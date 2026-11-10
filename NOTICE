@@ -1,0 +1,57 @@
+Passerelle
+Copyright 2026 Baptiste Faisy and the Passerelle contributors
+
+This product includes software developed for the QNX Global Hackathon 2026.
+It is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+--------------------------------------------------------------------------------
+Third-party projects this work builds upon, compares against, or was informed by
+--------------------------------------------------------------------------------
+
+1. gvergine/qnx-fs-9p — Apache-2.0
+   https://github.com/gvergine/qnx-fs-9p
+   A complete 9P2000.L client for QNX guests, ARM64 only (virtio-mmio).
+   Relationship to Passerelle: prior art, cited in the README and in
+   docs/state-of-the-art.md; benchmarked by host/bench; the PCI transport and
+   x86_64 target that Passerelle adds are offered back to this project as
+   patches under upstream/qnx-fs-9p/. No source file of this project is copied
+   into Passerelle. Numeric facts that cannot be copyrighted (Linux errno
+   numbers, 9P2000.L message numbers and field orders, virtio capability
+   layouts) were cross-checked against its documentation and sources.
+
+2. eclipse-score/qnx_unit_tests, directory src/common/virtio9p — Apache-2.0
+   https://github.com/eclipse-score/qnx_unit_tests
+   A 9P client for x86_64 and ARM64 reduced to what unit tests need. It is the
+   public reference for programming MSI-X on QNX without a root PCI server
+   configuration; that method is described (not copied) in
+   docs/design/transport.md and exercised by the E1 feasibility test.
+
+3. kodebooth/qnx-virtio — MIT
+   https://github.com/kodebooth/qnx-virtio
+   A virtio transport library for QNX 8 (core, queues, PCI, MMIO) with a sample
+   GPIO driver. Evaluated for reuse as decision D3 of the specification; the
+   evaluation and its outcome are recorded in docs/decisions.md. Passerelle
+   ships its own transport because every layer must also build and run its tests
+   on the PC (requirement P9-10), which requires a bus-access abstraction that
+   this project does not provide.
+
+4. The FUSE kernel ABI — (GPL-2.0 WITH Linux-syscall-note) OR BSD-2-Clause
+   /usr/include/linux/fuse.h, Copyright (C) 2001-2008 Miklos Szeredi
+   protofuse/fusep_abi.h re-states the wire layout of the FUSE protocol in our
+   own words and our own field names. No line of the Linux header is copied;
+   the header is only used as the authoritative description of the layout.
+
+5. The 9P2000.L protocol description — diod project
+   https://github.com/chaos/diod/blob/master/protocol.md
+   Used as the normative description of message layouts for 9P2000.L.
+
+6. QEMU 9p/virtio-fs documentation
+   https://wiki.qemu.org/Documentation/9psetup
+   https://wiki.qemu.org/Documentation/9p
+   https://virtio-fs.gitlab.io/howto-qemu.html
+   Used for host-side setup, security models and message-size guidance.
+
+--------------------------------------------------------------------------------
+No vendored third-party source tree is present in this repository. If a future
+revision vendors code, this file must name it, state its license, and keep the
+license text next to it.

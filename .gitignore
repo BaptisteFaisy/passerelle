@@ -1,0 +1,37 @@
+# Build trees (never committed)
+build/
+build-*/
+cmake-build-*/
+*.o
+*.a
+*.so
+*.so.*
+*.obj
+*.exe
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+dist/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Test + bench artefacts
+*.log
+*.out
+coverage/
+bench-results/
+fsproof-corpus/
+qshare-run/
+
+# QNX build artefacts
+*.ifs
+*.qnx
