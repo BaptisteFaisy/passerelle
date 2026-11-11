@@ -84,15 +84,16 @@ def build_initramfs(work: pathlib.Path, cache: pathlib.Path,
 
 def qemu_command(share: pathlib.Path, proto: str, tag: str,
                  kernel: pathlib.Path, initrd: pathlib.Path,
-                 work: pathlib.Path) -> tuple[list, object]:
+                 work: pathlib.Path, workload: int = 0,
+                 trace: pathlib.Path | None = None) -> tuple[list, object]:
     """Ask qshare for the command line, so the options tested are the emitted ones.
 
     ``build_qemu_cmd`` decides between ``-kernel`` and ``-drive`` from the image
     name, and resolves symlinks, so a host kernel cannot be smuggled in as the
     image. Instead the harness passes a throwaway disk image (never booted: with
     ``-kernel`` present QEMU uses the kernel) and appends the direct-boot
-    arguments. Everything that matters here - the share options - still comes
-    from qshare untouched.
+    arguments. Everything that matters here - the share options, and the 9P
+    trace switch - still comes from qshare untouched.
     """
     sys.path.insert(0, str(HOST_DIR))
     from qshare.options import validate_share
@@ -100,6 +101,8 @@ def qemu_command(share: pathlib.Path, proto: str, tag: str,
 
     cfg = validate_share(str(share), tag=tag, proto=proto)
     append = f"console=ttyS0 pgw.share={proto} pgw.tag={tag}"
+    if workload:
+        append += f" pgw.workload={workload}"
     placeholder = work / "unused-disk.img"
     if not placeholder.exists():
         with open(placeholder, "wb") as fh:
@@ -108,6 +111,7 @@ def qemu_command(share: pathlib.Path, proto: str, tag: str,
         cfg=cfg,
         image=placeholder,
         arch="x86_64",
+        trace_log=trace,
         extra_args=("-kernel", str(kernel), "-initrd", str(initrd),
                     "-append", append, "-no-reboot"),
     )
@@ -131,18 +135,19 @@ def run_guest(cmd: list, cfg, console: pathlib.Path) -> str:
 
 
 def check_proto(proto: str, work: pathlib.Path, cache: pathlib.Path,
-                kernel: pathlib.Path, initrd: pathlib.Path) -> bool:
+                kernel: pathlib.Path, initrd: pathlib.Path, workload: int = 0,
+                trace: pathlib.Path | None = None) -> bool:
     tag = f"e5{proto}"[:31]
     share = work / f"share-{proto}"
     share.mkdir(parents=True, exist_ok=True)
     (share / "from-host.txt").write_text(f"hello-from-pc-{proto}\n")
     console = work / f"console-{proto}.log"
 
-    cmd, cfg = qemu_command(share, proto, tag, kernel, initrd, work)
+    cmd, cfg = qemu_command(share, proto, tag, kernel, initrd, work, workload,
+                            trace)
     started = time.monotonic()
     text = run_guest(cmd, cfg, console)
     elapsed = time.monotonic() - started
-
     passes = [l for l in text.splitlines() if "PGW-E5 PASS" in l]
     fails = [l for l in text.splitlines() if "PGW-E5 FAIL" in l]
     for line in text.splitlines():
@@ -159,7 +164,53 @@ def check_proto(proto: str, work: pathlib.Path, cache: pathlib.Path,
     ok = bool(passes) and not fails and host_ok and "RESULT PASS" in text
     print(f"[{proto}] {'PASS' if ok else 'FAIL'} in {elapsed:.1f}s "
           f"({len(passes)} pass, {len(fails)} fail) - console: {console}")
+    if trace is not None:
+        report_roundtrips(trace, client=f"linux-guest/{proto}")
     return ok
+
+
+def report_roundtrips(trace: pathlib.Path, client: str) -> None:
+    """Turn a real QEMU 9P trace into the round-trip table (PERF-01)."""
+    if not trace.exists():
+        print(f"   no trace written at {trace}")
+        return
+    lines = trace.read_text(encoding="utf-8", errors="replace").splitlines()
+    print(f"   trace: {len(lines)} events in {trace}")
+    cmd = [sys.executable, "-c",
+           "import sys; from bench.cli import main; "
+           f"sys.exit(main(['roundtrips', {str(trace)!r}, '--client', {client!r}]))"]
+    proc = subprocess.run(cmd, cwd=HOST_DIR, capture_output=True, text=True,
+                          check=False, env={**os.environ, "PYTHONPATH": str(HOST_DIR)})
+    sys.stdout.write(proc.stdout)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stderr)
+        print(f"   pbench roundtrips failed (rc={proc.returncode})")
+
+
+def check_prerequisites(protos: list[str]) -> tuple[pathlib.Path, list[str]]:
+    """Check the tools the guest needs; raise Skipped when one is missing."""
+    require("qemu-system-x86_64", "the hypervisor")
+    require("curl", "fetching the guest rootfs")
+    require("cpio", "packing the initramfs")
+    require("gzip", "packing the initramfs")
+    require("unzstd", "decompressing the kernel modules")
+    kernel = find_kernel()
+    if "virtiofs" in protos:
+        sys.path.insert(0, str(HOST_DIR))
+        from qshare.runner import find_virtiofsd
+        if find_virtiofsd() is None:
+            raise Skipped("virtiofsd not found (qshare looks in /usr/lib/qemu, "
+                          "/usr/libexec, PATH)")
+    return kernel, protos
+
+
+def prepare_workdir(args: argparse.Namespace) -> pathlib.Path:
+    """Create (or reuse) the artefact directory and announce it."""
+    work = (pathlib.Path(args.workdir) if args.workdir
+            else pathlib.Path(tempfile.mkdtemp(prefix="pgw-e5-")))
+    work.mkdir(parents=True, exist_ok=True)
+    print(f"workdir: {work}")
+    return work
 
 
 def main() -> int:
@@ -167,37 +218,36 @@ def main() -> int:
     parser.add_argument("--protos", default="virtiofs,9p")
     parser.add_argument("--cache", default=os.path.expanduser("~/.cache/passerelle"))
     parser.add_argument("--workdir", default="", help="keep the artefacts here")
+    parser.add_argument("--workload", type=int, default=0, metavar="N",
+                        help="have the guest run N create/stat/read/unlink "
+                             "cycles on the share, so a 9P trace contains a "
+                             "known number of operations (PERF-01)")
+    parser.add_argument("--trace", default="", metavar="FILE",
+                        help="write the QEMU 9P trace here (implies the 9p "
+                             "protocol) and report the round-trip table")
     args = parser.parse_args()
 
+    protos = [p.strip() for p in args.protos.split(",") if p.strip()]
     try:
-        require("qemu-system-x86_64", "the hypervisor")
-        require("curl", "fetching the guest rootfs")
-        require("cpio", "packing the initramfs")
-        require("gzip", "packing the initramfs")
-        require("unzstd", "decompressing the kernel modules")
-        kernel = find_kernel()
-        protos = [p.strip() for p in args.protos.split(",") if p.strip()]
-        if "virtiofs" in protos:
-            sys.path.insert(0, str(HOST_DIR))
-            from qshare.runner import find_virtiofsd
-            if find_virtiofsd() is None:
-                raise Skipped("virtiofsd not found (qshare looks in /usr/lib/qemu, "
-                              "/usr/libexec, PATH)")
+        kernel, protos = check_prerequisites(protos)
     except Skipped as exc:
         print(f"::notice::E5 skipped, prerequisite missing: {exc}")
         return 2
 
-    work = pathlib.Path(args.workdir) if args.workdir else pathlib.Path(
-        tempfile.mkdtemp(prefix="pgw-e5-"))
-    work.mkdir(parents=True, exist_ok=True)
+    work = prepare_workdir(args)
     print(f"kernel: {kernel}")
-    print(f"workdir: {work}")
+    trace = None
+    if args.trace:
+        trace = work / args.trace
+        if "9p" not in protos:
+            protos = ["9p"] + protos  # only the 9P server emits v9fs_* events
     results: dict[str, bool] = {}
     try:
         initrd = build_initramfs(work, pathlib.Path(args.cache), kernel)
         for proto in protos:
             results[proto] = check_proto(proto, work, pathlib.Path(args.cache),
-                                         kernel, initrd)
+                                         kernel, initrd, args.workload,
+                                         trace if proto == "9p" else None)
     finally:
         if not args.workdir:
             shutil.rmtree(work, ignore_errors=True)

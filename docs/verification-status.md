@@ -139,11 +139,12 @@ policy (QNX-06). Those need E1–E5.
 | QNX-08 | Implemented (PC side) | `pgw_log_*` + `pgw_stat_*` counters; slog2 backend pending | Not built on QNX |
 | QNX-09 | Not started | Kernel trace events | No SDP |
 
-### 2.5 Performance (all require a QNX guest)
+### 2.5 Performance
 
 | ID | State | Proof / next step | Blocker |
 |---|---|---|---|
-| PERF-01 … PERF-07 | Not started | `host/bench/` harness exists in Python (roundtrips, loads, report) | **No SDP → no guest to measure**; E5 for virtiofs |
+| PERF-01 | **Baseline published** | `docs/measurements/linux-baseline-9p.md`: roundtrips per POSIX call from a real QEMU 8.2 trace (1 643 events, 822 requests) on an active Linux guest executing 30 create/stat/read/unlink cycles | Passerelle's own numbers need a QNX guest |
+| PERF-02 … PERF-07 | Not started | `host/bench/` harness exists in Python (`pbench`), baseline recorded | **No SDP → no guest to measure** |
 
 ### 2.6 Robustness
 
