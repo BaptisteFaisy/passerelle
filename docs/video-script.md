@@ -93,7 +93,12 @@ not yet measured, it is labelled "to be measured" on screen — no invented numb
 
 - Showing a benchmark bar that was not produced by the harness in this repository.
 - Speeding up footage of the priority test.
-- Claiming virtiofs works before feasibility test E5 and the read/write path are done.
+- Claiming virtiofs works in the *QNX* guest: feasibility test E5 passed on
+  11 Nov 2026 with a **Linux** guest (`tests/qemu`, see
+  [verification-status.md](verification-status.md) §3.1), which proves the host
+  half — `virtiofsd`, shared memory, the options `qshare` emits, both directions
+  of the exchange. It proves nothing about the QNX client, and the video must not
+  imply otherwise.
 - Omitting the two existing 9P clients — the spec forbids it (§3.3), and the judges
   will know.
 
