@@ -58,7 +58,10 @@ typedef struct pgw_fs_dirent {
 typedef struct pgw_fs_cred {
     uint32_t uid;
     uint32_t gid;
-    uint32_t prio; /* QNX thread priority (QNX-03, QNX-04, PERF-05) */
+    /* Scheduler urgency: **bigger is more urgent**, which is the opposite of
+     * the QNX numbering. Convert with pgw_prio_from_qnx() (pgw/prio.h) at the
+     * boundary where the caller's QNX priority is read (QNX-03/04, PERF-05). */
+    uint32_t prio;
 } pgw_fs_cred;
 
 typedef struct pgw_fs_opts {
@@ -84,7 +87,28 @@ typedef struct pgw_fs_setattr {
     uint64_t mtime_ns;
 } pgw_fs_setattr;
 
-/* Backend handle + vtable implemented by 9P and virtiofs adapters. */
+/* Backend handle + vtable implemented by 9P and virtiofs adapters.
+ *
+ * SYMLINK CONVENTION (it is what makes spec 5.3 work, and getting it backwards
+ * silently breaks both lstat and loop detection):
+ *
+ *   lookup(impl, relpath, ...)  -> attributes WITHOUT following a final
+ *                                  symbolic link, i.e. lstat(2) semantics.
+ *                                  The path walk uses it so that a link
+ *                                  component is *seen* and turned into a
+ *                                  redirect answer for the caller.
+ *   getattr(impl, relpath, ...) -> attributes FOLLOWING a final symbolic link,
+ *                                  i.e. stat(2) semantics; it may legitimately
+ *                                  return PGW_ELOOP or PGW_ENOENT.
+ *
+ * An adapter whose protocol cannot distinguish the two (9P2000.L: a walk ends on
+ * the link itself) may implement both with the same call - rmfs resolves links
+ * itself through readlink before asking for followed attributes, so the result
+ * is the same. What must never happen is `lookup` following links: the walk
+ * would then never see a link and FS-08 (loop detection) becomes unreachable.
+ *
+ * Every callback returns a pgw_err (PGW_OK on success) and leaves the output
+ * untouched on failure. None of them may block a caller thread (QNX-05). */
 typedef struct pgw_fs_backend_ops {
     void (*destroy)(void *impl);
     pgw_err (*lookup)(void *impl, const char *relpath, pgw_fs_attr *out,

@@ -224,6 +224,11 @@ typedef struct getattr_args {
 static pgw_err getattr_invoke(void *arg)
 {
     getattr_args *a = (getattr_args *)arg;
+    /* Backend convention (pgw/rmfs.h): `lookup` does NOT follow a final symlink
+     * (lstat semantics, what the path walk needs) and `getattr` DOES (stat
+     * semantics). Selecting the callback on `follow` is therefore correct, and
+     * an adapter may implement both with the same call when its protocol
+     * resolves links the same way. */
     if (!a->follow && a->fs->ops->lookup != NULL)
         return a->fs->ops->lookup(a->fs->impl, a->path, a->out, a->prio);
     return a->fs->ops->getattr(a->fs->impl, a->path, a->out, a->prio);

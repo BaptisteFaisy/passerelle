@@ -19,6 +19,8 @@
 #define _DEFAULT_SOURCE 1
 #include "pgw/drvsrv.h"
 
+#include "pgw/prio.h"
+
 #include <errno.h>
 #include <stddef.h>
 
@@ -29,8 +31,10 @@ void pgw_cred_from_ctp(resmgr_context_t *ctp, pgw_fs_cred *cred)
     cred->uid = ctp->info.cred.euid;
     cred->gid = ctp->info.cred.egid;
     /* The priority travels with the request: the submission scheduler orders
-     * pending requests by it (QNX-03, QNX-04, PERF-05). */
-    cred->prio = ctp->info.priority;
+     * pending requests by it (QNX-03, QNX-04, PERF-05). QNX numbers priorities
+     * the other way round (1 is the most urgent), so the conversion happens
+     * here, once: downstream, `prio` always means "bigger is more urgent". */
+    cred->prio = pgw_prio_from_qnx((uint32_t)ctp->info.priority);
 }
 
 int pgw_qnx_status(pgw_err e)

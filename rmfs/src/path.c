@@ -88,7 +88,10 @@ pgw_err rmfs_path_normalize(const char *in, char *out, size_t out_cap)
     return PGW_OK;
 }
 
-/* lstat one component chain: prefers lookup, falls back to getattr. */
+/* Probe one path component **without following** a final symlink: the walk has
+ * to see the link to turn it into a redirect (spec 5.3, FS-08). Per the backend
+ * convention (pgw/rmfs.h) that is `lookup`; `getattr` is the fallback for an
+ * adapter that only provides one of the two. */
 static pgw_err probe_attr(const pgw_fs_backend_ops *ops, void *impl,
                           const char *rel, uint32_t prio, pgw_fs_attr *out)
 {

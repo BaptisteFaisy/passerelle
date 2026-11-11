@@ -21,4 +21,8 @@ if(BUILD_TESTING)
     add_executable(test_common tests/test_common.c)
     target_link_libraries(test_common PRIVATE pgw_test)
     add_test(NAME common COMMAND test_common)
+
+    add_executable(test_prio tests/test_prio.c)
+    target_link_libraries(test_prio PRIVATE pgw_test)
+    add_test(NAME prio COMMAND test_prio)
 endif()
