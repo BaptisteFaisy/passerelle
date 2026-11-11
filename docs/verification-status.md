@@ -22,7 +22,11 @@
 - `virtiofsd` present at `/usr/libexec/virtiofsd`.
 - QEMU supports `virtio-9p-pci` and `vhost-user-fs-pci` (`qemu-system-x86_64 -device help`).
 - **No QNX SDP installed**: `qcc` and `mkqnximage` are absent, `~/qnx800` does not exist.
-  Every QNX-side validation below is blocked by this single fact.
+  Cross-compiling for QNX is therefore impossible on this machine.
+- **A real QNX guest does run here**: QNX Neutrino **7.1.0** x86_64, booted by
+  QEMU with a `virtio-9p-pci` device attached (`tests/qemu/qnx71/`). It ships no
+  compiler, so it cannot build our driver, but it answers what QNX sees of the
+  device — see §3.2.
 
 ---
 
@@ -74,70 +78,81 @@ policy (QNX-06). Those need E1–E5.
 
 ## 2. Requirement Matrix
 
-### 2.1 Virtio transport (`virtio/`) — contract: `include/pgw/virtio.h` **[exists]**
+### 2.1 Virtio transport (`virtio/`)
 
-| ID | State | Proof / next step | Blocker |
-|---|---|---|---|
-| VIO-01 | Not started | `pgw_vio_pci_open()` declared; device IDs in `limits.h` | Sources pending; E1 |
-| VIO-02 | Not started | PCI modern capability walk | Sources pending; E1 |
-| VIO-03 | Not started | `pgw_vio_mmio_open()` with `pgw_mmio_io` accessor | Sources pending |
-| VIO-04 | Not started | MSI-X with INTx fallback (`allow_msix` flag) | Sources pending; E1 |
-| VIO-05 | Not started | `pgw_vio_read_tag_9p()` / `pgw_vio_read_tag_fs()` | Sources pending |
-| VIO-06 | Not started | One `pgw_vio_dev` per device | Sources pending |
-| VIO-07 | Not started | `pgw_vio_sg` zero-copy scatter-gather | Sources pending |
-| VIO-08 | Not started | `PGW_VIO_F_RING_INDIRECT_DESC` / `EVENT_IDX` bits declared | Sources pending |
-| VIO-09 | Not started | `pgw_vio_destroy()` resets + tears down IRQ | Sources pending |
-| VIO-10 | Not started | Mock backend `pgw_vio_mock_open()` designed for PC tests | Sources pending |
+Implemented and tested on the PC; the QNX-only parts (`pci_qnx.c`, `mmio_qnx.c`)
+are compile-checked against `tests/qnx-stub` in CI. What a real QNX guest reports
+about the same device is in [§3.2](#32-a-real-qnx-71-guest-on-this-pc).
 
-### 2.2 9P2000.L protocol (`proto9p/`) — contract: `include/pgw/p9.h` **[exists]**
+| ID | State | Proof |
+|---|---|---|
+| VIO-01 | **Tested on PC + observed on QNX** | vendor/device matching: `ctest -R test_virtio_pci`; QNX 7.1's `pci-tool` reports `1af4/1009` for our device (EVIDENCE.md §2) |
+| VIO-02 | **Tested on PC + observed on QNX** | capability walk on a fake config space (`test_virtio_pci`); QNX exposes the MSI-X cap and the five vendor (virtio) caps |
+| VIO-03 | **Tested on PC** | MMIO v1 and v2 against a RAM-backed register file: `ctest -R test_virtio_mmio` |
+| VIO-04 | Implemented, **not verifiable here** | MSI-X programming with INTx fallback is separated from bus access (`test_virtio_pci` covers the programming); delivery needs QNX + a routed vector — see §3.2 and E1 |
+| VIO-05 | **Tested on PC** | mount tag read from device config: `ctest -R test_virtio_dev` |
+| VIO-06 | **Tested on PC** | one device object per share: `test_virtio_dev` |
+| VIO-07 | **Tested on PC** | zero-copy scatter-gather: `ctest -R test_virtio_vq` (no intermediate copy in the transport) |
+| VIO-08 | **Tested on PC** | indirect descriptors and notification suppression: `test_virtio_vq`, `test_virtio_dev` |
+| VIO-09 | **Tested on PC** | reset and interrupt teardown: `test_virtio_dev` |
+| VIO-10 | **Tested on PC** | the mock backend that makes all of the above possible without QNX: `ctest -R test_virtio_mock` |
 
-| ID | State | Proof / next step | Blocker |
-|---|---|---|---|
-| P9-01 | Not started | `pgw_p9_enc_tversion` + `PGW_MSIZE_DEFAULT` (128 KiB) | Sources pending |
-| P9-02 | Not started | Encoders/decoders declared for all core messages | Sources pending |
-| P9-03 | Not started | `tsetattr`, `tsymlink`, `treadlink`, `tlink` declared | Sources pending |
-| P9-04 | Implemented (tables) | `test_err_linux_table`, `test_flags_and_modes` in `common` | P9 wiring pending |
-| P9-05 | Not started | `pgw_p9_rpc_fn` carries a `prio` argument | Sources pending |
-| P9-06 | Not started | `pgw_p9_flush` declared | Sources pending |
-| P9-07 | Not started | `pgw_p9_idpool` (fid/tag pools) declared | Sources pending |
-| P9-08 | Not started | `pgw_p9_read/write/readdir` chunking documented | Sources pending |
-| P9-09 | Not started | `pgw_p9_dec_*` validate length/type/tag/trailing bytes | Sources pending |
-| P9-10 | Not started | Zero OS headers in `p9.h` — builds on PC by design | Sources pending |
+### 2.2 9P2000.L protocol (`proto9p/`)
 
-### 2.3 Filesystem behaviour (`rmfs/`) — contract: `include/pgw/rmfs.h` **[exists]**, sources partly present
+Portable C11, no OS header, tested on the PC — this is requirement P9-10 applied
+to the whole layer.
 
-| ID | State | Proof / next step | Blocker |
-|---|---|---|---|
-| FS-01 | Not started | `pgw_rmfs_read/write` take `uint64_t` offsets ( > 4 GiB capable) | `rmfs/` has no `CMakeLists.txt` yet |
-| FS-02 | Not started | `pgw_fs_attr` carries ns timestamps, nlink, stable `ino` | Not built |
-| FS-03 | Not started | `pgw_rmfs_readdir` returns `next_off` | Not built |
-| FS-04 | Not started | `pgw_oflags` carries EXCL/TRUNC/APPEND | Not built |
-| FS-05 | Not started | `pgw_rmfs_mkdir/unlink/rename` declared | Not built |
-| FS-06 | Not started | Execution from share | Not built; **E3** |
-| FS-07 | Not started | `pgw_rmfs_chmod/chown/truncate/utimens` declared | Not built |
-| FS-08 | Not started | `pgw_rmfs_symlink/readlink/link`, `PGW_SYMLINK_MAX`=40 | Not built |
-| FS-09 | Not started | `pgw_fs_opts` + `pgw_fs_cred` permission model | Not built |
-| FS-10 | Not started | `pgw_rmfs_fsync/statfs` declared | Not built |
-| FS-11 | Not started | `rmfs/src/open_table.c` present | Not built |
-| FS-12 | Not started | No data cache by default (`PGW_DATA_CACHE_DEFAULT=0`) | Not built |
-| FS-13 | Not started | `rmfs/src/attr_cache.c` + `attr_ttl_ns` option | Not built |
-| FS-14 | Not started | `rmfs/src/lock.c`, `pgw_rmfs_lock/getlock` | Not built |
-| FS-15 | Not started | `PGW_NAME_MAX` = 255 UTF-8 bytes | Not built |
-| FS-16 | Not started | X tier: relay locks to server | Not built |
+| ID | State | Proof |
+|---|---|---|
+| P9-01 | **Tested on PC** | version and `msize` negotiation: `ctest -R test_p9_session` |
+| P9-02 | **Tested on PC** | every core message encode/decode round trip: `ctest -R test_p9_codec` |
+| P9-03 | **Tested on PC** | `tsetattr`, `tsymlink`, `treadlink`, `tlink`: `test_p9_codec` |
+| P9-04 | **Tested on PC** | Linux↔QNX tables (`test_err_linux_table`, `test_flags_and_modes`) and their use in the session: `test_p9_session` |
+| P9-05 | **Tested on PC** | several requests in flight, one tag each: `test_p9_session` |
+| P9-06 | **Tested on PC** | `Tflush` on cancellation: `test_p9_session` |
+| P9-07 | **Tested on PC** | 1 000 000 alloc/free on the fid and tag pools, no leak: `ctest -R test_p9_idpool` |
+| P9-08 | **Tested on PC** | reads/writes/readdir split across messages and resumed: `test_p9_session` (a 300 KiB read with `msize` 8192) |
+| P9-09 | **Tested on PC** | strict validation (size, type, tag, internal lengths, no trailing bytes): `ctest -R test_p9_validation`, plus `ctest -R fuzz_p9` |
+| P9-10 | **Tested on PC** | the layer builds and its tests run with no QNX header: that is the CI `build-test` job |
 
-### 2.4 QNX integration
+### 2.3 Filesystem behaviour (`rmfs/`)
 
-| ID | State | Proof / next step | Blocker |
-|---|---|---|---|
-| QNX-01 | Not started | `drivers/` empty | No SDP |
-| QNX-02 | Not started | IFS startup ordering | No SDP |
-| QNX-03 | Not started | Priority inheritance demo | No SDP; needs kernel trace |
-| QNX-04 | Implemented (design) | `rmfs/src/sched.c` + `pgw_prio_sched_*` | Not built; needs QNX measurement |
-| QNX-05 | Not started | Non-blocking worker yield | No SDP |
-| QNX-06 | Not started | Non-root + capabilities policy | No SDP |
-| QNX-07 | Not started | `mount`/`umount` integration | No SDP |
-| QNX-08 | Implemented (PC side) | `pgw_log_*` + `pgw_stat_*` counters; slog2 backend pending | Not built on QNX |
-| QNX-09 | Not started | Kernel trace events | No SDP |
+| ID | State | Proof |
+|---|---|---|
+| FS-01 | **Tested on PC** | open/read/write/seek/close with 64-bit offsets: `ctest -R test_rmfs_open` |
+| FS-02 | **Tested on PC** | size, type, mode, owner, ns timestamps, nlink, stable ino: `ctest -R test_rmfs_meta` |
+| FS-03 | **Tested on PC** | readdir resumed by offset, no entry lost or doubled (600 entries in pages of 7): `ctest -R test_directed` |
+| FS-04 | **Tested on PC** | exclusive create, `O_TRUNC`, `O_APPEND`: `test_directed`, `test_rmfs_open` |
+| FS-05 | **Tested on PC** | mkdir/rmdir/unlink/atomic rename incl. across directories: `test_directed`, `test_rmfs_meta` |
+| FS-06 | **Not verified** | needs a QNX guest that executes a binary from the share — E3 |
+| FS-07 | **Tested on PC** | chmod/chown/truncate/utimens: `test_rmfs_meta`, `test_directed` |
+| FS-08 | **Tested on PC** | symlink create/read/resolve, loop detection (`PGW_SYMLINK_MAX`), hard links: `ctest -R test_rmfs_path`, `test_directed` |
+| FS-09 | **Tested on PC** | permission matrix with a non-owner caller, `ro`/`noexec`/`nosuid`: `ctest -R test_rmfs_perms`, `test_directed` |
+| FS-10 | **Tested on PC** | `fsync` reaches the backend, `statfs` reports the share: `test_directed` |
+| FS-11 | **Tested on PC** | deleted-but-open stays readable until close: `ctest -R test_diff` |
+| FS-12 | **Tested on PC** | a change made on the PC is seen without remounting (no data cache): `test_diff` |
+| FS-13 | **Tested on PC** | bounded attribute cache, hits and misses counted, off by default: `ctest -R test_rmfs_cache` |
+| FS-14 | **Tested on PC** | local byte-range locks between guest processes, released when the owner dies: `ctest -R test_rmfs_locks`, `test_directed` |
+| FS-15 | **Tested on PC** | 255-byte names accepted, 256 refused, UTF-8 preserved: `test_directed` |
+| FS-16 | Not started | X tier: relay locks to the server |
+
+### 2.4 QNX integration (`drivers/`)
+
+The driver sources exist and their portable half is tested; every requirement
+below needs a QNX build (SDP) to be *verified*, and §3.2 records what a real QNX
+7.1 guest already told us about the device itself.
+
+| ID | State | Proof / next step |
+|---|---|---|
+| QNX-01 | Written, **compiles on PC**, not run | resource-manager glue in `drivers/common/src/resmgr_*_qnx.c`; type-checked by CI job `qnx-syntax` |
+| QNX-02 | Written, not run | IFS fragment in `image/passerelle.build`; the guest's own `/proc/boot` shows the minimum is realistic (kernel, libc, `pci-server`) — EVIDENCE.md §4 |
+| QNX-03 | Written, not measured | `drivers/common/src/prio_qnx.c` re-applies the caller priority for the whole exchange; needs the kernel trace — E1 |
+| QNX-04 | **Tested on PC** | priority-ordered submission: `ctest -R test_rmfs_sched` (a priority request overtakes eight low-priority ones) |
+| QNX-05 | **Tested on PC** | a parked request never holds the caller thread: `test_rmfs_sched` |
+| QNX-06 | Written, not run | privilege drop + `image/passerelle.sec`; the guest ships `ability` and `libsecpol.so`, so the mechanism exists — EVIDENCE.md §4 |
+| QNX-07 | Written, not run | `mount_qnx.c`; E1 |
+| QNX-08 | **Tested on PC** (counters), backend not run | `pgw_stat_*` table exported as `name=value`; slog2 backend is `drivers/common/src/syslog_qnx.c` |
+| QNX-09 | Written, not measured | trace events around each request in `drivers/common/src/trace_qnx.c`; needs the kernel trace tooling |
 
 ### 2.5 Performance
 
@@ -148,34 +163,34 @@ policy (QNX-06). Those need E1–E5.
 
 ### 2.6 Robustness
 
-| ID | State | Proof / next step | Blocker |
-|---|---|---|---|
-| ROB-01 | Not started | errno propagation path | Not built |
-| ROB-02 | Not started | `rmfs/src/open_table.c` | Not built |
-| ROB-03 | Not started | Unmount under load | No SDP |
-| ROB-04 | Not started | Host-side unlink/replace handling | No SDP |
-| ROB-05 | Implemented (design) | `PGW_TIMEOUT_MS_DEFAULT` + injectable clock (`test_time_fake_clock`) | Not built |
-| ROB-06 | Not started | `-DPGW_SANITIZERS=ON` build option exists in root `CMakeLists.txt` | Fuzz harness pending |
-| ROB-07 | Not started | Faulty-server tier (X) | Not built |
+| ID | State | Proof / next step |
+|---|---|---|
+| ROB-01 | **Tested on PC** | a refused operation comes back as a code, never as a hang: `ctest -R test_rmfs_meta`, `test_p9_validation` |
+| ROB-02 | **Tested on PC** | no descriptor or fid left behind after a client disappears: `ctest -R test_diff` (20 000 open/close cycles, counters back to zero), `test_p9_idpool` |
+| ROB-03 | Written, not run | unmount under load in `drivers/*/src/mount_qnx.c`; needs QNX |
+| ROB-04 | **Partly tested on PC** | a file removed or replaced on the PC while in use gives clean errors: `test_diff`, `test_directed` |
+| ROB-05 | **Tested on PC** | request abandoned after a configurable deadline, with an injected clock so no test sleeps: `ctest -R common` (`test_time_fake_clock`), `test_p9_session` |
+| ROB-06 | **Tested on PC** | seeded campaigns against every decoder, under ASan+UBSan, with a header invariant that fails on a decoder accepting garbage: `ctest -R "fuzz_p9|fuzz_fuse"` |
+| ROB-07 | Not started | X tier: a deliberately faulty 9P server over the network |
 
 ### 2.7 Security
 
-| ID | State | Proof / next step | Blocker |
-|---|---|---|---|
-| SEC-01 | Implemented (design) | `pgw_fs_opts.nosuid` defaults to true | Not built |
-| SEC-02 | Not started | Transport restricted to its own device | No SDP |
-| SEC-03 | **Implemented (docs)** | [architecture.md](architecture.md) §3.7 documents QEMU security models | — |
+| ID | State | Proof / next step |
+|---|---|---|
+| SEC-01 | **Tested on PC** | `nosuid` on by default, read-only mount refuses writes, permission matrix enforced in the guest: `ctest -R test_rmfs_perms`, `test_directed` |
+| SEC-02 | Written, not run | the driver only opens its own device (single `pci_device_find` match); audit needs QNX |
+| SEC-03 | **Implemented (docs)** | [architecture.md](architecture.md) §3.7 documents the QEMU security models; `qshare` defaults to `mapped-xattr`, which needs no root, and E5 ran `virtiofsd` unprivileged |
 
 ### 2.8 Developer experience
 
-| ID | State | Proof / next step | Blocker |
-|---|---|---|---|
-| DX-01 | Partial | `host/qshare/{cli,options,image,runner}.py` written | Not yet validated end-to-end |
-| DX-02 | Not started | One-command demo | Needs driver + image |
-| DX-03 | Partial | `host/qshare/qrun.py` written | Needs a running guest |
-| DX-04 | **Implemented (docs)** | [user-guide.md](user-guide.md) §7 (CMake + Rust) | Examples not yet executed |
-| DX-05 | Partial | This `docs/` set; `codelab/` empty | Tutorial pending |
-| DX-06 | Not started | Root-on-share (X) | Needs driver |
+| ID | State | Proof / next step |
+|---|---|---|
+| DX-01 | **Verified on the host** | `qshare` emits the QEMU options and the `mkqnximage` fragment; those exact options booted a Linux guest (E5) and a QNX 7.1 guest (§3.2) |
+| DX-02 | Not started | one-command demonstration needs the QNX driver |
+| DX-03 | Partial | `qrun` written; needs a QNX guest with the driver mounted |
+| DX-04 | **Implemented (docs)** | [user-guide.md](user-guide.md) §7 (CMake + Rust examples, also written by `qshare --example`) |
+| DX-05 | **Implemented** | [user-guide.md](user-guide.md), [architecture.md](architecture.md) and the eight-chapter [codelab](../codelab/README.md) |
+| DX-06 | Not started | X tier: whole system root on the share |
 
 ### 2.9 virtiofs (`protofuse/`) — implemented, tested on PC
 
@@ -206,7 +221,7 @@ verified under QNX**, because no QNX SDP is available on this workstation.
 
 | Test | Question | State | What blocks it |
 |---|---|---|---|
-| **E1** | Under QEMU x86_64, does a QNX driver obtain the virtio PCI interrupt and exchange a first 9P message? | **Blocked** | No QNX SDP (no `qcc`, no `mkqnximage`, no bootable QNX image). QEMU 8.2.2 itself is available. Method reference: Project B's manual MSI-X sequence (see [state-of-the-art.md](state-of-the-art.md)) |
+| **E1** | Under QEMU x86_64, does a QNX driver obtain the virtio PCI interrupt and exchange a first 9P message? | **Half answered** (11 Nov 2026, 17:20 CET) | **Enumeration and capability discovery: answered yes on a real QNX 7.1 guest** — `pci-tool` reports our device `1af4:1009` with the MSI-X capability and the five virtio vendor capabilities, and three assigned BARs. **Interrupt: measured as *not routed* for this device** (`Interrupt list - 0 assigned`), because the image only routes INTx for other bus/device addresses — see §3.2. Still blocked for the remaining half: the driver itself needs the SDP to be built |
 | **E2** | Do clients A and B behave as advertised, and what do they measure? | **Blocked** | Both require the SDP to build; A is aarch64-only (needs `qemu-system-aarch64`, present, but no guest image), B needs Bazel + SDP |
 | **E3** | Does QNX execute a program served by a third-party resource manager, shared libraries included? | **Blocked** | No SDP, no `mkqnximage` image. Fallback: limit the objective to data sharing |
 | **E4** | Does `mkqnximage` accept extra QEMU options? | **Blocked** | `mkqnximage` ships with the SDP and is absent. Fallback already planned: `qshare` launches QEMU itself on the produced image |
@@ -214,9 +229,11 @@ verified under QNX**, because no QNX SDP is available on this workstation.
 
 **Unblocking checklist** (in order):
 
-1. Install QNX SDP 8.0 (QNX Everywhere) → unblocks E1, E2, E3, E4.
+1. Install QNX SDP 8.0 (QNX Everywhere) → unblocks E2, E3, E4 and the rest of E1.
 2. Build one `mkqnximage` x86_64le image with the driver embedded → unblocks E1, E3.
 3. ~~Boot a minimal Linux guest with `virtiofsd`~~ → **done**, `tests/qemu/`.
+4. ~~Boot a real QNX guest and ask its PCI server about the device~~ → **done**,
+   `tests/qemu/qnx71/`, see §3.2.
 
 ---
 
@@ -265,14 +282,43 @@ read/write both ways) and nothing about our driver.
 
 ---
 
+### 3.2 A real QNX 7.1 guest on this PC
+
+`tests/qemu/qnx71/` boots QNX Neutrino **7.1.0** x86_64 (community image,
+2022-07-12) under QEMU 8.2.2 with the same `virtio-9p-pci` options `qshare`
+emits, then asks the guest's own tools what it sees. Full transcript and the
+reasoning line by line: [`tests/qemu/qnx71/EVIDENCE.md`](../tests/qemu/qnx71/EVIDENCE.md).
+
+Measured, copy-pasted from the guest:
+
+| Observation | Meaning for the project |
+|---|---|
+| `uname -a` → `QNX vm1 7.1.0 ... x86pc x86_64` | a genuine QNX kernel, not a stub |
+| `pci-tool -vv` → `vid/did: 1af4/1009` at `B000:D05:F00` | QNX's PCI server enumerates our device with exactly the IDs in `limits.h` (**VIO-01** premise verified on QNX) |
+| `Capabilities list (6): 11 (MSI-X) --> 09 (VEND) ×5` | the five vendor capabilities a modern virtio device exposes are readable through QNX's PCI API, and MSI-X is present (**VIO-02**, **VIO-04**) |
+| `Address Space list - 3 assigned` (I/O `c000`, MEM `feb96000`, 64-bit prefetch `fe000000`) | QEMU assigned the legacy PIO window, the modern configuration window and the shared-memory window; QNX reports them (**VIO-07** premise) |
+| **`Interrupt list - 0 assigned`** | **no interrupt is routed to the device.** `pci_hw.cfg` in the image routes INTx only for `B0:D17:F0` and `B3:D0:F0`. A driver must either add its own entry (bus, device, pin — QEMU chose `pin A`) or take the MSI-X path, for which the image already ships `pci_cap-0x11.so` |
+| `pci_server.cfg` → `DO_BUS_CONFIG=no` | the PCI server does **not** program BARs itself; they are assigned here by QEMU's firmware. A driver must not assume that on real hardware (decision D3) |
+| `/proc/boot` contains `fs-dos.so`, `fs-qnx6.so`, **no 9P or virtiofs client** | the gap this project fills, now *observed* instead of asserted: a stock QNX runtime image cannot mount a host share |
+| ships `libsecpol.so`, `ability`, `qconn`; **no `qcc`, no `mkifs`** | the QNX-06/SEC-01 mechanisms exist in a runtime image; but nothing can be compiled in or for it without the SDP |
+
+What this does **not** do: build or run our driver. QNX 7.1 is also not QNX 8.0
+— the kernel changes the specification relies on (no `InterruptAttach()`,
+capability model) are not exercised by this image. It answers the *device*
+question, not the *driver* question.
+
 ## 4. Known Issues at Snapshot Time
 
-Second snapshot, **11 November 2026, 05:00 CET**: every module now has a
-`CMakeLists.txt`, the whole stack builds, and both guards are green.
+Third snapshot, **11 November 2026, 17:30 CET**: every module has a
+`CMakeLists.txt`, the whole stack builds, both guards are green, E5 passes in CI,
+and a real QNX 7.1 guest runs on this PC and confirms what the device looks like
+from the QNX side.
 
 | Issue | Impact | State |
 |---|---|---|
-| No QNX SDP on the workstation | Every QNX-side requirement stays unproven; feasibility tests E1–E5 blocked | **Open**, project-wide (issues #2–#6) |
+| **No QNX SDP on the workstation** | The driver cannot be built for QNX, so E2, E3, E4 and the driver half of E1 remain impossible; PERF-02…07 have no number | **Open**, the single blocking item (issues #2–#6) |
+| The QNX 7.1 guest ships no compiler | It answers device questions (enumeration, capabilities, BARs, interrupt routing) but cannot build or run our driver | **Open**, inherent to a runtime image |
+| No interrupt routed to the device in the reference image | `pci_hw.cfg` only routes INTx for other bus/device addresses, so `pci-tool` reports `Interrupt list - 0 assigned` | **Measured** (§3.2): the driver must add its own INTx entry or use MSI-X, for which `pci_cap-0x11.so` is present |
 | No published performance number | PERF-01…PERF-07 have harnesses (`host/bench`) but no measurement | **Open**: needs a QNX guest, nothing is claimed in the README |
 | `lookup` / `getattr` symlink convention was inverted between `rmfs` and its backends | `lstat` answered `ELOOP` on a link loop while `stat` answered `OK`: FS-08 unreachable, every `lstat` on a symlink wrong | **Fixed** by the PC conformance bench; convention now written in `pgw/rmfs.h` |
 | QNX priority passed through to the submission scheduler without conversion | A background copy at QNX priority 250 overtook a priority-10 read: PERF-05 inverted on target | **Fixed**: single conversion point `pgw_prio_from_qnx()` (`common/include/pgw/prio.h`), pinned by `common/tests/test_prio.c` |

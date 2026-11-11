@@ -1,0 +1,31 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+#
+# qnx-ssh - run a command inside the QNX 7.1 guest over SSH.
+#
+# The community image boots sshd with root/root, which is why this works without
+# any setup. The password is kept in a 0600 file next to this script and fed to
+# ssh through SSH_ASKPASS: no sshpass dependency, no password on the command
+# line that `ps` would show.
+#
+# Usage: ./qnx-ssh 'uname -a; pci-tool'
+set -eu
+DIR=$(cd "$(dirname "$0")" && pwd)
+VM=${QNX_VM_DIR:-$HOME/qnx71-vm}
+PORT=${QNX_SSH_PORT:-2225}
+ASKPASS="$VM/.askpass.sh"
+
+if [ ! -x "$ASKPASS" ]; then
+    mkdir -p "$VM"
+    printf '#!/bin/sh\ncat "%s/.pw"\n' "$VM" > "$ASKPASS"
+    chmod 700 "$ASKPASS"
+    printf 'root' > "$VM/.pw"
+    chmod 600 "$VM/.pw"
+fi
+
+SSH_ASKPASS="$ASKPASS" SSH_ASKPASS_REQUIRE=force DISPLAY=:0 setsid -w \
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        -o NumberOfPasswordPrompts=1 -o ConnectTimeout=10 \
+        -o PreferredAuthentications=password,keyboard-interactive \
+        -o PubkeyAuthentication=no \
+        -p "$PORT" root@127.0.0.1 "$@" 2>/dev/null
