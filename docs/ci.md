@@ -119,6 +119,30 @@ because the job never runs on a pull request. The file is therefore listed
 in `SKIP_FILES` of `.github/ci-budget/check_timeouts.py` — the guard checks
 every other workflow, but cannot judge a job that is allowed to be long.
 
+### Two jobs, two runners, and why
+
+| Job | Runner | Why there |
+|---|---|---|
+| `qemu-e2e` | `[self-hosted, passerelle-worker]` (R630) | the long conformance and fuzz campaigns; no QEMU needed |
+| `e5-guest-share` | `ubuntu-24.04` (GitHub-hosted) | the R630 workers have neither `qemu-system-x86_64` nor `virtiofsd`, so E5 would only ever skip there. The repository is public, so hosted runners cost nothing |
+
+`e5-guest-share` installs `qemu-system-x86`, `virtiofsd`, `cpio` and `zstd`, then
+boots a minimal Linux guest on the options `qshare` emits. Two runner facts had
+to be handled, both visible in the job log:
+
+- the runner's kernel is `-rw-------` (root only), so a step runs
+  `sudo chmod a+r /boot/vmlinuz-*` — without it the harness reports "no readable
+  host kernel" and skips;
+- `linux-modules-extra-$(uname -r)` is not installable there, but the Azure
+  kernel already ships `netfs`, `9pnet`, `9pnet_virtio`, `9p` and `virtiofs` as
+  modules, which is all the guest needs.
+
+Measured on 11 November 2026: **virtiofs PASS in 7.2 s, 9P PASS in 6.7 s**, four
+markers each, job total 40 s (ceiling 900 s). A runner that lacks any of this gets an explicit
+`::notice::` skip from the harness (exit status 2), never a false green — and if
+the kernel ships neither 9p nor virtiofs as a module, `mkinitramfs.sh` exits 3,
+which the harness also reports as a skip.
+
 ---
 
 ## 4. Why five minutes
