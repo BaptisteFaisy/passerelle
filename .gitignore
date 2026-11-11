@@ -32,6 +32,10 @@ bench-results/
 fsproof-corpus/
 qshare-run/
 
+# ...but the recorded QEMU traces are test fixtures, not artefacts: the
+# host-tools CI job replays them to check the round-trip table (PERF-01).
+!host/tests/fixtures/*.log
+
 # QNX build artefacts
 *.ifs
 *.qnx

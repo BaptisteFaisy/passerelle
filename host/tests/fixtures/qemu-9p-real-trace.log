@@ -1,0 +1,236 @@
+v9fs_version tag 65535 id 100 msize 131096 version 9P2000.L
+v9fs_version_return tag 65535 id 100 msize 131096 version 9P2000.L
+v9fs_attach tag 0 id 104 fid 0 afid -1 uname nobody aname 
+v9fs_attach_return tag 0 id 104 type 128 version 1793310844 path 20888852
+v9fs_getattr tag 0 id 24 fid 0 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16893 uid 1000 gid 1000}
+v9fs_attach tag 0 id 104 fid 1 afid -1 uname  aname 
+v9fs_attach_return tag 0 id 104 type 128 version 1793310844 path 20888852
+v9fs_getattr tag 0 id 24 fid 1 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16893 uid 1000 gid 1000}
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 0
+v9fs_walk_return tag 0 id 110 nwnames 0 qids (nil)
+v9fs_open tag 0 id 12 fid 2 mode 2048
+v9fs_open_return tag 0 id 12 qid={type 128 version 1793310844 path 20888852} iounit 0
+v9fs_getattr tag 0 id 24 fid 1 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16893 uid 1000 gid 1000}
+v9fs_readdir tag 0 id 40 fid 2 offset 0 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 84 retval 95
+v9fs_readdir tag 0 id 40 fid 2 offset 9223372036854775807 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 0 retval 11
+v9fs_walk tag 0 id 110 fid 1 newfid 3 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cecfcc7b0
+v9fs_getattr tag 0 id 24 fid 3 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33204 uid 1000 gid 1000}
+v9fs_getattr tag 0 id 24 fid 3 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33204 uid 1000 gid 1000}
+v9fs_clunk tag 0 id 120 fid 3
+v9fs_readdir tag 0 id 40 fid 2 offset 9223372036854775807 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 0 retval 11
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2ced42f2d0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33204 uid 1000 gid 1000}
+v9fs_walk tag 0 id 110 fid 2 newfid 3 nwnames 0
+v9fs_walk_return tag 0 id 110 nwnames 0 qids (nil)
+v9fs_open tag 0 id 12 fid 3 mode 0
+v9fs_open_return tag 0 id 12 qid={type 0 version 1794364432 path 20888853} iounit 131072
+v9fs_read tag 0 id 116 fid 3 off 0 max_count 4096
+v9fs_read_return tag 0 id 116 count 20 err 31
+v9fs_read tag 0 id 116 fid 3 off 20 max_count 4076
+v9fs_read_return tag 0 id 116 count 0 err 11
+v9fs_read tag 0 id 116 fid 3 off 20 max_count 4096
+v9fs_read_return tag 0 id 116 count 0 err 11
+v9fs_read tag 0 id 116 fid 3 off 20 max_count 4096
+v9fs_read_return tag 0 id 116 count 0 err 11
+v9fs_clunk tag 0 id 120 fid 3
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_rerror tag 0 id 110 err 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 0
+v9fs_walk_return tag 0 id 110 nwnames 0 qids (nil)
+v9fs_lcreate tag 0 id 14 dfid 2 flags 32833 mode 420 gid 0
+v9fs_lcreate_return tag 0 id 14 qid={type 0 version 1794359604 path 20887034} iounit 131072
+v9fs_walk tag 0 id 110 fid 1 newfid 3 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2ced0306e0
+v9fs_getattr tag 0 id 24 fid 3 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_xattrwalk tag 0 id 30 fid 3 newfid 4 name security.capability
+v9fs_rerror tag 0 id 30 err 95
+v9fs_write tag 0 id 118 fid 2 off 0 count 5 cnt 1
+v9fs_write_return tag 0 id 118 total 5 err 11
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_clunk tag 0 id 120 fid 3
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2ced0306e0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_walk tag 0 id 110 fid 2 newfid 3 nwnames 0
+v9fs_walk_return tag 0 id 110 nwnames 0 qids (nil)
+v9fs_open tag 0 id 12 fid 3 mode 0
+v9fs_open_return tag 0 id 12 qid={type 0 version 1794360372 path 20887034} iounit 131072
+v9fs_read tag 0 id 116 fid 3 off 0 max_count 4096
+v9fs_read_return tag 0 id 116 count 5 err 16
+v9fs_read tag 0 id 116 fid 3 off 5 max_count 4091
+v9fs_read_return tag 0 id 116 count 0 err 11
+v9fs_read tag 0 id 116 fid 3 off 5 max_count 4096
+v9fs_read_return tag 0 id 116 count 0 err 11
+v9fs_read tag 0 id 116 fid 3 off 5 max_count 4096
+v9fs_read_return tag 0 id 116 count 0 err 11
+v9fs_clunk tag 0 id 120 fid 3
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_getattr tag 0 id 24 fid 1 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16893 uid 1000 gid 1000}
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_rerror tag 0 id 110 err 2
+v9fs_mkdir tag 0 id 72 fid 1 name d mode 16877 gid 0
+v9fs_mkdir_return tag 0 id 72 qid={type 128 version 1793311028 path 21018871} err 20
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece76da0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece76da0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_walk tag 0 id 110 fid 2 newfid 3 nwnames 1
+v9fs_rerror tag 0 id 110 err 2
+v9fs_walk tag 0 id 110 fid 2 newfid 3 nwnames 0
+v9fs_walk_return tag 0 id 110 nwnames 0 qids (nil)
+v9fs_lcreate tag 0 id 14 dfid 3 flags 32833 mode 420 gid 0
+v9fs_lcreate_return tag 0 id 14 qid={type 0 version 1794359604 path 21018873} iounit 131072
+v9fs_walk tag 0 id 110 fid 2 newfid 4 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece76da0
+v9fs_getattr tag 0 id 24 fid 4 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_xattrwalk tag 0 id 30 fid 4 newfid 5 name security.capability
+v9fs_rerror tag 0 id 30 err 95
+v9fs_write tag 0 id 118 fid 3 off 0 count 2 cnt 1
+v9fs_write_return tag 0 id 118 total 2 err 11
+v9fs_clunk tag 0 id 120 fid 3
+v9fs_clunk tag 0 id 120 fid 4
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2ced0306e0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2ced0306e0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_walk tag 0 id 110 fid 2 newfid 3 nwnames 0
+v9fs_walk_return tag 0 id 110 nwnames 0 qids (nil)
+v9fs_open tag 0 id 12 fid 3 mode 2048
+v9fs_open_return tag 0 id 12 qid={type 128 version 1793311028 path 21018871} iounit 0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_readdir tag 0 id 40 fid 3 offset 0 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 76 retval 87
+v9fs_readdir tag 0 id 40 fid 3 offset 9223372036854775807 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 0 retval 11
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 1 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16893 uid 1000 gid 1000}
+v9fs_walk tag 0 id 110 fid 2 newfid 4 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece76da0
+v9fs_getattr tag 0 id 24 fid 4 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 4 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 4
+v9fs_readdir tag 0 id 40 fid 3 offset 9223372036854775807 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 0 retval 11
+v9fs_clunk tag 0 id 120 fid 3
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cecfcc7b0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cecfcc7b0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_walk tag 0 id 110 fid 2 newfid 3 nwnames 0
+v9fs_walk_return tag 0 id 110 nwnames 0 qids (nil)
+v9fs_open tag 0 id 12 fid 3 mode 2048
+v9fs_open_return tag 0 id 12 qid={type 128 version 1793311028 path 21018871} iounit 0
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_readdir tag 0 id 40 fid 3 offset 0 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 76 retval 87
+v9fs_readdir tag 0 id 40 fid 3 offset 9223372036854775807 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 0 retval 11
+v9fs_walk tag 0 id 110 fid 2 newfid 4 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2ced430520
+v9fs_getattr tag 0 id 24 fid 4 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 4 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 4
+v9fs_walk tag 0 id 110 fid 2 newfid 4 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2ced430520
+v9fs_getattr tag 0 id 24 fid 4 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 4
+v9fs_readdir tag 0 id 40 fid 3 offset 9223372036854775807 max_count 131072
+v9fs_readdir_return tag 0 id 40 count 0 retval 11
+v9fs_clunk tag 0 id 120 fid 3
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece58730
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 16877 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_rerror tag 0 id 110 err 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_rerror tag 0 id 110 err 2
+v9fs_symlink tag 0 id 16 fid 1 name lnk symname written.txt gid 0
+v9fs_symlink_return tag 0 id 16 qid={type 2 version 1794361908 path 20887036}
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece58730
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 2047 mode 41471 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 2047 mode 41471 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece58730
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 2047 mode 41471 uid 0 gid 0}
+v9fs_readlink tag 0 id 22 fid 2
+v9fs_readlink_return tag 0 id 22 name written.txt
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece58730
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 2047 mode 41471 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 2047 mode 41471 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece58730
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 2047 mode 41471 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece58730
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_getattr tag 0 id 24 fid 2 request_mask 16383
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
+v9fs_walk tag 0 id 110 fid 1 newfid 2 nwnames 1
+v9fs_walk_return tag 0 id 110 nwnames 1 qids 0x5c2cece58730
+v9fs_getattr tag 0 id 24 fid 2 request_mask 6143
+v9fs_getattr_return tag 0 id 24 getattr={result_mask 6143 mode 33188 uid 0 gid 0}
+v9fs_clunk tag 0 id 120 fid 2
