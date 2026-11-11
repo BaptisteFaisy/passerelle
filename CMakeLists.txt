@@ -33,7 +33,12 @@ include(CTest)
 enable_testing()
 
 # Order matters: common is the shared base of every other layer.
-foreach(mod IN ITEMS common virtio proto9p protofuse rmfs drivers tests)
+# PGW_MODULES restricts the set (used by per-module build directories so that
+# work in progress in another module cannot break this one).
+set(PGW_ALL_MODULES common virtio proto9p protofuse rmfs drivers tests)
+set(PGW_MODULES "${PGW_ALL_MODULES}" CACHE STRING "Modules to add to the build")
+
+foreach(mod IN LISTS PGW_MODULES)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${mod}/CMakeLists.txt")
         add_subdirectory(${mod})
     else()

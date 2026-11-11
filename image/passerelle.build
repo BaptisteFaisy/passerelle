@@ -1,0 +1,134 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# image/passerelle.build - IFS build file for the Passerelle guest.
+#
+# This is a *fragment*: it is meant to be included by the build file of the
+# image the guest boots from (see image/README.md). It declares the files the
+# guest needs and nothing else:
+#
+#   - the kernel and the C library (QNX-02: no dependency beyond those and the
+#     PCI server);
+#   - the PCI server and its configuration, so the virtio device is found;
+#   - the two drivers, fs9p and fsfuse;
+#   - the start-up script that mounts the share.
+#
+# The absolute paths are the ones the boot image uses; the binaries themselves
+# are copied into the image by mkqnximage (see image/README.md).
+#
+# DX-01: `qshare` on the PC prints the QEMU options and the fragment that
+# embeds the driver and mounts the share at boot (the fragment is this file).
+# DX-06: the image contains only the kernel, the PCI server and the driver; the
+# root of the guest stays on the share.
+
+[image=20m]
+[virtual=x86_64,multiboot] boot = {
+    startup-apic -D8250..115200 -zz
+
+    PATH=/usr/bin:/sbin
+    CONFIG_PATH=/etc
+    LD_LIBRARY_PATH=/usr/lib:/usr/lib/pci
+    [+keeplinked uid=0 gid=0 perms=0700] procnto-smp-instr -mr -d 0777 -u 0777
+}
+
+[+script] startup-script = {
+    display_msg "Passerelle: starting the PCI services"
+    slogger2
+
+    devc-ser8250 -e
+    waitfor /dev/ser1
+    reopen /dev/ser1
+
+    # The PCI server is the only service the drivers need (QNX-02): it owns
+    # the virtio device and hands the interrupt line over.
+    PCI_HW_MODULE=pci_hw-Intel_x86.so
+    PCI_BKWD_COMPAT_MODULE=pci_bkwd_compat.so
+    PCI_SLOG_MODULE=pci_slog2.so
+    PCI_CAP_MODULE_DIR=/usr/lib/pci
+    PCI_BASE_VERBOSITY=3
+
+    display_msg "Passerelle: starting PCI Services"
+    pci-server --config=/etc/pci_server.cfg
+
+    [+session] sh &
+
+    # The share is mounted here: the script waits for the device, mounts it and
+    # writes to the system log (QNX-07, QNX-08).
+    /usr/bin/qshare-mount.sh &
+
+    display_msg "Passerelle: startup complete"
+}
+
+#############################################
+### PCI
+#############################################
+
+[perms=0444] /etc/pci_server.cfg = {
+[buscfg]
+DO_BUS_CONFIG=no
+
+[envars]
+PCI_DEBUG_MODULE=pci_debug2.so
+PCI_HW_MODULE=pci_hw-Intel_x86.so
+PCI_HW_CONFIG_FILE=/etc/pci_hw.cfg
+}
+
+[perms=0444] /etc/pci_hw.cfg = {
+[interrupts]
+B0:D17:F0    A    18
+B0:D17:F0    B    19
+B0:D17:F0    C    16
+B0:D17:F0    D    17
+B3:D0:F0     A    18
+B3:D0:F0     B    19
+B3:D0:F0     C    16
+B3:D0:F0     D    17
+}
+
+# Libraries
+/usr/lib/ldqnx-64.so.2=ldqnx-64.so.2
+/usr/lib/libc.so.6=libc.so.6
+/usr/lib/libm.so.3=libm.so.3
+/usr/lib/libgcc_s.so.1=libgcc_s.so.1
+/usr/lib/libpci.so.3.0=libpci.so.3.0
+/usr/lib/libsecpol.so.1=libsecpol.so.1
+/usr/lib/libslog2.so.1=libslog2.so.1
+/usr/lib/libslog2parse.so.1=libslog2parse.so.1
+/usr/lib/pci/pci_bkwd_compat.so=pci/pci_bkwd_compat.so
+/usr/lib/pci/pci_cap-0x05.so=pci/pci_cap-0x05.so
+/usr/lib/pci/pci_cap-0x01.so=pci/pci_cap-0x01.so
+/usr/lib/pci/pci_cap-0x09-1af4ffff.so=pci/pci_cap-0x09-1af4ffff.so
+/usr/lib/pci/pci_cap-0x10.so=pci/pci_cap-0x10.so
+/usr/lib/pci/pci_cap-0x11.so=pci/pci_cap-0x11.so
+/usr/lib/pci/pci_debug2.so=pci/pci_debug2.so
+/usr/lib/pci/pci_hw-Intel_x86.so=pci/pci_hw-Intel_x86.so
+/usr/lib/pci/pci_slog2.so=pci/pci_slog2.so
+/usr/lib/pci/pci_strings.so=pci/pci_strings.so
+
+# Binaries
+/usr/bin/devc-ser8250=devc-ser8250
+/usr/bin/pci-server=pci-server
+/usr/bin/pci-tool=pci-tool
+/usr/bin/pidin=pidin
+/usr/bin/sh=sh
+/usr/bin/shutdown=shutdown
+/usr/bin/slog2info=slog2info
+/usr/bin/slogger2=slogger2
+/usr/bin/toybox=toybox
+
+[type=link] /usr/bin/cat=toybox
+[type=link] /usr/bin/ls=toybox
+[type=link] /usr/bin/mkdir=toybox
+[type=link] /usr/bin/rm=toybox
+[type=link] /usr/bin/sleep=toybox
+
+# The drivers and the mount script
+/usr/bin/fs9p=fs9p
+/usr/bin/fsfuse=fsfuse
+/usr/bin/qshare-mount.sh=qshare-mount.sh
+
+# The account the drivers drop root to (QNX-06): it exists only to own the
+# mount point and the device, it has no shell rights.
+/etc/passwd = {
+root::0:0:root:/root:/bin/sh
+passerelle::200:200:passerelle:/tmp:/bin/sh
+}

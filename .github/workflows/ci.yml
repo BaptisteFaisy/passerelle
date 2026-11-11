@@ -1,0 +1,336 @@
+name: ci (≤ 5 min)
+
+# Real CI of the portable stack. The verdict of a pull request is the
+# SLOWEST job of this workflow, so the 5-minute budget applies to the whole
+# workflow, not to each step: the jobs are therefore independent and
+# parallel, each one with its own build directory.
+#
+# Rules applied here (see ~/Bureau/CI-BUDGET-5MIN.md):
+#   * one `concurrency` group per ref, `cancel-in-progress: true`;
+#   * `actions/checkout` with `fetch-depth: 1` (no full clone);
+#   * `timeout-minutes: 5` on EVERY job;
+#   * no blind `git clean -ffdx` on a persistent runner: the CMake build
+#     trees are kept, only the stale files are removed;
+#   * `clean: false` on the checkout, so a job never throws away the
+#     compilation cache of the previous run.
+#
+# No `paths-ignore` on `pull_request`: every check named in .mergify.yml
+# must exist for every PR, otherwise Mergify waits for a check that never
+# comes. The `push` filter only skips documentation-only pushes to main.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 4 workers share the same R630: 4 build threads per job keep the machine
+  # responsive without oversubscribing the CPUs.
+  CMAKE_BUILD_JOBS: 4
+  # Full module list of the portable stack; the root CMakeLists.txt skips
+  # the modules that do not exist yet.
+  PGW_MODULES: common;virtio;proto9p;protofuse;rmfs;drivers;tests
+
+jobs:
+  build-test:
+    name: build-test
+    runs-on: [self-hosted, passerelle-worker]
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Toolchain (cmake)
+        run: |
+          set -euo pipefail
+          if ! command -v cmake >/dev/null 2>&1; then
+            for d in "$HOME/ci-tools/cmake/cmake/data/bin" "$HOME/.local/cmake/data/bin"; do
+              if [ -x "$d/cmake" ]; then
+                export PATH="$d:$PATH"
+                echo "$d" >> "$GITHUB_PATH"
+                break
+              fi
+            done
+          fi
+          if ! command -v cmake >/dev/null 2>&1; then
+            echo "::warning::cmake absent du runner - installation locale (reseau requise)"
+            python3 -m pip install --quiet --disable-pip-version-check \
+              --target "$GITHUB_WORKSPACE/.ci-tools/cmake" "cmake<4"
+            export PATH="$GITHUB_WORKSPACE/.ci-tools/cmake/cmake/data/bin:$PATH"
+            echo "$GITHUB_WORKSPACE/.ci-tools/cmake/cmake/data/bin" >> "$GITHUB_PATH"
+          fi
+          cmake --version
+          ctest --version
+      - name: Clean workspace (keep the build trees)
+        run: |
+          set -euo pipefail
+          # A blind `git clean -ffdx` on a persistent runner throws away every
+          # compiled object and forces a cold rebuild on the next run. The
+          # CMake trees are excluded, everything else is dropped.
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            git clean -ffdx -e '/build' -e '/build-asan' -e '/.ci-tools'
+          else
+            echo "no previous checkout in this workspace - nothing to clean"
+          fi
+          # A CMake cache pointing at another source directory cannot be
+          # reused: it would abort the configure step.
+          for d in build build-asan; do
+            if [ -f "$d/CMakeCache.txt" ]; then
+              src=$(sed -n 's/^CMAKE_HOME_DIRECTORY:INTERNAL=//p' "$d/CMakeCache.txt")
+              if [ -n "$src" ] && [ "$src" != "$PWD" ]; then
+                echo "::warning::stale CMake cache in $d ($src) - recreated"
+                cmake -E rm -rf "$d"
+              fi
+            fi
+          done
+      - name: Checkout (shallow, caches preserved)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false
+      - name: Configure
+        run: |
+          set -euo pipefail
+          cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPGW_MODULES="$PGW_MODULES"
+      - name: Build
+        run: cmake --build build -j"$CMAKE_BUILD_JOBS"
+      - name: ctest
+        run: ctest --test-dir build --output-on-failure --no-tests=error
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::build-test: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  sanitize:
+    name: sanitize
+    runs-on: [self-hosted, passerelle-worker]
+    timeout-minutes: 5
+    # Charge réduite et déclarée : cet job rejoue la pile portable avec
+    # -DPGW_SANITIZERS=ON (ASan + UBSan), c'est-à-dire le même code et les
+    # mêmes tests que build-test, mais compiles avec les sanitizers (temps de
+    # compilation ~2x). Les tests de longue durée ne sont pas rejoués ici :
+    # ils appartiennent au banc qemu-e2e.yml, hors PR. Si la suite de tests
+    # grossit au point de dépasser 5 min, elle sera shardée ici
+    # (ctest --shard=i/n) et non allongée.
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Toolchain (cmake)
+        run: |
+          set -euo pipefail
+          if ! command -v cmake >/dev/null 2>&1; then
+            for d in "$HOME/ci-tools/cmake/cmake/data/bin" "$HOME/.local/cmake/data/bin"; do
+              if [ -x "$d/cmake" ]; then
+                export PATH="$d:$PATH"
+                echo "$d" >> "$GITHUB_PATH"
+                break
+              fi
+            done
+          fi
+          if ! command -v cmake >/dev/null 2>&1; then
+            echo "::warning::cmake absent du runner - installation locale (reseau requise)"
+            python3 -m pip install --quiet --disable-pip-version-check \
+              --target "$GITHUB_WORKSPACE/.ci-tools/cmake" "cmake<4"
+            export PATH="$GITHUB_WORKSPACE/.ci-tools/cmake/cmake/data/bin:$PATH"
+            echo "$GITHUB_WORKSPACE/.ci-tools/cmake/cmake/data/bin" >> "$GITHUB_PATH"
+          fi
+          cmake --version
+      - name: Clean workspace (keep the build trees)
+        run: |
+          set -euo pipefail
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            git clean -ffdx -e '/build' -e '/build-asan' -e '/.ci-tools'
+          else
+            echo "no previous checkout in this workspace - nothing to clean"
+          fi
+          for d in build build-asan; do
+            if [ -f "$d/CMakeCache.txt" ]; then
+              src=$(sed -n 's/^CMAKE_HOME_DIRECTORY:INTERNAL=//p' "$d/CMakeCache.txt")
+              if [ -n "$src" ] && [ "$src" != "$PWD" ]; then
+                echo "::warning::stale CMake cache in $d ($src) - recreated"
+                cmake -E rm -rf "$d"
+              fi
+            fi
+          done
+      - name: Checkout (shallow, caches preserved)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false
+      - name: Configure (ASan + UBSan)
+        run: |
+          set -euo pipefail
+          cmake -B build-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+                -DPGW_MODULES="$PGW_MODULES" -DPGW_SANITIZERS=ON
+      - name: Build (ASan + UBSan)
+        run: cmake --build build-asan -j"$CMAKE_BUILD_JOBS"
+      - name: ctest (ASan + UBSan)
+        env:
+          ASAN_OPTIONS: detect_leaks=1:detect_stack_use_after_return=1:print_stacktrace=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build-asan --output-on-failure --no-tests=error
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::sanitize: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  host-tools:
+    name: host-tools
+    runs-on: [self-hosted, passerelle-worker]
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Clean workspace (keep the build trees)
+        run: |
+          set -euo pipefail
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            git clean -ffdx -e '/build' -e '/build-asan' -e '/.ci-tools'
+          else
+            echo "no previous checkout in this workspace - nothing to clean"
+          fi
+      - name: Checkout (shallow, caches preserved)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false
+      - name: Byte-compile the Python sources
+        run: |
+          set -euo pipefail
+          for d in host tools .github/hermes .github/ci-budget; do
+            [ -d "$d" ] || continue
+            python3 -m compileall -q "$d"
+          done
+      - name: Host unit tests (pytest)
+        run: |
+          set -euo pipefail
+          if [ ! -d host/tests ]; then
+            echo "::notice::host/tests does not exist yet - pytest skipped (explicit skip, not a silent green)"
+            exit 0
+          fi
+          if ! python3 -m pytest --version >/dev/null 2>&1; then
+            echo "::error::pytest is not available on the runner (python3 -m pytest --version failed)"
+            exit 1
+          fi
+          # Bounded below the 5-minute job budget: a hung test must fail with
+          # a readable message, not with a truncated log.
+          timeout 240 python3 -m pytest host/tests -q
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::host-tools: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  qnx-syntax:
+    name: qnx-syntax
+    runs-on: [self-hosted, passerelle-worker]
+    timeout-minutes: 5
+    # The QNX-only sources are compiled on the PC against tests/qnx-stub, with
+    # the same warning set as the `pgw_qnx_syntax` CMake helper. While the
+    # stubs or the `*_qnx.c` files do not exist yet, the job SKIPS itself with
+    # an explicit notice: it never turns green by accident, and the notice
+    # tells the reader exactly what was not checked.
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Clean workspace (keep the build trees)
+        run: |
+          set -euo pipefail
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            git clean -ffdx -e '/build' -e '/build-asan' -e '/.ci-tools'
+          else
+            echo "no previous checkout in this workspace - nothing to clean"
+          fi
+      - name: Checkout (shallow, caches preserved)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false
+      - name: Collect the QNX-only sources
+        id: qnx
+        run: |
+          set -euo pipefail
+          find . -name '*_qnx.c' -not -path './build/*' -not -path './build-asan/*' \
+               -not -path './.git/*' | sort > qnx-files.txt
+          echo "count=$(wc -l < qnx-files.txt)" >> "$GITHUB_OUTPUT"
+          cat qnx-files.txt
+      - name: Syntax check against the QNX stubs
+        run: |
+          set -euo pipefail
+          count=${{ steps.qnx.outputs.count }}
+          if [ "$count" -eq 0 ]; then
+            echo "::notice::no *_qnx.c file in the tree - QNX syntax check skipped (explicit skip, not a silent green)"
+            exit 0
+          fi
+          if [ ! -d tests/qnx-stub/include ]; then
+            echo "::notice::tests/qnx-stub/include is missing - QNX syntax check skipped (explicit skip, not a silent green)"
+            exit 0
+          fi
+          includes="-I$PWD/tests/qnx-stub/include"
+          for d in common/include virtio/include proto9p/include protofuse/include rmfs/include; do
+            [ -d "$d" ] && includes="$includes -I$PWD/$d"
+          done
+          status=0
+          while IFS= read -r f; do
+            module=$(dirname "$(dirname "$f")")
+            extra=""
+            [ -d "$module/include" ] && extra="-I$PWD/$module/include"
+            echo "--- $f"
+            # Same warning set as cmake/passerelle.cmake (pgw_qnx_syntax).
+            if ! "${CC:-cc}" -fsyntax-only -std=c11 \
+                 -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual \
+                 -Wstrict-prototypes -Wmissing-prototypes -Wvla \
+                 -Wconversion -Wsign-conversion -Werror \
+                 -DPGW_QNX_STUB_BUILD=1 $includes $extra "$f"; then
+              status=1
+            fi
+          done < qnx-files.txt
+          exit $status
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::qnx-syntax: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  rules:
+    name: rules
+    runs-on: [self-hosted, passerelle-worker]
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Clean workspace (keep the build trees)
+        run: |
+          set -euo pipefail
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            git clean -ffdx -e '/build' -e '/build-asan' -e '/.ci-tools'
+          else
+            echo "no previous checkout in this workspace - nothing to clean"
+          fi
+      - name: Checkout (shallow, caches preserved)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false
+      - name: Code size rules (< 500 lines / < 50 lines)
+        run: python3 tools/check-size.py --root .
+      - name: SPDX headers (Apache-2.0)
+        run: python3 tools/check-spdx.py --root .
+      - name: CI budget (5 minutes per job)
+        run: python3 .github/ci-budget/check_timeouts.py
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::rules: $(( $(date +%s) - JOB_START ))s (budget 300s)"

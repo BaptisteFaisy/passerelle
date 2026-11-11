@@ -1,0 +1,141 @@
+From 66550b7438b15cb9490e18373ab7c8e05534e489 Mon Sep 17 00:00:00 2001
+From: Passerelle contributors <passerelle@example.invalid>
+Date: Wed, 11 Nov 2026 01:51:51 +0100
+Subject: [PATCH 3/4] main: choose the transport, defaulting to the
+ architecture
+
+An x86_64 guest gets its share from QEMU's -virtfs, which creates a
+virtio-9p-pci device; an ARM64 virt guest from -device virtio-9p-device,
+which is virtio-mmio. fs-9p now picks the matching backend from the
+architecture it was built for, and -o transport=mmio|pci overrides that
+for a machine that does not follow the rule (an x86_64 microvm guest, for
+instance, whose devices are MMIO).
+
+The option is documented where the consistency test looks for it: the use
+message and docs/user/reference.md. The reference page also says that
+-o irq= only applies to virtio-mmio, since the PCI transport takes its
+interrupt from MSI-X or from the firmware's INTx assignment.
+
+CHANGELOG gains the user-visible additions: the PCI transport, the new
+option, the x86_64 target and the host tests for the decoder.
+---
+ CHANGELOG.md           | 11 +++++++++++
+ docs/user/reference.md | 11 ++++++++++-
+ src/fs-9p.use.in       |  3 +++
+ src/main.c             | 20 +++++++++++++++++++-
+ 4 files changed, 43 insertions(+), 2 deletions(-)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 701a36a..0c18583 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -13,3 +13,14 @@ Guide, "Making a release".
+ ## [0.1.0] - unreleased
+ 
+ First release.
++
++### Added
++
++- virtio-pci transport, so the share works on x86_64 guests (QEMU's
++  `-virtfs`), not only on ARM64 `virt` with virtio-mmio. MSI-X is used when
++  the kernel allocates a vector, with the firmware's INTx line as the
++  fallback.
++- `-o transport=mmio|pci`, defaulting to the build's architecture.
++- The x86_64 target: `-DCMAKE_TOOLCHAIN_FILE=cmake/qnx8-x86_64.cmake`.
++- Host unit tests for the virtio PCI capability decoder, which is portable
++  and takes a config-space read callback.
+diff --git a/docs/user/reference.md b/docs/user/reference.md
+index 65dde0a..c425042 100644
+--- a/docs/user/reference.md
++++ b/docs/user/reference.md
+@@ -55,7 +55,16 @@ QNX OS 8.0, aarch64le, in a guest on QEMU's `virt` machine.
+ 
+ `irq=N`
+ : Use interrupt `N` instead of the one implied by the device's virtio-mmio
+-  slot (48 + slot on `virt`). For unusual machine configurations.
++  slot (48 + slot on `virt`). For unusual machine configurations. Ignored by
++  the virtio-pci transport, which takes its interrupt from MSI-X or from the
++  firmware's INTx assignment.
++
++`transport=mmio|pci`
++: Which virtio transport to use. The default follows the architecture:
++  `pci` on x86_64 (where `-virtfs` creates a virtio-9p-pci device) and
++  `mmio` on ARM64 (QEMU's `virt` machine). Set it explicitly when a machine
++  does not follow that rule, for example `transport=mmio` for an x86_64
++  `microvm` guest, whose devices are MMIO.
+ 
+ `mount_tag`
+ : The tag QEMU gives the share (`mount_tag=` of `-device
+diff --git a/src/fs-9p.use.in b/src/fs-9p.use.in
+index 78f1c11..bb1d78d 100644
+--- a/src/fs-9p.use.in
++++ b/src/fs-9p.use.in
+@@ -20,6 +20,9 @@ Options:
+  debug        Stay in the foreground; log setup and every 9P message
+  poll         Poll for completions instead of using the interrupt (debug)
+  irq=N        Use interrupt N instead of the one the device slot implies
++              (virtio-mmio only)
++ transport=K  virtio transport: mmio or pci (default: pci on x86_64,
++              mmio on ARM64). Use pci for -virtfs on an x86_64 image.
+ 
+ Unmount with 'slay fs-9p'. Without root, fs-9p needs the abilities
+ mem_phys, interrupt and pathspace. Full documentation:
+diff --git a/src/main.c b/src/main.c
+index a8f01bc..eeb0df6 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -28,6 +28,14 @@
+ /* Requests in flight at once; each slot costs 2 x msize of DMA memory. */
+ #define FS9P_DEFAULT_REQUESTS 4u
+ 
++/* Which transport to use. The default follows the architecture: an x86_64
++ * guest gets its share from -virtfs, which creates a PCI device, and an
++ * ARM64 `virt` guest from -device virtio-9p-device, which is MMIO. */
++typedef enum {
++    FS9P_TRANSPORT_MMIO = 0,
++    FS9P_TRANSPORT_PCI = 1
++} fs9p_transport_kind_t;
++
+ typedef struct {
+     const char *mount_tag;
+     const char *mount_point;
+@@ -35,6 +43,7 @@ typedef struct {
+     uint32_t cache_ms; /* metadata cache TTL, 0 = off */
+     bool ro;
+     int debug;
++    fs9p_transport_kind_t transport;
+     vio9p_options_t vio;
+ } fs9p_args_t;
+ 
+@@ -79,6 +88,9 @@ static int parse_opts(char *list, fs9p_args_t *a)
+             a->ro = false;
+         } else if (strcmp(o, "poll") == 0 && !val) {
+             a->vio.poll = 1;
++        } else if (strcmp(o, "transport") == 0 && val != NULL &&
++                   (strcmp(val, "mmio") == 0 || strcmp(val, "pci") == 0)) {
++            a->transport = strcmp(val, "pci") == 0 ? FS9P_TRANSPORT_PCI : FS9P_TRANSPORT_MMIO;
+         } else {
+             fprintf(stderr, "fs-9p: bad option '%s%s%s'\n", o, val ? "=" : "", val ? val : "");
+             return -1;
+@@ -94,6 +106,11 @@ static int parse_args(int argc, char *argv[], fs9p_args_t *a)
+     a->vio.timeout_ms = FS9P_DEFAULT_TIMEOUT;
+     a->vio.slots = FS9P_DEFAULT_REQUESTS;
+     a->vio.irq = -1;
++#if defined(__x86_64__)
++    a->transport = FS9P_TRANSPORT_PCI;
++#else
++    a->transport = FS9P_TRANSPORT_MMIO;
++#endif
+     int c;
+     while ((c = getopt(argc, argv, "o:")) != -1) {
+         if (c != 'o' || parse_opts(optarg, a) != 0)
+@@ -132,7 +149,8 @@ int main(int argc, char *argv[])
+     pthread_sigmask(SIG_BLOCK, &sigs, NULL);
+ 
+     fs9p_transport_t tp;
+-    int rc = vio9p_open(a.mount_tag, &a.vio, &tp);
++    int rc = a.transport == FS9P_TRANSPORT_PCI ? vio9p_pci_open(a.mount_tag, &a.vio, &tp)
++                                               : vio9p_open(a.mount_tag, &a.vio, &tp);
+     if (rc != 0) {
+         fprintf(stderr, "fs-9p: %s: %s\n", a.mount_tag,
+                 rc == -ENODEV ? "no virtio-9p device with this mount tag" : strerror(-rc));

@@ -1,35 +1,192 @@
-# Socle CI self-hosted (R630)
+# Passerelle
 
-## Ce dépôt démarre avec
+**Passerelle** is a high-performance host-guest shared filesystem driver for **QNX® Neutrino® 8.0** virtual machines under QEMU, providing seamless directory sharing via **9P2000.L** and **virtiofs** over modern virtio-PCI and virtio-MMIO.
 
-- **N workers** self-hosted sur le serveur R630 (Debian 13, 80 cœurs) :
-  `r630-<repo>-01` …, labels `self-hosted, <repo>-worker, ci-node, Linux, X64`,
-  services systemd `actions.runner.<owner>-<repo>.r630-<repo>-0N.service`.
-- **Gate hermes-lite** (`.github/workflows/hermes-lite.yml` + `.github/hermes/gate.py`)
-  tournant sur les workers : check `hermes-lite/verdict`, labels `hermes/approuvee` /
-  `hermes/conflit`. En **dry-run** au lancement (variable de dépôt
-  `HERMES_LITE_DRY_RUN=1`) : il évalue et étiquette, il ne merge pas.
-- **Mergify** (`.mergify.yml`) : file de merge, rebase, batching 1-3, labels
-  `urgent` / `priority-low`, auto-embarquement par
-  `merge_protections_settings.auto_merge_conditions: true`. À faire une fois :
-  app GitHub **All repositories** + activation du produit **Merge Queue** dans
-  le dashboard Mergify.
-- **stale-base-guard** : check informatif de retard de branche.
-- **ci-budget** (`.github/workflows/ci-budget.yml` +
-  `.github/ci-budget/check_timeouts.py`) : garde-fou du budget CI de
-  **5 minutes** (règle user 2026-10-24). Chaque job doit déclarer
-  `timeout-minutes: 5` au plus ; un job plus long = CI refusée (le check
-  `ci-budget` est exigé par `queue_conditions` dans `.mergify.yml`). Toute
-  nouvelle CI suit : `concurrency` + `cancel-in-progress`, `fetch-depth: 1`,
-  filtres `paths:`, cache. Build natif / suite longue : hors PR (tag,
-  `main`, ou `workflow_dispatch`), timeout justifié en commentaire.
-  Détail : `~/Bureau/CI-BUDGET-5MIN.md`.
+Submitted to the **QNX Global Hackathon 2026** under the [Apache-2.0](LICENSE) license.
 
-## Mise en service (ordre)
+---
 
-1. (fait par l'agent) workers enregistrés et en ligne ;
-2. app GitHub **Mergify** installée en « All repositories », produit Merge Queue
-   activé sur le dashboard (app installée ≠ produit activé) ;
-3. `HERMES_LITE_DRY_RUN` : la garder si Mergify reste le seul pilote de merge
-   (contrat duello `MERGIFY_QUEUE_ENABLED` 2026-10-10), la retirer pour que le
-   gate merge lui-même — **jamais deux pilotes**.
+## Why Passerelle?
+
+Developing software for QNX virtual machines today usually means suffering a slow iteration loop:
+```
+[Host] cross-compile  ──>  [SCP / rebuild disk image]  ──>  [Guest] boot / transfer  ──>  [Guest] test run
+```
+Every change pays a "copy tax". If the VM image is read-only or minimal, you must regenerate the entire image just to test one binary.
+
+With Passerelle, your build directory on the host PC is mounted directly inside the QNX guest:
+```
+[Host] cross-compile  ──>  [Guest] run immediately from /host
+```
+Binaries execute straight from the share, shared libraries load on demand, and files created or modified by QNX are instantly available on the host.
+
+---
+
+## Prior Art & What Passerelle Adds
+
+In accordance with open-source engineering ethics and hackathon standards, Passerelle explicitly acknowledges prior art. Two public 9P clients and one virtio transport library exist for QNX:
+
+1. **`gvergine/qnx-fs-9p`** (October 2026, Apache-2.0):
+   A feature-rich 9P2000.L client designed for everyday development, but **strictly restricted to ARM64 guests** over virtio-mmio. It does not support x86_64 and has no PCI transport.
+2. **`eclipse-score/qnx_unit_tests` (`virtio9p`)** (March 2026, Apache-2.0):
+   Supports both x86_64 (PCI) and ARM64 (MMIO), but is **intentionally stripped down to test runner needs**: no symbolic links, no permission or ownership changes (`chmod`/`chown`), no timestamp updates, no file locking.
+3. **`kodebooth/qnx-virtio`** (April 2026, MIT):
+   A transport library for virtio on QNX 8.0 with a sample GPIO driver, but no filesystem implementation and no host-side testability.
+
+### What Passerelle Adds
+
+| Capability | `qnx-fs-9p` (A) | `qnx_unit_tests` (B) | **Passerelle** |
+|---|:---:|:---:|:---:|
+| **Full x86_64 Guest Support** (PCI modern, MSI-X) | ❌ *ARM64 only* | ⚠️ *Minimal ops only* | **Target: complete POSIX share** |
+| **Full ARM64 Guest Support** (MMIO v1 & v2) | ✅ Yes | ⚠️ *Minimal ops only* | **Target: complete POSIX share** |
+| **POSIX Operations** (symlinks, chmod, chown, utime, df) | ✅ Yes | ❌ No | **Target: yes (redirect symlinks, atomic renames)** |
+| **virtiofs for QNX Guests** (FUSE over virtio) | ❌ No | ❌ No | **✅ Target (X tier)** — no public implementation found |
+| **Real-Time Priority Scheduling** | ❌ FIFO | ❌ Unspecified | **Target: priority-ordered dispatch** |
+| **Host PC Testability without QNX SDP** | ❌ Needs SDP | ❌ Needs Bazel/SDP | **✅ Portable L1/L2/L3, PC unit tests** |
+| **Differential Conformance Testbed** | ❌ Trace-only | ❌ None | **✅ Harness written** (`host/fsproof`, 1M-op target) |
+| **One-Command Setup CLI** (`qshare`) | ❌ Manual QEMU | ❌ Manual script | **✅ `qshare` tool written** |
+
+**Reading this table honestly.** The "Passerelle" column states what the project
+*provides by design and targets*; the columns for projects A and B state what their
+code and documentation show today. Implementation status per requirement — including
+what is not yet done — is in [docs/verification-status.md](docs/verification-status.md).
+The absence of a public QNX virtiofs guest driver is a **search result, not a proof**
+(spec §14).
+
+See [docs/state-of-the-art.md](docs/state-of-the-art.md) for detailed code-level analysis and [NOTICE](NOTICE) for project attributions.
+
+---
+
+## Architecture
+
+Passerelle follows a modular three-layer design:
+
+```
+  QNX Applications: open, read, write, stat, readdir, execve...
+        │  QNX Messages handled at caller priority (QNX-03)
+ ┌──────▼────────────────────────────────────────────────────────┐
+ │ Layer 3 — Filesystem Resource Manager (`rmfs/`)               │
+ │   Path namespace, fids/inodes, permission checks (SEC-01),     │
+ │   guest-local range locks (FS-14), priority scheduler (QNX-04)│
+ ├──────────────────────────────┬────────────────────────────────┤
+ │ Layer 2 — 9P2000.L Protocol  │ Layer 2 — FUSE Protocol        │
+ │ (`proto9p/`)                 │ (`protofuse/` - virtiofs)      │
+ │ Pure C11, strict decoders    │ Pure C11, node refcounts       │
+ ├──────────────────────────────┴────────────────────────────────┤
+ │ Layer 1 — virtio Transport (`virtio/`)                        │
+ │   Split virtqueue, indirect descs (VIO-08), zero-copy (VIO-07) │
+ │   Backends: PCI Modern (x86_64), MMIO v1/v2 (ARM64), PC Mock  │
+ └──────┬────────────────────────────────────────────────────────┘
+        │
+   QEMU: `virtio-9p-pci` / `virtio-9p-device`  or  `virtiofsd`
+        │
+   Host Workstation Directory
+```
+
+See [docs/architecture.md](docs/architecture.md) for full design documentation.
+
+---
+
+## One-Command Demo
+
+On the host workstation (tooling status: see [verification-status.md](docs/verification-status.md)):
+
+```bash
+# 1. Share your project directory and start the VM
+qshare ~/my-project
+
+# 2. Inside the QNX VM, the host folder is mounted at /host
+ls -la /host
+
+# 3. Cross-compile on the host, run in QNX with zero copying
+make -C ~/my-project
+/host/bin/my_program
+```
+
+See [docs/user-guide.md](docs/user-guide.md) for mount options, troubleshooting, and CMake/Rust workflows.
+
+---
+
+## Building
+
+Passerelle targets **QNX SDP 8.0** (`x86_64le` and `aarch64le`) and builds natively on Linux for PC testing.
+
+### 1. Build on Host PC (Portable Layers & Unit Tests, No SDP Needed)
+
+The transport abstraction, protocol codecs, and resource manager core are 100% portable C11 and run directly on your Linux host:
+
+```bash
+# Standard build and CTest execution
+cmake -B build -DPGW_MODULES="common;virtio;proto9p;protofuse;rmfs"
+cmake --build build -j8
+ctest --test-dir build --output-on-failure
+
+# Build with AddressSanitizer and UBSan
+cmake -B build-asan -DPGW_SANITIZERS=ON
+cmake --build build-asan -j8
+ctest --test-dir build-asan --output-on-failure
+```
+
+### 2. Cross-Compile for QNX 8.0
+
+Requires QNX SDP 8.0. Source the SDP environment, then use the toolchain file shipped with the SDP (no repository-local toolchain wrapper exists yet — see [docs/building.md](docs/building.md)):
+
+```bash
+source ~/qnx800/qnxsdp-env.sh
+
+# For an x86_64 guest
+cmake -B build-qnx-x86 \
+      -DCMAKE_TOOLCHAIN_FILE="$QNX_HOST/usr/cmake/QNXToolchain.cmake" \
+      -DCMAKE_SYSTEM_PROCESSOR=x86_64
+cmake --build build-qnx-x86 -j8
+
+# For an aarch64le guest
+cmake -B build-qnx-arm \
+      -DCMAKE_TOOLCHAIN_FILE="$QNX_HOST/usr/cmake/QNXToolchain.cmake" \
+      -DCMAKE_SYSTEM_PROCESSOR=aarch64le
+cmake --build build-qnx-arm -j8
+```
+
+Detailed step-by-step instructions and test level runner commands are available in [docs/building.md](docs/building.md).
+
+---
+
+## Honest Verification Status
+
+Every requirement is tracked against rigorous automated testing. We distinguish clearly between facts verified in code vs claims to be validated on live hardware:
+
+- **Unit & Codec Layers (Level 0)**: the `common/` module is implemented and green on the host PC (`ctest -R common`); the other modules' unit tests land with their sources.
+- **Randomized Fuzzing (Level 1)**: wire decoders are designed for it (strict, non-casting decoders) and the `-DPGW_SANITIZERS=ON` build exists; the fuzz campaign itself is pending.
+- **Differential Conformance (Level 2)**: the harness (`host/fsproof`) is written; a full QEMU campaign requires a QNX guest.
+- **Hardware & QEMU Integration (Feasibility Tests E1–E5)**: all blocked on the QNX SDP except E5, which only needs a Linux guest.
+- **No QNX-side requirement is claimed as verified**: this workstation has no QNX SDP installed.
+
+See [docs/verification-status.md](docs/verification-status.md) for the full matrix.
+
+---
+
+## Documentation Index
+
+- [docs/spec-en.md](docs/spec-en.md) — Complete English Specification (Requirements VIO, P9, FS, QNX, PERF, ROB, SEC, DX, VFS, SRV)
+- [docs/spec-fr.md](docs/spec-fr.md) — Original French Specification (authoritative text)
+- [docs/architecture.md](docs/architecture.md) — Detailed Three-Layer Design & Tricky Issues Resolution
+- [docs/user-guide.md](docs/user-guide.md) — User Guide, Mounting Options, CMake and Rust Workflows
+- [docs/state-of-the-art.md](docs/state-of-the-art.md) — Comprehensive Analysis of Existing Projects
+- [docs/decisions.md](docs/decisions.md) — Architectural Decisions Log (D1–D4)
+- [docs/verification-status.md](docs/verification-status.md) — Honest Requirements & Feasibility (E1–E5) Status
+- [docs/building.md](docs/building.md) — Compilation, Toolchain, and Test Runner Guide
+- [docs/video-script.md](docs/video-script.md) — 3-Minute Hackathon Video Script
+- [docs/ci.md](docs/ci.md) — Self-Hosted CI Infrastructure & 5-Minute Budget Guard
+
+---
+
+## Repository CI
+
+This repository uses a self-hosted CI pipeline on dedicated Dell PowerEdge R630 workers enforcing strict C11 compliance, AddressSanitizer verification, a **5-minute maximum runtime budget per job**, and automated merge queues via Mergify. Details are documented in [docs/ci.md](docs/ci.md).
+
+---
+
+## License & Attribution
+
+Passerelle is distributed under the **Apache License, Version 2.0**.  
+See [LICENSE](LICENSE) for full legal text and [NOTICE](NOTICE) for third-party project attributions.

@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# image/passerelle.sec - QNX 8.0 security policy for the Passerelle drivers.
+#
+# The policy is the QNX way of saying what a process may do: it replaces the
+# in-process privilege drop with a kernel-enforced one (QNX-06). The driver
+# asks for the same four abilities at run time and locks them; the policy is
+# what the kernel grants when the process starts, and it is what an auditor
+# reads (SEC-01, SEC-02).
+#
+# Source of the language: QNX SDP 8.0 System Security Guide, "Security policy
+# language" and "Abilities Reference":
+#   https://www.qnx.com/developers/docs/8.0/com.qnx.doc.security.system/topic/manual/secpol_language.html
+#   https://www.qnx.com/developers/docs/8.0/com.qnx.doc.security.system/topic/manual/abilities_reference.html
+#
+# Compile it with secpolcompile and push it with secpolpush (the utilities of
+# the SDP); see image/README.md.
+#
+# Covered requirements: QNX-06 (the driver runs without root and with the
+# minimum capabilities), SEC-01 (no privilege elevation through the share),
+# SEC-02 (the driver reaches no device but its own).
+
+# One type per driver: they are two processes with two devices, and each must
+# be able to attach its own mount point without being able to touch the
+# other's (SEC-02).
+type fs9p_t;
+type fsfuse_t;
+
+# The drivers may register their mount point and create their channel.
+allow fs9p_t self:ability {
+    nonroot
+    pathspace
+    public_channel
+};
+
+allow fsfuse_t self:ability {
+    nonroot
+    pathspace
+    public_channel
+};
+
+# The interrupt ability lets a driver attach its Interrupt Service Thread to
+# its own line (VIO-04). The range is the one the PCI server reported for the
+# virtio device; a named range (see the range file) is the right way to bind
+# it to the hardware, because the line depends on the machine.
+allow fs9p_t self:ability {
+    nonroot
+    interrupt:0-31
+};
+
+allow fsfuse_t self:ability {
+    nonroot
+    interrupt:0-31
+};
+
+# The physical memory ability is what lets the driver map the BAR of its own
+# device (VIO-02). It is deliberately narrow: the range below is the window
+# the virtio device is mapped into on the supported machines. On a machine with
+# a different layout, replace it with a named range bound to the device's
+# physical address (see image/README.md).
+allow fs9p_t self:ability {
+    nonroot
+    mem_phys:0x0-0x10000000
+};
+
+allow fsfuse_t self:ability {
+    nonroot
+    mem_phys:0x0-0x10000000
+};
+
+# The drivers must be allowed to attach their own mount point. The rule says
+# exactly where: a driver of type fs9p_t may register /host and nothing else,
+# so a compromised driver cannot take over another path (SEC-02).
+allow_attach fs9p_t /host;
+allow_attach fsfuse_t /host;
+
+# Nothing else is granted: no setuid, no process spawning, no other path. The
+# drivers drop root themselves at run time and keep only these abilities
+# (QNX-06); a policy that granted more would make that drop pointless.

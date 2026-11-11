@@ -9,7 +9,10 @@ import sys
 
 C_EXTS = {".c", ".h"}
 PY_EXTS = {".py"}
-SKIP_DIRS = {".git", "build", "build-asan", "__pycache__", ".venv", "venv"}
+# Any directory whose name starts with "build" is a build tree (per-module
+# build-<module> and build-<module>-asan); plus the usual noise directories.
+SKIP_DIR_PREFIX = ("build",)
+SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", ".pytest_cache", "node_modules"}
 
 # Vendored CI socle, maintained centrally in ~/Bureau/hermes-port and copied
 # verbatim into every repository of this account. Refactoring it here would
@@ -95,6 +98,8 @@ def check_tree(root: pathlib.Path, max_file: int, max_fn: int) -> list[str]:
     issues: list[str] = []
     for path in sorted(root.rglob("*")):
         if not path.is_file() or any(part in SKIP_DIRS for part in path.parts):
+            continue
+        if any(part.startswith(SKIP_DIR_PREFIX) for part in path.parts):
             continue
         ext = path.suffix
         if ext not in C_EXTS and ext not in PY_EXTS:

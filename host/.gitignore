@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Build and test artefacts of the Passerelle host tools.
+# The repository root .gitignore already covers __pycache__, .pytest_cache
+# and *.egg-info; the regression corpus produced by `fsproof diff` is a
+# local run artefact and is not part of the sources.
+
+regressions/
+*.egg-info/
+__pycache__/
+.pytest_cache/

@@ -1,0 +1,296 @@
+From 3b0b35a794bac9243f8928a10452df79119d8713 Mon Sep 17 00:00:00 2001
+From: Passerelle contributors <passerelle@example.invalid>
+Date: Wed, 11 Nov 2026 01:51:51 +0100
+Subject: [PATCH 4/4] docs: the x86_64 side, and what is still unverified
+
+docs/dev/virtio-pci-notes.md states what the PCI transport assumes and how
+each assumption can be turned into an observation in a guest. It is
+explicit that the transport has not been run on an x86_64 QNX guest yet,
+and names the two numbers that come from a boot log rather than from a
+header (the MSI IRQ base and its first APIC vector), since those are the
+part most likely to differ on another machine.
+
+docs/user/qemu.md gains the x86_64 configuration (-virtfs and its long
+form), docs/index.md shows both targets side by side, and
+docs/dev/architecture.md stops claiming aarch64-only, records why
+virtio-mmio was picked first on virt, and lists the new source files.
+---
+ docs/dev/architecture.md     |  18 +++--
+ docs/dev/index.md            |   1 +
+ docs/dev/virtio-pci-notes.md | 128 +++++++++++++++++++++++++++++++++++
+ docs/index.md                |  20 ++++--
+ docs/user/qemu.md            |  38 +++++++++++
+ 5 files changed, 192 insertions(+), 13 deletions(-)
+ create mode 100644 docs/dev/virtio-pci-notes.md
+
+diff --git a/docs/dev/architecture.md b/docs/dev/architecture.md
+index dc53400..e7da44f 100644
+--- a/docs/dev/architecture.md
++++ b/docs/dev/architecture.md
+@@ -8,17 +8,20 @@ details of each 9P message are in {doc}`op-mapping`, the virtio findings in
+ 
+ These shaped everything and still hold:
+ 
+-- **Target:** QNX 8.0, aarch64le only, QEMU's `virt` machine, the
+-  virtio-9p device on the virtio-mmio transport. x86_64 and virtio-pci were
+-  dropped ({doc}`virtio-notes`, "Why not virtio-pci"): on `virt`, MMIO
+-  needs no PCI server and no I/O privilege.
++- **Targets:** QNX 8.0, aarch64le on QEMU's `virt` machine over the
++  virtio-mmio transport (the default, and the one that has been run end to
++  end), and x86_64 over the virtio-pci transport
++  ({doc}`virtio-pci-notes`). virtio-mmio was chosen first for aarch64
++  because on `virt` it needs no PCI server and no I/O privilege
++  ({doc}`virtio-notes`, "Why not virtio-pci"); x86_64 images have no
++  virtio-mmio window at all, so there PCI is the only option.
+ - **No network:** QEMU's own 9P server is the only peer. No TCP transport,
+   no `diod`.
+ - **`lib9p` is portable:** standard C headers only, no I/O, no allocation,
+   no `errno`; it builds and is tested on plain Linux.
+ - **One coupling point:** the resource manager talks to the virtio code
+   only through `src/transport.h`; it never touches registers, rings or DMA
+-  memory.
++  memory, and it does not know which transport it got.
+ - **Nothing copied from the QNX SDK:** headers are included from the
+   installed SDP; no sample code.
+ - **Verified, not assumed:** any QNX or QEMU behaviour the headers don't
+@@ -40,8 +43,11 @@ work but are untested.
+ | `lib9p/src/wire.h` | Little-endian byte cursors with a sticky failure flag. |
+ | `lib9p/src/encode.c`, `decode.c` | T-message encoders, R-message decoders. |
+ | `lib9p/src/idpool.c`, `p9.c` | Fid/tag pool; names and error strings. |
+-| `src/transport.h` | The transport interface (request slots). |
++| `src/transport.h` | The transport interface (request slots), both backends. |
+ | `src/transport_virtio.c` | virtio-mmio discovery, device setup, virtqueue, interrupt thread, DMA, tag claim. |
++| `src/transport_virtio_pci.c` | The same for virtio-pci: libpci discovery, BAR mapping, MSI-X with INTx fallback, features, queue. |
++| `src/virtio_pci_ring.c` | The PCI backend's split virtqueue, request slots and interrupt thread. |
++| `src/virtio_pci_caps.c` | Decoding of the virtio PCI capabilities; portable, unit-tested on the host. |
+ | `src/client.c`, `client.h` | The 9P session: one call per 9P operation, fids, walks, timeouts. |
+ | `src/errno_map.c` | Linux errno numbers (in `Rlerror`) to QNX values, by name. |
+ | `src/resmgr_core.c` | Resource manager setup, attribute conversion, node lifetime, signals and shutdown. |
+diff --git a/docs/dev/index.md b/docs/dev/index.md
+index 1e655a0..7c8b0ad 100644
+--- a/docs/dev/index.md
++++ b/docs/dev/index.md
+@@ -9,6 +9,7 @@ and how to ship a new version.
+ architecture
+ op-mapping
+ virtio-notes
++virtio-pci-notes
+ test-environment
+ testing
+ workflow
+diff --git a/docs/dev/virtio-pci-notes.md b/docs/dev/virtio-pci-notes.md
+new file mode 100644
+index 0000000..b147aa3
+--- /dev/null
++++ b/docs/dev/virtio-pci-notes.md
+@@ -0,0 +1,128 @@
++# Virtio PCI notes (x86_64)
++
++What the virtio-pci transport assumes, and how each assumption can be checked
++in a guest. The ARM64 side, which is the one that has been run end to end, is
++in {doc}`virtio-notes`.
++
++**Status.** The code in `src/transport_virtio_pci.c`, `src/virtio_pci_ring.c`
++and `src/virtio_pci_caps.c` compiles with the project's strict flags, and the
++capability decoder passes its host unit tests. It has **not** been run on an
++x86_64 QNX guest yet. Everything below is either taken from the virtio 1.2
++specification, from the QNX 8.0 documentation, or from the two public QNX
++virtio implementations that already drive this device; where a statement comes
++from one of those rather than from our own observation, it says so.
++
++## What is the same as virtio-mmio
++
++Feature negotiation, the status sequence, the split ring, the DMA memory, the
++interrupt service thread, the slot bookkeeping and the barriers are the ones
++already verified on `virt` ({doc}`virtio-notes`, "Initialization sequences").
++Only four things change.
++
++## 1. Discovery
++
++The device is `vendor 0x1AF4, device 0x1049` on the modern-only interface
++(`0x1040 + 9`), or `0x1009` on the transitional one (`0x1000 + 9`). QEMU's
++`-virtfs` and `-device virtio-9p-pci` produce the transitional id; both are
++accepted, and the modern interface is what is driven either way.
++
++The transport then reads the device's vendor-specific capabilities, which name
++a BAR, an offset and a length for each of:
++
++| `cfg_type` | Structure | Needed |
++|---|---|---|
++| 1 | common configuration (features, status, queues) | yes |
++| 2 | notification area, plus `notify_off_multiplier` | yes |
++| 3 | ISR byte | no, but read to acknowledge INTx |
++| 4 | device-specific configuration (the mount tag) | for the tag |
++| 5 | alternate config-space access window | no |
++
++Decoding lives in `src/virtio_pci_caps.c`, which takes a config-space read
++callback and is therefore unit-tested on the host. It offers two scans: the
++capability linked list from offset `0x34`, and a 32-bit-only sweep of
++`0x40..0xFF`. The sweep exists because `pci_device_cfg_rd8()` has been
++reported to return 0 silently at unaligned offsets on QNX, and because one
++public implementation reads the list in reverse order on QEMU's device.
++
++## 2. Bus mastering
++
++`pci_device_attach()` does **not** set the command register's memory-space and
++bus-master bits. Without bus mastering the device cannot write into the ring,
++and the first request times out with no diagnostic. Both bits are set
++explicitly, and a failure to set them is reported as `-EIO`.
++
++## 3. Interrupts
++
++MSI-X first, INTx as the fallback.
++
++With `DO_BUS_CONFIG=no` in the PCI server's configuration, SeaBIOS has already
++enumerated the bus and assigned the INTx lines, and the QNX PCI server
++allocates no MSI vectors, so `pci_device_cfg_cap_enable()` and the `cap_msix_*`
++helpers fail. MSI-X is therefore programmed directly:
++
++1. the MSI-X capability's Message Control, Table BIR and Table Offset are read
++   from config space (the decoder records the capability offset);
++2. one IRQ is claimed from the kernel's MSI range through `rsrcdbmgr_attach()`
++   with `RSRCDBMGR_IRQ`;
++3. table entry 0 is written through the BAR: message address `0xFEE00000`
++   (physical, destination 0), message data = the APIC vector;
++4. Message Control is written with Enable + Function Mask, then with Enable
++   alone;
++5. the PCI command register's INTx-disable bit (bit 10) is set;
++6. `queue_msix_vector` is left at 0 for queue 0.
++
++Two numbers in step 3 are not in any header: the MSI IRQ range starts at
++`0x100` and the first APIC vector for it is 78. Both are printed by the kernel
++at boot (`MSI interrupt = 0x100`, `MSI vector no = 78`), and both are used by
++the public QNX 9P implementation that drove this device first. They are the
++fragile part of this file: if a machine reports different numbers, MSI-X has
++to be re-derived from its boot log, and until then the INTx fallback is what
++runs.
++
++`InterruptAttachThread()` + `InterruptWait(_NTO_INTR_WAIT_FLAGS_UNMASK)` is
++used exactly as on ARM64, because the request path runs on resource-manager
++threads, not on the thread that attaches.
++
++## 4. Notification
++
++`QueueNotify` is not a register at a fixed offset: it is a write of the queue
++index to `notify_cap.offset + queue_notify_off * notify_off_multiplier` inside
++the notification BAR. With a multiplier of 0 every queue shares the first
++word, which is the legacy-compatible layout.
++
++## Checks to run in a guest
++
++Each line turns an assumption above into an observation.
++
++| Check | How |
++|---|---|
++| The device is found | `fs-9p -o debug,transport=pci hostshare /mnt/host 2>&1` prints the BDF and the capability table |
++| The tag is read | the same run prints `tag "hostshare"` |
++| Bus mastering was needed | comment out the command-register write: the first request should time out instead of completing |
++| MSI-X or INTx | the same run prints `irq N (MSI-X)` or `irq N (INTx)` |
++| The boot log's MSI numbers | the boot log's `MSI interrupt` and `MSI vector no` lines |
++| Completion works | `ls -l /mnt/host`, then `dd if=/mnt/host/file of=/dev/null bs=1M` |
++| No spurious wakeups | as on ARM64, completion is decided from `used->idx`, so a spurious wakeup costs one loop |
++| Reset on exit | `slay fs-9p`, then start again: the device is found at status 0 |
++| Privileges | `on -u qnxuser -A nonroot,allow,pci -A nonroot,allow,mem_phys -A nonroot,allow,interrupt -A nonroot,allow,pathspace ...` |
++
++## Privileges
++
++On top of the three abilities fs-9p already needs (`mem_phys`, `interrupt`,
++`pathspace`), the PCI transport needs `PROCMGR_AID_PCI`. On a machine without
++ECAM, libpci reads config space through the `0xCF8`/`0xCFC` ports inside the
++client process, so `PROCMGR_AID_IO` is needed as well; without it
++`pci_device_attach()` crashes rather than failing.
++
++## What could still go wrong
++
++- The MSI vector numbers above are machine-specific. If they differ, MSI-X
++  silently produces an interrupt nobody receives; the symptom is a request
++  that times out while `used->idx` has already advanced. Make `msix_setup()`
++  return -1 temporarily to force INTx and confirm.
++- A transitional device that does not offer `VIRTIO_F_VERSION_1` is rejected
++  (`-EIO`): the legacy PCI interface uses I/O BARs and a different register
++  layout, which is not implemented.
++- The x86_64 image's own drivers also use the PCI bus. Nothing here reserves
++  the device beyond the `name_attach()` claim on the mount tag, which is what
++  stops a second fs-9p from driving the same device.
+diff --git a/docs/index.md b/docs/index.md
+index aa59553..9629e8f 100644
+--- a/docs/index.md
++++ b/docs/index.md
+@@ -1,15 +1,21 @@
+ # fs-9p
+ 
+ fs-9p mounts a host directory in a QNX 8.0 guest running under QEMU. It is
+-a QNX resource manager that speaks 9P2000.L to QEMU's virtio-9p device on
+-the aarch64 `virt` machine, over the virtio-mmio transport: no network, no
+-extra daemon on the host. QEMU itself is the file server.
++a QNX resource manager that speaks 9P2000.L to QEMU's virtio-9p device: no
++network, no extra daemon on the host. QEMU itself is the file server.
++
++Two targets are supported, one virtio transport each:
+ 
+ ```
+-host:   qemu-system-aarch64 -M virt ... \
+-          -fsdev local,id=fs0,path=/some/dir,security_model=mapped-xattr \
+-          -device virtio-9p-device,fsdev=fs0,mount_tag=hostshare
+-guest:  fs-9p hostshare /mnt/host
++ARM64, virtio-mmio          x86_64, virtio-pci
++host:  qemu-system-aarch64 -M virt ... \
++         -fsdev local,id=fs0,path=/some/dir,security_model=mapped-xattr \
++         -device virtio-9p-device,fsdev=fs0,mount_tag=hostshare
++guest: fs-9p hostshare /mnt/host
++
++host:  qemu-system-x86_64 ... \
++         -virtfs local,path=/some/dir,mount_tag=hostshare,security_model=mapped-xattr
++guest: fs-9p -o transport=pci hostshare /mnt/host
+ ```
+ 
+ This documentation has two parts:
+diff --git a/docs/user/qemu.md b/docs/user/qemu.md
+index 784b519..8db040b 100644
+--- a/docs/user/qemu.md
++++ b/docs/user/qemu.md
+@@ -79,6 +79,44 @@ fs-9p -o ro tools /opt/tools
+ 
+ Mount tags must be unique: fs-9p serves one device per tag.
+ 
++## x86_64 guests (virtio-pci)
++
++Everything above is `virt` on ARM64, where the share arrives on virtio-mmio.
++An x86_64 guest has no virtio-mmio window, so the share arrives on the PCI
++bus instead, and that is the default transport for an x86_64 build of fs-9p
++({doc}`building`).
++
++```
++-virtfs local,path=/some/dir,mount_tag=hostshare,security_model=mapped-xattr
++```
++
++```
++fs-9p hostshare /mnt/host
++```
++
++`-virtfs` is shorthand for a `-fsdev` backend plus `-device virtio-9p-pci`.
++The long form works too and takes the same options:
++
++```
++-fsdev local,id=fs0,path=/some/dir,security_model=mapped-xattr
++-device virtio-9p-pci,fsdev=fs0,mount_tag=hostshare
++```
++
++The same mount-tag rule applies: one fs-9p per tag, and the tag must match.
++`-o transport=pci` is redundant on x86_64 but harmless, and useful in a
++script that also runs on ARM64.
++
++Two things differ from ARM64 and are worth knowing before the first run:
++
++- **Interrupts.** fs-9p uses MSI-X when the kernel gives it a vector and the
++  firmware's INTx line otherwise. On a QNX x86_64 image with
++  `DO_BUS_CONFIG=no`, MSI-X is programmed by hand from the kernel's boot log
++  numbers; {doc}`../dev/virtio-pci-notes` says which ones and how to check
++  them.
++- **Privileges.** A non-root fs-9p needs `pci` on top of `mem_phys`,
++  `interrupt` and `pathspace`, and `io` on machines without ECAM (libpci
++  then reads config space through ports 0xCF8/0xCFC).
++
+ ## Machine and QEMU version
+ 
+ fs-9p was tested with QEMU 10.2.1 on `-M virt-8.2` (TCG on x86_64), which

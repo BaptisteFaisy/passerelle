@@ -1,12 +1,14 @@
 # File de merge Mergify — socle CI self-hosted (R630).
 #
-# Le depot demarre sans gate IA ni batterie de tests : les queue_conditions
-# n'exigent donc aucun check inexistant (le socle CI est en dry-run —
-# variable de depot HERMES_LITE_DRY_RUN=1). Le seul check exige est
-# `ci-budget`, livre par le socle : aucune PR ne peut entrer dans la file
-# avec un job declare a plus de 5 minutes. Quand la CI reelle du depot
-# existera, ajouter dans queue_conditions :
-#   - check-success = "<check reel>"
+# Mergify est le SEUL pilote de merge du dépôt. Le gate hermes-lite reste en
+# dry-run (variable de dépôt HERMES_LITE_DRY_RUN=1) : il observe et alerte,
+# il ne fusionne jamais.
+#
+# Les checks exigés sont ceux de la CI réelle du dépôt (.github/workflows/ci.yml)
+# plus le garde-fou du socle (ci-budget). Les jobs qemu-e2e ne sont pas
+# exigés : ils ne tournent jamais sur une pull request (workflow_dispatch +
+# push sur main uniquement).
+#
 # Structure copiée du .mergify.yml de BaptisteFaisy/duello (décision
 # user 2026-10-10) : inline labels urgent / priority-low identiques.
 queue_rules:
@@ -14,6 +16,12 @@ queue_rules:
     queue_conditions:
       # Budget CI 5 min (règle user 2026-10-24) : le garde-fou du socle.
       - check-success = ci-budget
+      # CI réelle du dépôt : chaque job de .github/workflows/ci.yml.
+      - check-success = build-test
+      - check-success = sanitize
+      - check-success = host-tools
+      - check-success = qnx-syntax
+      - check-success = rules
       - -conflict
       - -draft
       - base = main
@@ -36,7 +44,7 @@ priority_rules:
     priority: low
 
 merge_queue:
-  # N workers self-hosted (R630, labels passerelle-worker) ; la speculation
+  # 4 workers self-hosted (R630, labels passerelle-worker) ; la speculation
   # Mergify reste bornee a 4, ajustable.
   max_parallel_checks: 4
 

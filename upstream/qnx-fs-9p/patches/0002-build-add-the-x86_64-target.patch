@@ -1,0 +1,111 @@
+From 390234a9dd655115a0fbde2969001faad0baca4d Mon Sep 17 00:00:00 2001
+From: Passerelle contributors <passerelle@example.invalid>
+Date: Wed, 11 Nov 2026 01:51:51 +0100
+Subject: [PATCH 2/4] build: add the x86_64 target
+
+The virtio-pci transport makes x86_64 guests reachable, and x86_64 is the
+architecture the stock mkqnximage images use, so the build needs a
+toolchain file for it. cmake/qnx8-x86_64.cmake is the aarch64 one with
+gcc_ntox86_64 and the x86_64 sysroot; nothing else changes.
+
+CMakeLists.txt stops refusing every processor but aarch64 and picks the
+target from CMAKE_SYSTEM_PROCESSOR instead; an unknown processor is still
+a hard error, with both toolchain files named. The host build's notice now
+names the decoder it also builds, and docs/user/building.md gains the
+two-target table.
+---
+ cmake/qnx8-x86_64.cmake | 33 +++++++++++++++++++++++++++++++++
+ docs/user/building.md   | 31 +++++++++++++++++++++----------
+ 2 files changed, 54 insertions(+), 10 deletions(-)
+ create mode 100644 cmake/qnx8-x86_64.cmake
+
+diff --git a/cmake/qnx8-x86_64.cmake b/cmake/qnx8-x86_64.cmake
+new file mode 100644
+index 0000000..d646f68
+--- /dev/null
++++ b/cmake/qnx8-x86_64.cmake
+@@ -0,0 +1,33 @@
++# Toolchain file for cross-compiling fs-9p with QNX SDP 8.0, x86_64 target.
++# Requires the SDP environment: source ~/qnx800/qnxsdp-env.sh
++#
++# This is the architecture the stock QEMU images use (mkqnximage builds
++# x86_64 by default on a PC host), and on it the 9P share arrives as a
++# virtio-9p-pci device, which is why the build gained the virtio-pci
++# transport (src/transport_virtio_pci.c).
++
++if(NOT DEFINED ENV{QNX_HOST} OR NOT DEFINED ENV{QNX_TARGET})
++    message(FATAL_ERROR "QNX_HOST/QNX_TARGET not set; source qnxsdp-env.sh first")
++endif()
++
++set(CMAKE_SYSTEM_NAME QNX)
++set(CMAKE_SYSTEM_VERSION 8.0.0)
++set(CMAKE_SYSTEM_PROCESSOR x86_64)
++
++set(QNX_HOST   "$ENV{QNX_HOST}")
++set(QNX_TARGET "$ENV{QNX_TARGET}")
++
++set(CMAKE_C_COMPILER   "${QNX_HOST}/usr/bin/qcc")
++set(CMAKE_CXX_COMPILER "${QNX_HOST}/usr/bin/q++")
++# CMake's QCC module turns *_COMPILER_TARGET into "-V<target>". Target name
++# verified with `qcc -V` on SDP 8.0 (gcc 12.2.0).
++set(CMAKE_C_COMPILER_TARGET   gcc_ntox86_64)
++set(CMAKE_CXX_COMPILER_TARGET gcc_ntox86_64_cxx)
++
++set(CMAKE_FIND_ROOT_PATH "${QNX_TARGET}" "${QNX_TARGET}/x86_64")
++set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
++set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
++set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
++set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
++
++set(FS9P_USEMSG "${QNX_HOST}/usr/bin/usemsg" CACHE FILEPATH "usemsg tool")
+diff --git a/docs/user/building.md b/docs/user/building.md
+index d6b02c5..5cbb7bb 100644
+--- a/docs/user/building.md
++++ b/docs/user/building.md
+@@ -20,16 +20,27 @@ cmake -S . -B build-qnx -DCMAKE_TOOLCHAIN_FILE=cmake/qnx8-aarch64le.cmake
+ cmake --build build-qnx
+ ```
+ 
+-`qnxsdp-env.sh` sets `QNX_HOST` and `QNX_TARGET`, which the toolchain file
+-`cmake/qnx8-aarch64le.cmake` uses to find `qcc` (`-Vgcc_ntoaarch64le`). The
+-result is `build-qnx/fs-9p`, an aarch64le executable with its usage message
+-embedded (`usemsg`). This build compiles only what is shipped; no test
+-programs.
++`qnxsdp-env.sh` sets `QNX_HOST` and `QNX_TARGET`, which the toolchain files
++use to find `qcc`. Two targets are supported, one transport each:
++
++| Target | Toolchain file | Transport | Guest machine |
++|---|---|---|---|
++| `aarch64le` | `cmake/qnx8-aarch64le.cmake` | virtio-mmio | QEMU `virt` (the default for ARM64 images) |
++| `x86_64` | `cmake/qnx8-x86_64.cmake` | virtio-pci | the stock `mkqnximage` images |
++
++```
++cmake -S . -B build-qnx-x86 -DCMAKE_TOOLCHAIN_FILE=cmake/qnx8-x86_64.cmake
++cmake --build build-qnx-x86
++```
++
++The result is `build-qnx/fs-9p` (or `build-qnx-x86/fs-9p`), an executable
++with its usage message embedded (`usemsg`). This build compiles only what is
++shipped; no test programs.
+ 
+ The toolchain file is what makes this the QNX build. Without it, `cmake`
+-configures the host build that developers use for the unit tests: it
+-builds only the protocol library and its tests, installs nothing, and
+-says so when it configures.
++configures the host build that developers use for the unit tests: it builds
++the protocol library, the virtio PCI capability decoder and their tests,
++installs nothing, and says so when it configures.
+ 
+ Check it:
+ 
+@@ -62,8 +73,8 @@ else on the target besides `libc.so.6` and `libgcc_s.so.1`.
+ 
+ | Option | Default | Meaning |
+ |---|---|---|
+-| `CMAKE_TOOLCHAIN_FILE` | none | `cmake/qnx8-aarch64le.cmake` for the QNX build. Without it, only the host-side library and its tests build, and nothing is installed. |
+-| `FS9P_BUILD_TESTS` | `ON` on the host, `OFF` for QNX | Build the `lib9p` unit tests (host only). |
++| `CMAKE_TOOLCHAIN_FILE` | none | `cmake/qnx8-aarch64le.cmake` or `cmake/qnx8-x86_64.cmake` for the QNX build. Without it, only the host-side libraries and their tests build, and nothing is installed. |
++| `FS9P_BUILD_TESTS` | `ON` on the host, `OFF` for QNX | Build the host unit tests (`lib9p` and the virtio PCI capability decoder). |
+ | `FS9P_SANITIZE` | `OFF` | Host builds: compile the tests with AddressSanitizer and UndefinedBehaviorSanitizer. |
+ | `FS9P_INSTALL_LIB` | `OFF` | Also install `lib9p` and its headers. |
+ 
