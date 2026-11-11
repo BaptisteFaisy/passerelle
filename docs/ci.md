@@ -233,6 +233,58 @@ it never merges. There is exactly one merge pilot — Mergify.
 `stale-base-guard` is purely informative: it reports how many commits the
 branch is behind `main` and always succeeds.
 
+### Branch protection must NOT require up-to-date branches
+
+Measured on 11 November 2026, on PR #13: with `required_status_checks.strict:
+true` ("Require branches to be up to date before merging") on `main`, the Mergify
+queue **refuses to queue anything** and posts a failing `Mergify Merge Queue`
+check with the reason *"Configuration not compatible with a branch protection
+setting"*. The queue tests a pull request through a draft PR built on the latest
+base, then merges the original branch, which GitHub then considers out of date.
+
+The protection of this repository is therefore:
+
+```bash
+gh api -X PUT repos/BaptisteFaisy/passerelle/branches/main/protection --input - <<'JSON'
+{
+  "required_status_checks": {
+    "strict": false,
+    "contexts": ["ci-budget", "build-test", "sanitize", "host-tools",
+                 "qnx-syntax", "rules", "stale-base-guard"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
+```
+
+Losing `strict` costs nothing here: the queue re-tests every pull request on the
+latest base together with the ones queued ahead of it, and `hermes-lite`
+separately watches freshness. Two traps found the same day, worth remembering:
+the update endpoint is `PUT` (a `PATCH` answers 404), and all four keys must be
+supplied or GitHub answers 422.
+
+If `strict` ever has to come back, the queue must switch to
+`merge_method: fast-forward`, or to serial in-place checks
+(`merge_queue.mode: serial`, `max_parallel_checks: 1`, `batch_size: 1`) — see the
+Mergify documentation on GitHub rulesets.
+
+### What the queue needs to actually run
+
+Two things, both easy to miss because a valid configuration is not enough:
+
+1. `pull_request_rules` with a `queue` action. `queue_rules` alone only *defines*
+   the queue; nothing ever puts a pull request in it. The action takes no option
+   here: `method` and `allow_merging_configuration_change` are rejected by the
+   current schema (`mergify config validate` says so), and the merge method comes
+   from the queue rule.
+2. The Merge Queue product activated for the repository. `mergify config
+   simulate` answering "1 rule matches" proves nothing about activation: it
+   evaluates the rule, it does not run the engine. The signs that the engine is
+   off are an empty `mergify queue status`, no event at all in
+   `mergify events`, and no reaction to a `@Mergifyio queue` comment.
+
 ---
 
 ## 8. Adding a job
