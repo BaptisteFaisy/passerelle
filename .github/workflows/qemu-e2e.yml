@@ -100,22 +100,21 @@ jobs:
           set -euo pipefail
           cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPGW_MODULES="$PGW_MODULES"
           cmake --build build -j"$CMAKE_BUILD_JOBS"
-      - name: Differential conformance bench
+      - name: Differential conformance bench (long campaign)
         run: |
           set -euo pipefail
-          found=0
-          # The number of operations is passed through the environment, so a
-          # bench script does not have to know any command-line convention.
-          export PGW_BENCH_OPS="${{ github.event.inputs.ops || '0' }}"
-          for script in host/bench/run-bench.py host/bench/bench.py host/fsproof/run-fsproof.py; do
-            [ -f "$script" ] || continue
-            found=1
-            echo "--- $script"
-            timeout "$BENCH_STEP_TIMEOUT" python3 "$script"
-          done
-          if [ "$found" -eq 0 ]; then
-            echo "::notice::no conformance bench script in the tree - bench skipped (explicit skip, not a silent green)"
-          fi
+          # The pull-request pipeline runs the short campaigns (seconds); here we
+          # run the ones of spec 7.6: one million differential operations and
+          # five million randomized inputs per decoder family. The environment
+          # variables are how the benches take their size, so no command-line
+          # convention is needed here either.
+          export PGW_DIFF_OPS="${PGW_BENCH_OPS:-1000000}"
+          export PGW_FUZZ_ITERS=5000000
+          echo "differential: $PGW_DIFF_OPS operations per seed"
+          timeout "$BENCH_STEP_TIMEOUT" ./build/tests/test_diff
+          echo "fuzz: $PGW_FUZZ_ITERS iterations per decoder family"
+          timeout "$BENCH_STEP_TIMEOUT" ./build/tests/fuzz_p9
+          timeout "$BENCH_STEP_TIMEOUT" ./build/tests/fuzz_fuse
       - name: Guest share scenario (E5, Linux guest)
         run: |
           set -uo pipefail
@@ -124,13 +123,18 @@ jobs:
           # prerequisite is missing (no QEMU, no virtiofsd, no readable kernel):
           # that is an explicit skip, reported as a notice - never a silent
           # green, and not a failure of the repository either.
+          # The `|| rc=$?` form matters: Actions runs steps under `bash -e`, so
+          # a bare failing command would abort the step before it is inspected.
+          rc=0
           python3 tests/qemu/run_share_check.py \
-            --protos "${{ github.event.inputs.protos || 'virtiofs,9p' }}"
-          rc=$?
+            --protos "${{ github.event.inputs.protos || 'virtiofs,9p' }}" || rc=$?
           if [ "$rc" -eq 2 ]; then
-            echo "E5 skipped on this runner (missing prerequisites)"
+            echo "::notice::E5 skipped on this runner: prerequisite missing (QEMU, virtiofsd or a readable kernel)"
           elif [ "$rc" -ne 0 ]; then
+            echo "::error::E5 failed with code $rc"
             exit "$rc"
+          else
+            echo "E5 passed on this runner"
           fi
       - name: QNX guest scenario (QEMU)
         run: |
