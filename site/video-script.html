@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video script - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="video-script-under-three-minutes">Video Script — Under Three Minutes</h1>
+<p>&lt;strong&gt;Deliverable&lt;/strong&gt;: a single video shorter than &lt;strong&gt;3:00&lt;/strong&gt;, in English, submitted with the hackathon entry. Derived from Section 8 of the <a href="spec-en.html">specification</a>.</p>
+<p>&lt;strong&gt;Rules of the exercise&lt;/strong&gt;</p>
+<ul>
+<li>Hard ceiling 3:00. Target **2:52** to leave margin.</li>
+<li>Every segment shows something *running*, never a slide of bullet points alone.</li>
+<li>The narration states facts that the footage proves in the same shot.</li>
+<li>Prior art is named out loud (spec §3.3 — one of the judges leads QNX open-source engineering).</li>
+</ul>
+<p>&lt;strong&gt;Recording setup&lt;/strong&gt;</p>
+<ul>
+<li>1920×1080, two sources side by side: left = host PC terminal, right = QNX guest console.</li>
+<li>Font ≥ 16 px in both terminals so text is readable after compression.</li>
+<li>The kernel trace window (`traceprinter` or the IDE trace view) is a third pane for the priority segment.</li>
+<li>Record the guest at real time; never speed up footage that is supposed to prove latency.</li>
+</ul>
+<hr>
+<h2 id="timeline">Timeline</h2>
+<h3 id="000-020-the-problem-20-s">0:00 – 0:20 — The problem (20 s)</h3>
+<table>
+<thead>
+<tr>
+<th>On screen</th>
+<th>Narration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Left: <code>make</code> finishes. Right: <code>scp app qnx:/tmp</code> then <code>./app</code> — then the same with an image rebuild (<code>mkqnximage</code>), progress bar crawling. A counter overlay: "one iteration = 1 copy".</td>
+<td>"Cross-compiling for QNX is fast. Testing is not. Every change means copying the binary into the guest, or rebuilding the disk image. Each cycle pays a copy tax."</td>
+</tr>
+</tbody>
+</table>
+<p>Cut on the progress bar mid-way — that is the hook.</p>
+<h3 id="020-055-passerelle-zero-copy-35-s">0:20 – 0:55 — Passerelle: zero copy (35 s)</h3>
+<table>
+<thead>
+<tr>
+<th>On screen</th>
+<th>Narration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Host: <code>qshare ~/project</code>. Guest boots, <code>ls /host</code> lists the project tree. Host: <code>make</code>. Guest: <code>/host/build/my_app</code> runs instantly. Then a split-second edit on the host (<code>echo</code> into a file) and <code>cat /host/README</code> in the guest showing the new line.</td>
+<td>"Passerelle mounts a host directory inside the QNX guest. The image stays minimal — kernel and driver. Compile here, run there. Edit on the host, and the guest sees it on the next read, with no remount and no cache to invalidate."</td>
+</tr>
+</tbody>
+</table>
+<h3 id="055-125-it-is-not-a-toy-30-s">0:55 – 1:25 — It is not a toy (30 s)</h3>
+<table>
+<thead>
+<tr>
+<th>On screen</th>
+<th>Narration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fsproof diff</code> scrolling: operations counter climbing past 1,000,000, "divergences: 0". Brief cut to the case table (symlink loops, 255-byte names, 5 GiB file, 100,000-entry directory) all green.</td>
+<td>"A differential harness runs randomized operation sequences in the guest and compares the tree — names, types, sizes, permissions, timestamps, symlink targets, content hashes — against the host, which is the ground truth. One million operations, zero divergence. And the same harness runs against the existing clients, so the comparison is apples to apples."</td>
+</tr>
+</tbody>
+</table>
+<h3 id="125-200-the-numbers-35-s">1:25 – 2:00 — The numbers (35 s)</h3>
+<table>
+<thead>
+<tr>
+<th>On screen</th>
+<th>Narration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Benchmark chart: bars for <code>gvergine/qnx-fs-9p</code>, <code>eclipse-score</code> virtio9p, Passerelle 9P, Passerelle virtiofs, and <code>scp</code>. Two panels: sequential throughput, and round trips per POSIX call.</td>
+<td>"Round trips per call, measured from QEMU traces, and sequential throughput. This is where the project earns its place: 9P on x86_64 — which neither existing client offers with full POSIX semantics — and virtiofs, the FUSE protocol over virtio, which had no public QNX guest implementation."</td>
+</tr>
+</tbody>
+</table>
+<p>Chart values must come from <code>bench_report</code>, generated in the same session. If a bar is not yet measured, it is labelled "to be measured" on screen — no invented numbers.</p>
+<h3 id="200-230-real-time-behaviour-30-s">2:00 – 2:30 — Real-time behaviour (30 s)</h3>
+<table>
+<thead>
+<tr>
+<th>On screen</th>
+<th>Narration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Guest: a high-priority reader (priority 30) issues a 4 KiB read while a low-priority <code>cp</code> of a large file (priority 10) saturates the share. Stopwatch on the read. Cut to the kernel trace showing the driver thread running at the caller's priority and the request overtaking the bulk I/O.</td>
+<td>"This is a real-time operating system, so the driver behaves like one. Requests are handled at the caller's priority, and when the queue saturates they leave in priority order. A priority read during a bulk copy does not queue behind it — you can see the inherited priority in the kernel trace."</td>
+</tr>
+</tbody>
+</table>
+<h3 id="230-245-least-privilege-15-s">2:30 – 2:45 — Least privilege (15 s)</h3>
+<table>
+<thead>
+<tr>
+<th>On screen</th>
+<th>Narration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pidin</code> showing the driver running as a non-root user with only <code>mem_phys</code>, <code>interrupt</code> and <code>pathspace</code>. Mount options line: <code>nosuid</code> by default.</td>
+<td>"The driver runs without root, with the minimum capabilities: map the device, take its interrupt, attach the mount point. Shared files never elevate privileges."</td>
+</tr>
+</tbody>
+</table>
+<h3 id="245-300-honesty-and-credit-15-s">2:45 – 3:00 — Honesty and credit (15 s)</h3>
+<table>
+<thead>
+<tr>
+<th>On screen</th>
+<th>Narration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>README on screen, with the prior-art table and the NOTICE file. Then the repository URL and the tutorial title.</td>
+<td>"Passerelle builds on public work: <code>gvergine/qnx-fs-9p</code> for the 9P client design, <code>eclipse-score/qnx_unit_tests</code> for MSI-X on QNX, <code>kodebooth/qnx-virtio</code> for the transport API. What we add — x86_64 PCI, virtiofs, the conformance bench, priority scheduling — is written down, tested, and offered back upstream. Code, docs and tutorial: github.com/BaptisteFaisy/passerelle."</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="shot-checklist-for-the-editing-pass">Shot Checklist (for the editing pass)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Segment</th>
+<th>Must be visible</th>
+<th>Recorded from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Copy tax</td>
+<td><code>scp</code> or <code>mkqnximage</code> actually running</td>
+<td>host terminal</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>qshare</code></td>
+<td>command line + resulting QEMU launch</td>
+<td>host terminal</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Mount</td>
+<td><code>ls /host</code>, <code>mount</code> output</td>
+<td>guest console</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Live edit</td>
+<td>host write + guest read, same take</td>
+<td>both panes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Differential run</td>
+<td>counter + "0 divergences"</td>
+<td>guest console</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Edge cases</td>
+<td>table of green cases</td>
+<td>guest console</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Chart</td>
+<td><code>bench_report</code> output</td>
+<td>host, rendered SVG/PNG</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Priority read</td>
+<td>stopwatch + kernel trace</td>
+<td>guest + trace viewer</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Least privilege</td>
+<td><code>pidin</code> + ability list</td>
+<td>guest console</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Credits</td>
+<td>README table + NOTICE</td>
+<td>host editor</td>
+</tr>
+</tbody>
+</table>
+<h2 id="text-overlays-english-short">Text Overlays (English, short)</h2>
+<ul>
+<li>0:00 `compile → copy → run` · 0:20 `zero copy` · 0:55 `1,000,000 ops, 0 divergences`</li>
+<li>1:25 `round trips per call` · 2:00 `priority inherited` · 2:30 `no root`</li>
+<li>2:45 `prior art cited, additions stated`</li>
+</ul>
+<h2 id="things-that-would-invalidate-the-video">Things That Would Invalidate the Video</h2>
+<ul>
+<li>Showing a benchmark bar that was not produced by the harness in this repository.</li>
+<li>Speeding up footage of the priority test.</li>
+<li>Claiming virtiofs works in the *QNX* guest: feasibility test E5 passed on 11 Nov 2026 with a **Linux** guest (`tests/qemu`, see [verification-status.md](verification-status.md) §3.1), which proves the host half — `virtiofsd`, shared memory, the options `qshare` emits, both directions of the exchange. It proves nothing about the QNX client, and the video must not imply otherwise.</li>
+<li>Omitting the two existing 9P clients — the spec forbids it (§3.3), and the judges will know.</li>
+</ul>
+<p>Status of each segment depends on the schedule in §10 of the specification; anything not yet runnable is shot only once it is, and <a href="verification-status.html">verification-status.md</a> is the source of truth for that.</p>
+    <nav class="pager">
+      <a class="prev" href="gap-analysis.html">Previous</a>
+      <a class="next" href="codelab.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

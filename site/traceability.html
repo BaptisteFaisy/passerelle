@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traceability - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="requirement-traceability">Requirement traceability</h1>
+<blockquote><p>&lt;strong&gt;Generated file - do not edit.&lt;/strong&gt; <code>python3 tools/traceability.py</code> builds it from <code>docs/spec-en.md</code> (identifiers and statements) and <code>tools/traceability-map.yml</code> (state, proof, note). CI re-runs the generator with <code>--check</code>, so a stale map fails the build instead of lying to a reader.</p></blockquote>
+<p>77 requirements: 50 <code>tested</code>, 21 <code>partial</code>, 6 <code>missing</code>.</p>
+<h2 id="states">States</h2>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tested</code></td>
+<td>automated proof runs in the CI on the host PC, or measured and published</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>code exists and part of it is exercised; the rest needs a QNX guest (SDP)</td>
+</tr>
+<tr>
+<td><code>missing</code></td>
+<td>not started; extreme tier, first item de-scoped when the schedule slips</td>
+</tr>
+</tbody>
+</table>
+<h2 id="matrix">Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement (spec-en.md section 6)</th>
+<th>State</th>
+<th>Proof (test)</th>
+<th>Files</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VIO-01</td>
+<td>Driver discovers 9P device on PCI bus (vendor 0x1AF4, device 0x1009, or 0x1049 modern-only).</td>
+<td>tested</td>
+<td><code>test_virtio_pci</code>, <code>test_modern_9p_device_is_found</code>, <code>test_transitional_9p_id_is_accepted</code></td>
+<td><code>virtio/src/pci.c</code>, <code>virtio/src/pci_modern.c</code>, <code>virtio/include/pgw/virtio.h</code></td>
+<td>vendor and device matching, modern and transitional ids. A real QNX 7.1 guest reports 1af4/1009 for the same device (tests/qemu/qnx71/EVIDENCE.md).</td>
+</tr>
+<tr>
+<td>VIO-02</td>
+<td>Driver uses modern PCI interface defined by device capabilities.</td>
+<td>tested</td>
+<td><code>test_virtio_pci</code>, <code>test_capabilities_are_all_discovered</code>, <code>test_device_without_common_cfg_is_refused</code></td>
+<td><code>virtio/src/pci_caps.c</code>, <code>virtio/src/pci_modern.c</code></td>
+<td>capability walk over a fake config space; the QNX 7.1 guest exposes MSI-X and the five vendor capabilities.</td>
+</tr>
+<tr>
+<td>VIO-03</td>
+<td>Driver supports virtio-mmio, versions 1 and 2 (ARM64 <code>virt</code>, x86 <code>microvm</code>).</td>
+<td>tested</td>
+<td><code>test_virtio_mmio</code>, <code>test_v2_device_is_found</code>, <code>test_v1_device_is_found</code></td>
+<td><code>virtio/src/mmio.c</code>, <code>virtio/src/mmio_qnx.c</code></td>
+<td>MMIO v1 and v2 against a RAM-backed register file; mmio_qnx.c is compile-checked by the qnx-syntax job.</td>
+</tr>
+<tr>
+<td>VIO-04</td>
+<td>Driver receives interrupts via QNX 8.0 APIs, using MSI-X with legacy INTx fallback.</td>
+<td>partial</td>
+<td><code>test_virtio_pci</code>, <code>test_msix_table_is_programmed</code>, <code>test_intx_path_uses_the_isr_capability</code></td>
+<td><code>virtio/src/pci.c</code>, <code>virtio/src/pci_qnx.c</code>, <code>drivers/fs9p/src/irq_qnx.c</code></td>
+<td>MSI-X programming and the INTx fallback are tested on the PC; delivery needs a QNX guest with a routed vector (E1). Measured on the QNX 7.1 reference image: no interrupt is routed to this device, so the driver must add its own INTx entry or use MSI-X.</td>
+</tr>
+<tr>
+<td>VIO-05</td>
+<td>Driver reads mount tag from device config and selects device by tag.</td>
+<td>tested</td>
+<td><code>test_virtio_dev</code>, <code>test_reads_9p_mount_tag</code>, <code>test_rejects_oversized_9p_tag</code></td>
+<td><code>virtio/src/dev.c</code></td>
+<td>mount tag read from the device config space, length-prefixed as in the Linux header.</td>
+</tr>
+<tr>
+<td>VIO-06</td>
+<td>Multiple shares can be mounted simultaneously, one per device.</td>
+<td>tested</td>
+<td><code>test_virtio_mock</code>, <code>test_two_devices_are_independent</code></td>
+<td><code>virtio/src/dev.c</code>, <code>virtio/src/mock.c</code></td>
+<td>one device object per share; two mock devices keep separate state.</td>
+</tr>
+<tr>
+<td>VIO-07</td>
+<td>Request buffers are passed to QEMU zero-copy within the transport layer.</td>
+<td>tested</td>
+<td><code>test_virtio_vq</code>, <code>test_zero_copy_uses_caller_addresses</code>, <code>test_phys_address_wins_over_virtual</code></td>
+<td><code>virtio/src/virtq.c</code>, <code>virtio/src/virtq_alloc.c</code></td>
+<td>descriptors carry the caller addresses, no intermediate copy in the transport; the spec asks for inspection here and the test pins it.</td>
+</tr>
+<tr>
+<td>VIO-08</td>
+<td>Indirect descriptors and notification suppression (<code>EVENT_IDX</code>) are negotiated when offered by...</td>
+<td>tested</td>
+<td><code>test_virtio_vq</code>, <code>test_indirect_used_above_threshold</code>, <code>test_indirect_disabled_when_not_negotiated</code>, <code>test_event_idx_suppresses_redundant_kick</code></td>
+<td><code>virtio/src/virtq.c</code>, <code>virtio/src/virtq_alloc.c</code></td>
+<td>the test half is green; the measurement half (kick counts on a QNX guest) has no number yet.</td>
+</tr>
+<tr>
+<td>VIO-09</td>
+<td>On unmount, device is cleanly reset and no interrupt handlers remain attached.</td>
+<td>tested</td>
+<td><code>test_virtio_dev</code>, <code>test_destroy_resets_first</code>, <code>test_reset_detaches_irq_and_zeroes_status</code></td>
+<td><code>virtio/src/dev.c</code></td>
+<td>reset zeroes the device status and detaches the interrupt handler.</td>
+</tr>
+<tr>
+<td>VIO-10</td>
+<td>Transport layer is a documented, standalone library reusable by other virtio drivers.</td>
+<td>tested</td>
+<td><code>test_virtio_mock</code>, <code>test_open_reports_identity</code>, <code>test_full_stack_asynchronous</code></td>
+<td><code>virtio/include/pgw/virtio.h</code>, <code>virtio/src/mock.c</code>, <code>docs/architecture.md</code></td>
+<td>standalone library behind a bus-ops table, with a documented mock backend; the protocol layers reuse it with no QNX.</td>
+</tr>
+<tr>
+<td>P9-01</td>
+<td>Negotiation of 9P2000.L version and configurable maximum message size (<code>msize</code>).</td>
+<td>tested</td>
+<td><code>test_p9_session</code>, <code>test_negotiation</code>, <code>test_p9_codec</code></td>
+<td><code>proto9p/src/p9_session.c</code>, <code>proto9p/src/p9_enc.c</code>, <code>proto9p/src/p9_dec.c</code></td>
+<td>Tversion and Tattach negotiate the version and the maximum message size.</td>
+</tr>
+<tr>
+<td>P9-02</td>
+<td>Core messages: attach, walk, open, create, read, write, clunk, getattr, readdir, mkdir...</td>
+<td>tested</td>
+<td><code>test_p9_codec</code>, <code>test_enc_simple_ones</code>, <code>test_enc_namespace_messages</code>, <code>test_dec_rattach_and_rwalk</code></td>
+<td><code>proto9p/src/p9_enc.c</code>, <code>proto9p/src/p9_dec.c</code></td>
+<td>every core message has an encode and a decode round trip.</td>
+</tr>
+<tr>
+<td>P9-03</td>
+<td>Extended messages: setattr, symlink, readlink, link.</td>
+<td>tested</td>
+<td><code>test_p9_codec</code>, <code>test_enc_attr_messages</code>, <code>test_enc_links</code></td>
+<td><code>proto9p/src/p9_enc.c</code>, <code>proto9p/src/p9_dec_attr.c</code></td>
+<td>setattr, symlink, readlink and link.</td>
+</tr>
+<tr>
+<td>P9-04</td>
+<td>Open flags translated to Linux values; Linux errno codes translated to QNX errno.</td>
+<td>tested</td>
+<td><code>test_p9_codec</code>, <code>test_wire_flags_are_linux</code>, <code>test_errno_linux_to_qnx</code>, <code>test_err_linux_table</code></td>
+<td><code>proto9p/src/p9_xlate.c</code>, <code>common/src/err.c</code>, <code>common/src/flags.c</code></td>
+<td>one table per direction, tested value by value; the session uses them.</td>
+</tr>
+<tr>
+<td>P9-05</td>
+<td>Multiple in-flight requests supported concurrently.</td>
+<td>tested</td>
+<td><code>test_p9_session</code>, <code>test_nested_request</code>, <code>test_many_twaks_for_a_deep_path</code></td>
+<td><code>proto9p/src/p9_session.c</code>, <code>proto9p/src/p9_idpool.c</code></td>
+<td>several requests in flight, one tag each; the pool refuses a double allocation.</td>
+</tr>
+<tr>
+<td>P9-06</td>
+<td>Interrupted calls (signals, timeouts) cancel their request on the server via <code>Tflush</code>.</td>
+<td>tested</td>
+<td><code>test_p9_session</code>, <code>test_timeout_sends_flush</code>, <code>test_explicit_flush</code></td>
+<td><code>proto9p/src/p9_session_io.c</code></td>
+<td>a cancelled or timed-out request sends Tflush carrying the old tag.</td>
+</tr>
+<tr>
+<td>P9-07</td>
+<td>Every allocated fid on the server is clunked. Zero leak after 1,000,000 opens/closes.</td>
+<td>tested</td>
+<td><code>test_p9_idpool</code>, <code>test_pool_million_cycles_no_leak</code>, <code>test_no_fid_leak_over_many_operations</code></td>
+<td><code>proto9p/src/p9_idpool.c</code></td>
+<td>1 000 000 alloc and free cycles without a leak; the differential bench checks the counters return to zero.</td>
+</tr>
+<tr>
+<td>P9-08</td>
+<td>Reads, writes, and directory listings larger than <code>msize</code> are chunked and resumed.</td>
+<td>tested</td>
+<td><code>test_p9_session</code>, <code>test_chunked_read_300k</code>, <code>test_chunked_write</code>, <code>test_readdir_multi_chunk_resume</code></td>
+<td><code>proto9p/src/p9_session_io.c</code></td>
+<td>a 300 KiB read with msize 8192 is split and resumed.</td>
+</tr>
+<tr>
+<td>P9-09</td>
+<td>Every response is strictly validated: size, type, tag, internal length consistency.</td>
+<td>tested</td>
+<td><code>test_p9_validation</code>, <code>test_truncation_at_every_length</code>, <code>test_trailing_bytes_refused</code>, <code>fuzz_p9</code></td>
+<td><code>proto9p/src/p9_dec.c</code>, <code>proto9p/src/p9_dec_attr.c</code></td>
+<td>size, type, tag and internal lengths are checked; randomized input campaigns run under the sanitizers.</td>
+</tr>
+<tr>
+<td>P9-10</td>
+<td>Protocol library builds and passes tests on host PC without QNX toolchain.</td>
+<td>tested</td>
+<td><code>test_p9_codec</code>, <code>test_p9_session</code>, <code>test_p9_validation</code>, <code>test_p9_idpool</code></td>
+<td><code>proto9p/CMakeLists.txt</code>, <code>proto9p/include/pgw/p9.h</code></td>
+<td>the layer includes no OS header; the build-test job compiles and runs it on Linux.</td>
+</tr>
+<tr>
+<td>FS-01</td>
+<td>Open, read, write, seek, close; support for files larger than 4 GiB.</td>
+<td>tested</td>
+<td><code>test_rmfs_open</code>, <code>test_open_read_write_seek_close</code>, <code>test_file_above_4gib</code></td>
+<td><code>rmfs/src/rmfs_ops_io.c</code>, <code>rmfs/src/open_table.c</code></td>
+<td>open, read, write, seek, close with 64-bit offsets and no materialisation of a sparse file above 4 GiB.</td>
+</tr>
+<tr>
+<td>FS-02</td>
+<td><code>stat</code> returns size, type, permissions, owner, nanosecond timestamps, link count, and stable...</td>
+<td>tested</td>
+<td><code>test_rmfs_meta</code>, <code>test_stat_reports_every_field</code></td>
+<td><code>rmfs/src/rmfs_ops_meta.c</code>, <code>rmfs/src/attr_cache.c</code></td>
+<td>size, type, mode, owner, nanosecond timestamps, link count and a stable inode number.</td>
+</tr>
+<tr>
+<td>FS-03</td>
+<td>Directory reads are consistent: no missing or duplicated entries, offset resumption, entry type...</td>
+<td>tested</td>
+<td><code>test_directed</code>, <code>test_readdir_large_and_resumed</code>, <code>test_readdir_resumes_without_duplicates</code></td>
+<td><code>rmfs/src/rmfs_ops_io.c</code>, <code>tests/e2e/test_directed.c</code></td>
+<td>600 entries read in pages of 7, offset resumption, no entry lost or doubled.</td>
+</tr>
+<tr>
+<td>FS-04</td>
+<td>Exclusive creation (<code>O_EXCL</code>), truncation on open (<code>O_TRUNC</code>), append mode (<code>O_APPEND</code>).</td>
+<td>tested</td>
+<td><code>test_directed</code>, <code>test_create_excl_trunc_append</code>, <code>test_rmfs_open</code></td>
+<td><code>rmfs/src/rmfs_ops_io.c</code>, <code>rmfs/src/rmfs_calls.c</code></td>
+<td>exclusive create, truncation on open and append mode; the flags reach the wire as Linux values.</td>
+</tr>
+<tr>
+<td>FS-05</td>
+<td>Create and remove directories, unlink files, atomic rename across directories.</td>
+<td>tested</td>
+<td><code>test_directed</code>, <code>test_rename_over_existing_file</code>, <code>test_rmfs_meta</code>, <code>test_rename_across_directories</code></td>
+<td><code>rmfs/src/rmfs_ops_meta.c</code></td>
+<td>mkdir, rmdir, unlink and atomic rename, including across directories.</td>
+</tr>
+<tr>
+<td>FS-06</td>
+<td>Binaries execute from the share and load shared libraries located on the share.</td>
+<td>partial</td>
+<td>-</td>
+<td><code>rmfs/src/rmfs_ops_io.c</code>, <code>drivers/fs9p/src/dispatch_qnx.c</code></td>
+<td>the read and offset paths the program loader uses are tested on the PC, but executing a binary from the share needs a QNX guest (E3) and therefore the SDP. Nothing is claimed here.</td>
+</tr>
+<tr>
+<td>FS-07</td>
+<td>Modify permissions (<code>chmod</code>), ownership (<code>chown</code>), timestamps (<code>utimensat</code>), size (<code>truncate</code>).</td>
+<td>tested</td>
+<td><code>test_rmfs_meta</code>, <code>test_chmod_chown_truncate_utimens</code>, <code>test_directed</code></td>
+<td><code>rmfs/src/rmfs_ops_meta.c</code></td>
+<td>chmod, chown, truncate and utimens, with nanosecond resolution.</td>
+</tr>
+<tr>
+<td>FS-08</td>
+<td>Symlinks: creation, reading, resolution, loop detection. Hard links.</td>
+<td>tested</td>
+<td><code>test_rmfs_path</code>, <code>test_symlink_loop_detected</code>, <code>test_readlink_returns_body</code>, <code>test_hard_link_shares_inode</code>, <code>test_directed</code></td>
+<td><code>rmfs/src/path.c</code>, <code>rmfs/include/pgw/rmfs.h</code></td>
+<td>loop detection bounded by PGW_SYMLINK_MAX; the lookup and getattr convention is written down in pgw/rmfs.h (ADR-001).</td>
+</tr>
+<tr>
+<td>FS-09</td>
+<td>Guest-side permission enforcement based on caller identity. Mount options: <code>ro</code>, <code>noexec</code>...</td>
+<td>tested</td>
+<td><code>test_rmfs_perms</code>, <code>test_permission_matrix</code>, <code>test_readonly_mount</code>, <code>test_noexec_refuses_execution</code>, <code>test_directed</code></td>
+<td><code>rmfs/src/rmfs.c</code>, <code>drivers/common/src/opts.c</code></td>
+<td>permission matrix with a non-owner caller; ro, noexec and nosuid are mount options.</td>
+</tr>
+<tr>
+<td>FS-10</td>
+<td><code>fsync</code> propagates to host; <code>df</code> (<code>statvfs</code>) reflects host directory free space.</td>
+<td>tested</td>
+<td><code>test_directed</code>, <code>test_fsync_and_statfs</code></td>
+<td><code>rmfs/src/rmfs_ops_meta.c</code>, <code>tests/posix_backend/backend_file.c</code></td>
+<td>fsync reaches the backend and statfs reports the shared directory.</td>
+</tr>
+<tr>
+<td>FS-11</td>
+<td>Unlinked file remains readable while open descriptors exist.</td>
+<td>tested</td>
+<td><code>test_diff</code>, <code>test_deleted_but_open_stays_readable</code>, <code>test_deleted_while_open_stays_readable</code></td>
+<td><code>rmfs/src/open_table.c</code>, <code>tests/e2e/test_diff.c</code></td>
+<td>an unlinked file stays readable until the last descriptor closes.</td>
+</tr>
+<tr>
+<td>FS-12</td>
+<td>File modified on host PC is seen modified in guest on next read without remounting.</td>
+<td>tested</td>
+<td><code>test_diff</code>, <code>test_host_change_visible_without_remount</code>, <code>test_pc_change_seen_on_next_read</code></td>
+<td><code>rmfs/src/rmfs_ops_io.c</code>, <code>rmfs/src/attr_cache.c</code></td>
+<td>no data cache by default (decision D4): a change made on the PC is seen on the next read, without remounting.</td>
+</tr>
+<tr>
+<td>FS-13</td>
+<td>Optional metadata attribute cache with bounded, user-configurable TTL.</td>
+<td>tested</td>
+<td><code>test_rmfs_cache</code>, <code>test_attr_cache_disabled_by_default</code>, <code>test_expiry_follows_the_injected_clock</code>, <code>test_attr_ttl_clamped_to_max</code></td>
+<td><code>rmfs/src/attr_cache.c</code>, <code>rmfs/src/attr_cache.h</code></td>
+<td>off by default, TTL bounded by PGW_ATTR_CACHE_NS_MAX, expiry driven by the injected clock.</td>
+</tr>
+<tr>
+<td>FS-14</td>
+<td>Advisory byte-range file locks work between guest processes; documented that they are not...</td>
+<td>tested</td>
+<td><code>test_rmfs_locks</code>, <code>test_read_locks_are_shared</code>, <code>test_dead_process_locks_are_released</code>, <code>test_directed</code></td>
+<td><code>rmfs/src/lock.c</code>, <code>rmfs/src/lock.h</code></td>
+<td>guest-local byte-range locks, released when the owner dies; they are not forwarded to the host, which is FS-16.</td>
+</tr>
+<tr>
+<td>FS-15</td>
+<td>UTF-8 filenames up to 255 bytes supported, including special characters.</td>
+<td>tested</td>
+<td><code>test_directed</code>, <code>test_long_names</code>, <code>test_normalize_keeps_utf8</code></td>
+<td><code>rmfs/src/path.c</code>, <code>common/include/pgw/limits.h</code></td>
+<td>255-byte names accepted, 256 refused, UTF-8 preserved.</td>
+</tr>
+<tr>
+<td>FS-16</td>
+<td>Byte-range locks are relayed to 9P server.</td>
+<td>missing</td>
+<td>-</td>
+<td>-</td>
+<td>X tier, first item de-scoped when the schedule slips (spec section 10): relay byte-range locks to the 9P server. Not started.</td>
+</tr>
+<tr>
+<td>QNX-01</td>
+<td>Driver is a standard QNX resource manager managing the entire subtree below its mount point.</td>
+<td>partial</td>
+<td><code>test_driver_opts</code></td>
+<td><code>drivers/common/src/resmgr_io_qnx.c</code>, <code>drivers/common/src/resmgr_meta_qnx.c</code>, <code>drivers/common/src/resmgr_dir_qnx.c</code></td>
+<td>the resource-manager glue is written and compile-checked against the stub headers by the qnx-syntax job, but it has never run: it needs the SDP.</td>
+</tr>
+<tr>
+<td>QNX-02</td>
+<td>Starts from initial boot image (IFS), depending only on <code>procnto</code>, libc, and PCI server.</td>
+<td>partial</td>
+<td><code>test_system_layout_fragment</code>, <code>test_ifs_layout_fragment</code></td>
+<td><code>image/passerelle.build</code></td>
+<td>the IFS fragment is written and the guest proc boot shows the minimum is realistic, but building and booting our own image needs mkqnximage, hence the SDP.</td>
+</tr>
+<tr>
+<td>QNX-03</td>
+<td>Request handling executes at the calling thread's priority, verifiable via kernel trace.</td>
+<td>partial</td>
+<td><code>prio</code>, <code>test_most_urgent_qnx_priority_wins</code>, <code>test_caller_priority_reaches_backend</code></td>
+<td><code>drivers/common/src/prio_qnx.c</code>, <code>common/include/pgw/prio.h</code></td>
+<td>the conversion and the priority-ordered submission are proven on the PC; the requirement asks for a kernel trace on a QNX guest, and that trace does not exist yet.</td>
+</tr>
+<tr>
+<td>QNX-04</td>
+<td>When transport queue is saturated, pending requests are submitted in priority order.</td>
+<td>tested</td>
+<td><code>test_rmfs_sched</code>, <code>test_high_priority_overtakes_bulk</code>, <code>test_equal_priority_is_fifo</code></td>
+<td><code>rmfs/src/sched.c</code></td>
+<td>a priority request overtakes eight low-priority ones, FIFO inside one priority; the measured half of the requirement needs a QNX guest.</td>
+</tr>
+<tr>
+<td>QNX-05</td>
+<td>A blocked client does not lock up a driver worker thread.</td>
+<td>tested</td>
+<td><code>test_rmfs_sched</code>, <code>test_enqueue_does_not_block</code>, <code>test_core_runs_when_saturated</code></td>
+<td><code>rmfs/src/sched.c</code>, <code>rmfs/src/rmfs.c</code></td>
+<td>a parked request never holds the caller thread and the core still runs when the queue is saturated.</td>
+</tr>
+<tr>
+<td>QNX-06</td>
+<td>Driver runs unprivileged (non-root) with minimum required capabilities; security policy...</td>
+<td>partial</td>
+<td><code>test_default_options_are_safe</code></td>
+<td><code>drivers/common/src/privdrop_qnx.c</code>, <code>image/passerelle.sec</code></td>
+<td>privilege drop and the security policy are written; the QNX 7.1 guest ships ability and libsecpol.so, so the mechanism exists, but nothing runs without the SDP.</td>
+</tr>
+<tr>
+<td>QNX-07</td>
+<td>Integrates with standard <code>mount</code> and <code>umount</code> commands.</td>
+<td>partial</td>
+<td>-</td>
+<td><code>drivers/fs9p/src/mount_qnx.c</code>, <code>drivers/fsfuse/src/mount_qnx.c</code></td>
+<td>mount and umount integration is written, not run; E1 needs the SDP.</td>
+</tr>
+<tr>
+<td>QNX-08</td>
+<td>Logs to system logger (<code>slog2</code>) and exposes per-operation performance counters.</td>
+<td>partial</td>
+<td><code>common</code>, <code>test_log_stats_and_pattern</code>, <code>test_counters_move</code></td>
+<td><code>drivers/common/src/syslog_qnx.c</code>, <code>common/src/log.c</code></td>
+<td>the per-operation counter table is tested on the PC and exported as name=value; the slog2 backend is written but has never run.</td>
+</tr>
+<tr>
+<td>QNX-09</td>
+<td>Emits kernel trace events (<code>TraceEvent</code>) on request send and receive.</td>
+<td>partial</td>
+<td>-</td>
+<td><code>drivers/common/src/trace_qnx.c</code>, <code>drivers/fs9p/src/trace_qnx.c</code></td>
+<td>trace events are written around each request; measuring them needs the QNX kernel trace tooling.</td>
+</tr>
+<tr>
+<td>PERF-01</td>
+<td>Server round-trip counts measured and published for common POSIX calls via QEMU traces.</td>
+<td>tested</td>
+<td><code>test_cli_roundtrips</code>, <code>test_compare_tables_flags_extra_roundtrips</code></td>
+<td><code>docs/measurements/linux-baseline-9p.md</code>, <code>host/bench/trace.py</code>, <code>host/bench/roundtrips.py</code></td>
+<td>published baseline from a real QEMU 8.2 trace: 1 643 events, 822 requests, round trips per POSIX call. The Passerelle column of that table needs a QNX guest.</td>
+</tr>
+<tr>
+<td>PERF-02</td>
+<td>Round-trip count on each POSIX call does not exceed the best existing client.</td>
+<td>partial</td>
+<td><code>test_cli_roundtrips</code>, <code>test_report_passes_on_good_numbers</code></td>
+<td><code>host/bench/roundtrips.py</code>, <code>host/bench/report.py</code>, <code>docs/measurements/linux-baseline-9p.md</code></td>
+<td>the harness and the thresholds exist and are tested; no comparison is possible until the driver runs on a QNX guest.</td>
+</tr>
+<tr>
+<td>PERF-03</td>
+<td>Sequential read/write of 1 GiB file: at least matching best existing client; &gt;= 50% of Linux...</td>
+<td>partial</td>
+<td><code>test_throughput_reports_mib_per_second</code>, <code>test_each_workload_runs_at_small_scale</code></td>
+<td><code>host/bench/loads.py</code>, <code>host/bench/report.py</code></td>
+<td>the 1 GiB sequential workload is implemented and runs at small scale; there is no measurement, because there is no QNX guest.</td>
+</tr>
+<tr>
+<td>PERF-04</td>
+<td>Metadata operations: create, stat, and unlink 10,000 files; traverse 50,000-entry directory...</td>
+<td>partial</td>
+<td><code>test_metadata_counts_three_operations_per_file</code></td>
+<td><code>host/bench/loads.py</code>, <code>host/bench/report.py</code></td>
+<td>the create, stat and unlink workload and the directory-tree walk are implemented; no measurement, no QNX guest.</td>
+</tr>
+<tr>
+<td>PERF-05</td>
+<td>A 4 KiB high-priority read launched during a bulk low-priority copy takes &lt;= 2x its idle...</td>
+<td>partial</td>
+<td><code>test_priority_workload_exposes_the_ratio</code>, <code>test_high_priority_overtakes_bulk</code>, <code>test_report_fails_on_priority_regression</code></td>
+<td><code>host/bench/loads.py</code>, <code>rmfs/src/sched.c</code></td>
+<td>the scheduler behaviour is proven on the PC and the workload reports the ratio; the 2x idle-duration figure needs a QNX guest under a bulk copy.</td>
+</tr>
+<tr>
+<td>PERF-06</td>
+<td>Mount operation completes in under 50 ms.</td>
+<td>partial</td>
+<td><code>test_mount_verdict_threshold</code>, <code>test_mount_measurement_needs_a_console</code></td>
+<td><code>host/bench/mount.py</code>, <code>host/bench/report.py</code></td>
+<td>the mount measurement is implemented and skips explicitly when no guest console is available; there is no number yet.</td>
+</tr>
+<tr>
+<td>PERF-07</td>
+<td>Comparative benchmark report published: this driver, Project A, Project B, <code>scp</code>, and virtiofs...</td>
+<td>partial</td>
+<td><code>test_report_requires_rivals_at_complete_level</code>, <code>test_report_requires_virtiofs_at_extreme_level</code>, <code>test_levels_table_matches_the_specification</code></td>
+<td><code>host/bench/report.py</code>, <code>host/bench/cli.py</code>, <code>host/pgwutil/svg.py</code></td>
+<td>the comparative report refuses to publish a table missing a rival; nothing can be compared until clients A and B and our driver run on the same guest.</td>
+</tr>
+<tr>
+<td>ROB-01</td>
+<td>Any server error returns an appropriate errno code to the caller, never a hang.</td>
+<td>tested</td>
+<td><code>test_rmfs_meta</code>, <code>test_errors_are_propagated</code>, <code>test_p9_validation</code></td>
+<td><code>common/src/err.c</code>, <code>rmfs/src/rmfs.c</code></td>
+<td>a refused operation returns an errno code and never a hang; the Linux errno table is tested value by value.</td>
+</tr>
+<tr>
+<td>ROB-02</td>
+<td>Abnormal death of client process during in-flight request leaves no server leak or memory leak.</td>
+<td>tested</td>
+<td><code>test_diff</code>, <code>test_no_handle_leak_after_many_cycles</code>, <code>test_p9_idpool</code>, <code>test_release_pid_closes_everything</code></td>
+<td><code>rmfs/src/open_table.c</code>, <code>rmfs/src/lock.c</code></td>
+<td>20 000 open and close cycles leave the counters at zero; a dying process releases its descriptors and its locks.</td>
+</tr>
+<tr>
+<td>ROB-03</td>
+<td>Unmount under active I/O load completes cleanly without crash.</td>
+<td>partial</td>
+<td>-</td>
+<td><code>drivers/fs9p/src/mount_qnx.c</code>, <code>virtio/src/dev.c</code></td>
+<td>the PC side of a clean unmount is tested (reset, interrupt detached); unmounting under an active I/O load needs a QNX guest.</td>
+</tr>
+<tr>
+<td>ROB-04</td>
+<td>File unlinked or replaced on host during guest use produces clean error codes.</td>
+<td>partial</td>
+<td><code>test_diff</code>, <code>test_directed</code></td>
+<td><code>rmfs/src/rmfs_ops_meta.c</code>, <code>tests/e2e/diff_ops.c</code></td>
+<td>the differential bench shows clean errors when a file is removed or replaced on the PC; the same behaviour on a live QNX mount is not exercised.</td>
+</tr>
+<tr>
+<td>ROB-05</td>
+<td>Request without response is timed out after a configurable deadline.</td>
+<td>tested</td>
+<td><code>test_p9_session</code>, <code>test_timeout_is_configurable</code>, <code>test_time_fake_clock</code></td>
+<td><code>proto9p/src/p9_session_io.c</code>, <code>common/src/time.c</code></td>
+<td>the deadline is configurable and the clock is injectable, so no test has to sleep.</td>
+</tr>
+<tr>
+<td>ROB-06</td>
+<td>Protocol decoder does not crash on arbitrary corrupted input; verified by fuzzer with memory...</td>
+<td>tested</td>
+<td><code>fuzz_p9</code>, <code>fuzz_fuse</code>, <code>test_p9_seeded_campaigns</code>, <code>test_fuse_seeded_campaigns</code></td>
+<td><code>tests/fuzz/fuzz_p9.c</code>, <code>tests/fuzz/fuzz_fuse.c</code></td>
+<td>noise plus five kinds of damage on well-formed messages; 5 000 000 iterations per family recorded, repeated under ASan and UBSan, zero defect.</td>
+</tr>
+<tr>
+<td>ROB-07</td>
+<td>Resilient against a maliciously buggy server (truncated responses, invalid tags, extreme...</td>
+<td>missing</td>
+<td>-</td>
+<td>-</td>
+<td>X tier, de-scoped first (spec section 10): resilience against a maliciously buggy server. Not started.</td>
+</tr>
+<tr>
+<td>SEC-01</td>
+<td>Default mount is <code>nosuid</code> (no privilege elevation from shared files).</td>
+<td>tested</td>
+<td><code>test_rmfs_perms</code>, <code>test_nosuid_strips_and_refuses</code>, <code>test_nosuid_blocks_setuid_exec</code>, <code>test_default_options_are_safe</code></td>
+<td><code>rmfs/src/rmfs.c</code>, <code>drivers/common/src/opts.c</code></td>
+<td>nosuid is the default, a read-only mount refuses writes and the permission matrix is enforced guest-side.</td>
+</tr>
+<tr>
+<td>SEC-02</td>
+<td>Driver accesses only its assigned virtio device resources.</td>
+<td>partial</td>
+<td><code>test_pci_open_without_a_pci_server_returns_null</code>, <code>test_wrong_vendor_or_device_is_refused</code></td>
+<td><code>virtio/src/pci_qnx.c</code>, <code>virtio/src/pci.c</code></td>
+<td>the driver opens a single pci_device_find match, so it cannot reach another device; the code-level audit the spec asks for needs a QNX build.</td>
+</tr>
+<tr>
+<td>SEC-03</td>
+<td>Documentation explains QEMU security models and recommends unprivileged host execution.</td>
+<td>tested</td>
+<td><code>test_recommended_model_needs_no_root</code>, <code>test_security_help_mentions_root</code>, <code>test_virtiofsd_starts_and_stops</code></td>
+<td><code>docs/architecture.md</code>, <code>host/qshare/options.py</code></td>
+<td>the QEMU security models are documented, qshare defaults to mapped-xattr which needs no root, and E5 ran virtiofsd unprivileged.</td>
+</tr>
+<tr>
+<td>DX-01</td>
+<td>Host CLI tool <code>qshare</code> outputs QEMU args and generates <code>mkqnximage</code> snippet to auto-mount at...</td>
+<td>tested</td>
+<td><code>test_build_9p_args_exact</code>, <code>test_cli_emit_prints_options</code>, <code>test_cli_mkqnximage</code></td>
+<td><code>host/qshare/options.py</code>, <code>host/qshare/cli.py</code>, <code>host/qshare/image.py</code></td>
+<td>the emitted options are the ones that booted a Linux guest (E5) and a QNX 7.1 guest; the mkqnximage fragment is generated but not yet built.</td>
+</tr>
+<tr>
+<td>DX-02</td>
+<td>Complete end-to-end demonstration replayable with a single command.</td>
+<td>partial</td>
+<td><code>test_demo_replays_in_one_command</code></td>
+<td><code>host/qshare/demo.py</code></td>
+<td>the one-command replay exists and is tested against the host half (E5); the QNX side of the demonstration needs the driver built with the SDP.</td>
+</tr>
+<tr>
+<td>DX-03</td>
+<td>Host CLI tool <code>qrun</code> executes a binary located on the share inside the guest, returning stdout...</td>
+<td>partial</td>
+<td><code>test_cli_local_mode</code>, <code>test_run_local_returns_output_and_status</code>, <code>test_parse_guest_output_roundtrip</code></td>
+<td><code>host/qshare/qrun.py</code></td>
+<td>qrun is written and tested in local mode; running a binary from the share inside a QNX guest needs the driver.</td>
+</tr>
+<tr>
+<td>DX-04</td>
+<td>Practical examples show executing tests of a CMake project and a Rust project inside the guest.</td>
+<td>tested</td>
+<td><code>test_cmake_example_layout</code>, <code>test_rust_example_layout</code>, <code>test_cmake_example_builds_and_passes</code></td>
+<td><code>host/qshare/examples.py</code>, <code>docs/user-guide.md</code></td>
+<td>the CMake and Rust examples are written by qshare --example, and the CMake one is built and run by the host test.</td>
+</tr>
+<tr>
+<td>DX-05</td>
+<td>User guide, architectural design guide, and tutorial: "Writing a virtio driver for QNX 8.0".</td>
+<td>tested</td>
+<td><code>test_clab</code></td>
+<td><code>docs/user-guide.md</code>, <code>docs/architecture.md</code>, <code>codelab/README.md</code></td>
+<td>user guide, architecture guide and the eight-chapter codelab; the codelab code builds and its exercises run as test_clab.</td>
+</tr>
+<tr>
+<td>DX-06</td>
+<td>Full root filesystem hosted on share: guest boot image contains only kernel and driver.</td>
+<td>missing</td>
+<td>-</td>
+<td>-</td>
+<td>X tier, de-scoped (spec section 10): the whole system root hosted on the share. Not started.</td>
+</tr>
+<tr>
+<td>VFS-01</td>
+<td>Driver discovers virtiofs device (virtio ID 26), reading mount tag and request queue count.</td>
+<td>tested</td>
+<td><code>test_virtio_dev</code>, <code>test_reads_virtiofs_tag_and_queue_count</code>, <code>test_rejects_virtiofs_without_request_queue</code></td>
+<td><code>virtio/src/dev.c</code>, <code>protofuse/src/fusep_abi.h</code></td>
+<td>PGW_VIRTIO_ID_FS is 26, and the guest in E5 reports device 0x001a; discovery on a QNX guest is still E1.</td>
+</tr>
+<tr>
+<td>VFS-02</td>
+<td>Uses hiprio queue for <code>FORGET</code> and <code>INTERRUPT</code> messages, and standard queues for all file I/O.</td>
+<td>tested</td>
+<td><code>protofuse_session</code>, <code>test_forget_and_interrupt_are_hiprio</code>, <code>test_priority_lane_first</code></td>
+<td><code>protofuse/src/fusep_session.c</code>, <code>protofuse/src/fusep_reply.c</code></td>
+<td>FORGET and INTERRUPT travel on the hiprio lane, file I/O on the request queues.</td>
+</tr>
+<tr>
+<td>VFS-03</td>
+<td>Negotiates FUSE version (7.x) and supports lookup, getattr, setattr, open, read, write...</td>
+<td>tested</td>
+<td><code>protofuse_codec</code>, <code>protofuse_session</code>, <code>test_negotiation_takes_max_write_from_server</code>, <code>test_read_and_write_are_split</code>, <code>test_entry_roundtrip</code></td>
+<td><code>protofuse/src/fusep_init.c</code>, <code>protofuse/src/fusep_ops.c</code>, <code>protofuse/src/fusep_encode.c</code>, <code>protofuse/src/fusep_decode.c</code></td>
+<td>version negotiation with fallback, the full operation set, splitting on max_write and an 8-aligned reclen.</td>
+</tr>
+<tr>
+<td>VFS-04</td>
+<td>Tracks node reference counts (<code>lookup_count</code>) and returns them cleanly via <code>FORGET</code>.</td>
+<td>tested</td>
+<td><code>protofuse_refs</code>, <code>test_lookup_accumulates_references</code>, <code>test_batch_forget_is_used_on_modern_servers</code>, <code>test_hundred_thousand_cycles</code></td>
+<td><code>protofuse/src/fusep_refs.c</code>, <code>protofuse/src/fusep_node.c</code></td>
+<td>100 000 lookup and forget cycles; closing the session settles every outstanding reference.</td>
+</tr>
+<tr>
+<td>VFS-05</td>
+<td>Reuses Layer 3 (<code>rmfs</code>) and passes identical conformance suite as 9P client.</td>
+<td>partial</td>
+<td><code>protofuse_session</code>, <code>test_full_session</code></td>
+<td><code>rmfs/adapters/fuse_adapter.c</code>, <code>rmfs/include/pgw/rmfs_glue.h</code></td>
+<td>pgw_rmfs_from_fuse() exists and the codec session is green, but running the same differential conformance suite through the adapter needs a guest, so the identical-suite half of the requirement is unproven.</td>
+</tr>
+<tr>
+<td>VFS-06</td>
+<td><code>qshare</code> launches <code>virtiofsd</code> and configures shared memory in QEMU.</td>
+<td>tested</td>
+<td><code>test_virtiofsd_starts_and_stops</code>, <code>test_virtiofs_options_are_accepted_by_qemu</code>, <code>test_build_virtiofs_args_exact</code></td>
+<td><code>host/qshare/runner.py</code>, <code>host/qshare/options.py</code>, <code>tests/qemu/run_share_check.py</code></td>
+<td>E5 measured: qshare starts virtiofsd without root and a Linux guest mounts the share through the emitted options.</td>
+</tr>
+<tr>
+<td>VFS-07</td>
+<td>Benchmark report includes virtiofs pitted against 9P clients.</td>
+<td>missing</td>
+<td>-</td>
+<td>-</td>
+<td>X tier: the comparative bench of virtiofs against the 9P clients. Not started, no QNX guest.</td>
+</tr>
+<tr>
+<td>SRV-01</td>
+<td>In-guest 9P server exports a QNX directory tree, mounted on host via standard Linux 9P client.</td>
+<td>missing</td>
+<td>-</td>
+<td>-</td>
+<td>X tier, first item de-scoped (spec section 10): an in-guest 9P server exporting a QNX tree to the host. Not started.</td>
+</tr>
+<tr>
+<td>SRV-02</td>
+<td>Export can expose <code>/proc</code> and <code>/dev</code>, allowing host inspection of QNX guest internals.</td>
+<td>missing</td>
+<td>-</td>
+<td>-</td>
+<td>X tier: exporting the guest proc and dev trees. Not started, and it depends on SRV-01.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tally">Tally</h2>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tested</code></td>
+<td>50</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>21</td>
+</tr>
+<tr>
+<td><code>missing</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td>total</td>
+<td>77</td>
+</tr>
+</tbody>
+</table>
+    <nav class="pager">
+      <a class="prev" href="release.html">Previous</a>
+      <a class="next" href="index.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

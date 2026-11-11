@@ -1,0 +1,50 @@
+name: verif-site
+
+# The website (site/) is generated from the Markdown and committed, and GitHub
+# Pages serves it straight from the branch: no Pages build, no dependency. This
+# workflow regenerates the site in a scratch directory and compares it with the
+# committed one, so a pull request that edits the documentation but forgets to
+# regen the site fails instead of shipping a stale website.
+#
+# It also runs the link checker (the builder fails on a link to a missing file).
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'codelab/**'
+      - 'upstream/**'
+      - 'README.md'
+      - 'tools/site/**'
+      - 'site/**'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'codelab/**'
+      - 'upstream/**'
+      - 'README.md'
+      - 'tools/site/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verif-site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: site up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Regenerate the site in a scratch directory
+        run: python3 tools/site/build_site.py --out /tmp/regenerated-site
+      - name: Compare with the committed site
+        run: |
+          diff -r site /tmp/regenerated-site \
+            && echo "site is up to date" \
+            || { echo "::error::site/ is stale: regenerate with 'python3 tools/site/build_site.py' and commit it"; exit 1; }

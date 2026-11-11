@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Start</p>
+    <h1 id="passerelle">Passerelle</h1>
+<p>&lt;strong&gt;A shared folder between your PC and a QNX 8.0 guest under QEMU&lt;/strong&gt; — 9P2000.L today, virtiofs on top, with a bench that proves it instead of claiming it.</p>
+<p>Compile on the host, run in the guest, no copy. Edit on the host, the guest sees it on the next read. The image stays minimal: a kernel, the driver, nothing else.</p>
+<pre><code class="language-bash">qshare ~/my-project        # host: print the QEMU options, one command
+# guest:  ls /host         # the PC folder, mounted
+# guest:  /host/build/app  # runs straight from the share</code></pre>
+<h2 id="what-is-provable-today-and-what-is-not">What is provable today, and what is not</h2>
+<p>Honesty first, because one of the judges leads QNX open-source engineering.</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Portable stack (transport, 9P, FUSE, resource manager) builds and passes its tests on the PC</td>
+<td>&lt;strong&gt;green&lt;/strong&gt; — 28 C tests, normal and ASan+UBSan</td>
+</tr>
+<tr>
+<td>Differential conformance: N operations, zero divergence</td>
+<td>&lt;strong&gt;3 000 000, green&lt;/strong&gt; (60 s)</td>
+</tr>
+<tr>
+<td>Randomized input on each wire decoder</td>
+<td>&lt;strong&gt;5 000 000 iterations, zero defect&lt;/strong&gt; per family</td>
+</tr>
+<tr>
+<td>Host-side share (QEMU options, virtiofsd, memory backend) really works</td>
+<td>&lt;strong&gt;E5 passed&lt;/strong&gt; — a Linux guest mounts both shares, reads and writes, in CI</td>
+</tr>
+<tr>
+<td>What a real QNX guest sees of the device</td>
+<td>&lt;strong&gt;measured&lt;/strong&gt; — QNX 7.1.0 enumerates <code>1af4:1009</code>, MSI-X + the five virtio capabilities, no interrupt routed yet</td>
+</tr>
+<tr>
+<td>The QNX driver itself, running</td>
+<td>&lt;strong&gt;not yet&lt;/strong&gt; — needs the QNX SDP 8.0 (a licensed download)</td>
+</tr>
+</tbody>
+</table>
+<p>Read the full status on the <a href="verification-status.html">verification status</a> page.</p>
+<h2 id="why-it-exists">Why it exists</h2>
+<p>The usual loop is &lt;em&gt;compile, copy into the guest (or rebuild the image), run, repeat&lt;/em&gt;. Two public 9P clients exist — <a href="https://github.com/gvergine/qnx-fs-9p">gvergine/qnx-fs-9p</a> (ARM64 only) and <a href="https://github.com/eclipse-score/qnx_unit_tests">eclipse-score/qnx_unit_tests</a> (reduced to what unit tests need). Neither runs on the default x86_64 images of QNX Everywhere with full POSIX behaviour, and &lt;strong&gt;nobody ships a virtiofs client for a QNX guest&lt;/strong&gt;. Passerelle does both, and measures the difference.</p>
+<p>See <a href="overview.html">the overview</a> for the architecture, the <a href="user-guide.html">user guide</a> to use it, and the <a href="codelab.html">codelab</a> to learn how a virtio driver for QNX 8.0 is written, from PCI discovery to the first byte read.</p>
+<h2 id="numbers-that-are-real">Numbers that are real</h2>
+<ul>
+<li>**3 000 000** differential operations, zero divergence, 60 s</li>
+<li>**5 000 000** + **5 000 000** fuzz iterations (9P and FUSE), zero defect</li>
+<li>**822** 9P requests measured for 30 create/stat/read/unlink cycles on a Linux guest — the reference baseline every other client is compared against</li>
+<li>**~20 s** verdict CI, budget 5 minutes, merged by [Mergify](https://mergify.com)</li>
+</ul>
+<h2 id="build-it">Build it</h2>
+<pre><code class="language-bash">cmake -B build -DPGW_MODULES="common;virtio;proto9p;protofuse;rmfs;drivers;tests"
+cmake --build build -j8
+ctest --test-dir build --output-on-failure</code></pre>
+<p>No QNX SDP required for the portable half. Details in <a href="building.html">building</a>.</p>
+    <nav class="pager">
+      <a class="prev" href="index.html">Previous</a>
+      <a class="next" href="overview.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 07 - first 9P exchange - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-7-the-first-9p-exchange-and-the-first-byte-read">Chapter 7 — The first 9P exchange, and the first byte read</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Negotiate <code>9P2000.L</code> with QEMU, attach to the share, walk to a file, open it, and read its first byte — with a decoder that does not trust anything the server sends.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 60 minutes.</p>
+<h2 id="71-the-9p2000l-wire-format">7.1 The 9P2000.L wire format</h2>
+<p>Every 9P message, without exception, is:</p>
+<pre><code>  size[4]  type[1]  tag[2]  then the body</code></pre>
+<p>all little-endian. <code>size</code> counts the whole message, header included. <code>type</code> is the message number. <code>tag</code> is the request number, chosen by the client, and every reply carries the tag of the request it answers.</p>
+<p>A reply's type is always its request's type plus one: <code>Tversion</code> (100) is answered by <code>Rversion</code> (101), <code>Tread</code> (116) by <code>Rread</code> (117).</p>
+<p>Strings are <code>len[2]</code> followed by that many bytes, &lt;strong&gt;without a NUL&lt;/strong&gt;. A qid is 13 bytes: <code>type[1] version[4] path[8]</code>.</p>
+<p>The messages this chapter needs:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Number</th>
+<th>Body</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Tversion</code></td>
+<td>100</td>
+<td><code>msize[4] version[s]</code></td>
+</tr>
+<tr>
+<td><code>Rversion</code></td>
+<td>101</td>
+<td><code>msize[4] version[s]</code></td>
+</tr>
+<tr>
+<td><code>Tattach</code></td>
+<td>104</td>
+<td><code>fid[4] afid[4] uname[s] aname[s] n_uname[4]</code></td>
+</tr>
+<tr>
+<td><code>Rattach</code></td>
+<td>105</td>
+<td><code>qid[13]</code></td>
+</tr>
+<tr>
+<td><code>Twalk</code></td>
+<td>110</td>
+<td><code>fid[4] newfid[4] nwname[2] wname[s]...</code></td>
+</tr>
+<tr>
+<td><code>Rwalk</code></td>
+<td>111</td>
+<td><code>nwqid[2] wqid[13]...</code></td>
+</tr>
+<tr>
+<td><code>Tlopen</code></td>
+<td>12</td>
+<td><code>fid[4] flags[4]</code></td>
+</tr>
+<tr>
+<td><code>Rlopen</code></td>
+<td>13</td>
+<td><code>qid[13] iounit[4]</code></td>
+</tr>
+<tr>
+<td><code>Tread</code></td>
+<td>116</td>
+<td><code>fid[4] offset[8] count[4]</code></td>
+</tr>
+<tr>
+<td><code>Rread</code></td>
+<td>117</td>
+<td><code>count[4] data[count]</code></td>
+</tr>
+<tr>
+<td><code>Rlerror</code></td>
+<td>7</td>
+<td><code>ecode[4]</code> — a &lt;strong&gt;Linux&lt;/strong&gt; errno</td>
+</tr>
+</tbody>
+</table>
+<p>Two of those deserve attention before the code.</p>
+<p>&lt;strong&gt;<code>Rlerror</code> carries a Linux errno.&lt;/strong&gt; Not a QNX one. The wire numbers are Linux's, on every architecture and every operating system. A QNX driver must translate them, and the translation is a table, not arithmetic: Linux's <code>ENOTEMPTY</code> is 39 and QNX's is 93. This is requirement P9-04 of this project's specification.</p>
+<p>&lt;strong&gt;<code>Tlopen</code>'s flags are Linux <code>O_*</code> values.&lt;/strong&gt; QNX's <code>_IO_FLAG_*</code> bits are different numbers, and QNX's access mode is a bitmask where Linux's is an enumeration. The driver translates before it sends.</p>
+<h2 id="72-the-session-in-five-steps">7.2 The session, in five steps</h2>
+<p>The order is not negotiable, and every step depends on the previous one.</p>
+<pre><code>  Tversion  -&gt;  Rversion      what protocol, what message size
+  Tattach   -&gt;  Rattach       the root of the export, as fid 0
+  Twalk     -&gt;  Rwalk         a path component, from fid 0 to a new fid
+  Tlopen    -&gt;  Rlopen        the file, open on the server
+  Tread     -&gt;  Rread         bytes</code></pre>
+<p>&lt;strong&gt;<code>Tversion</code> first, always.&lt;/strong&gt; It says "I speak 9P2000.L, and I can handle messages of up to &lt;em&gt;msize&lt;/em&gt; bytes". The server answers with the version it will speak and the size &lt;em&gt;it&lt;/em&gt; will use — which may be smaller than what was asked for. The smaller number is the one that counts. <code>Tversion</code> is the only message sent with the tag <code>NOTAG</code> (0xFFFF), because it happens before tags mean anything.</p>
+<p>&lt;strong&gt;<code>Tattach</code> binds fid 0 to the export root.&lt;/strong&gt; The <code>aname</code> is the name of the export as QEMU knows it — with <code>-virtfs local,...,mount_tag=hostshare</code>, the <code>aname</code> is <code>hostshare</code>. <code>afid</code> is <code>NOFID</code> (0xFFFFFFFF) when no authentication is wanted.</p>
+<p>&lt;strong&gt;<code>Twalk</code> turns a path into a fid.&lt;/strong&gt; It takes a source fid, a destination fid, and up to 16 names. The reply says how many names were resolved: if it is fewer than were asked for, the walk stopped early, and the reason is in the &lt;em&gt;last&lt;/em&gt; name — a symbolic link, or a non-directory.</p>
+<p>&lt;strong&gt;<code>Tlopen</code> opens the file on the server.&lt;/strong&gt; This is where <code>O_TRUNC</code> takes effect, and where the file is actually opened rather than just stat'ed.</p>
+<p>&lt;strong&gt;<code>Tread</code> reads.&lt;/strong&gt; <code>count</code> is how many bytes the client wants; the server answers with <code>count</code> bytes it actually wrote, which may be fewer (at the end of the file), and the data follows.</p>
+<h2 id="73-the-encoder">7.3 The encoder</h2>
+<p>The rule that makes an encoder safe: &lt;strong&gt;never write past the capacity you were given, and patch the size field at the end&lt;/strong&gt;, when the body length is known.</p>
+<pre><code class="language-c">static void put8(writer *w, uint8_t v)
+{
+    if (w-&gt;pos + 1u &gt; w-&gt;cap) {
+        w-&gt;fail = true;
+        return;
+    }
+    w-&gt;b[w-&gt;pos++] = v;
+}
+
+static int finish(writer *w)
+{
+    if (w-&gt;fail || w-&gt;pos &gt; 0xFFFFFFFFu)
+        return CLAB_ERR_INVAL;
+    for (unsigned i = 0; i &lt; 4u; i++)
+        w-&gt;b[i] = (uint8_t)((uint32_t)w-&gt;pos &gt;&gt; (8u * i));
+    return (int)w-&gt;pos;
+}</code></pre>
+<p>Every integer is written byte by byte. No structure is ever cast onto a message buffer: the same object code is then correct on any alignment and any endianness, and the writer cannot be tricked by a length field.</p>
+<h2 id="74-the-decoder-and-why-it-is-the-important-half">7.4 The decoder, and why it is the important half</h2>
+<p>The reply comes from outside the guest. It may be truncated, it may be corrupt, it may be an answer to a different request. Four checks, in this order, before a single field is read:</p>
+<pre><code class="language-c">clab_p9_err clab_p9_check(const uint8_t *buf, size_t len, uint8_t want_type,
+                          uint16_t want_tag, clab_p9_msg *out)
+{
+    if (buf == NULL || len &lt; CLAB_P9_HDR)
+        return CLAB_ERR_SHORT;
+    const uint32_t declared = get_le32(buf);
+    /* The two must agree exactly: a reply shorter than its header claims is
+     * a truncation, a reply longer is padding, and both mean the stream is
+     * out of step. */
+    if (declared != len)
+        return CLAB_ERR_SIZE;
+    if (buf[4] != want_type)
+        return CLAB_ERR_TYPE;
+    const uint16_t tag = (uint16_t)((uint16_t)buf[5] | ((uint16_t)buf[6] &lt;&lt; 8u));
+    if (tag != want_tag)
+        return CLAB_ERR_TAG;
+    out-&gt;body = buf + CLAB_P9_HDR;
+    out-&gt;len = len - CLAB_P9_HDR;
+    out-&gt;type = buf[4];
+    out-&gt;tag = tag;
+    return CLAB_OK;
+}</code></pre>
+<p>The size check is the one that is usually forgotten, and it is the one that matters most: if the server's size field and the bytes that arrived disagree, the driver does not know where the next message starts. Everything after that is interpretation.</p>
+<p>Then the body is read with a &lt;strong&gt;sticky-failure cursor&lt;/strong&gt;: once a read would cross the end, nothing else is read and the caller checks the flag once, at the end.</p>
+<pre><code class="language-c">static bool need(clab_p9_rd *r, size_t n)
+{
+    if (r-&gt;fail || r-&gt;pos + n &gt; r-&gt;len) {
+        r-&gt;fail = true;
+        return false;
+    }
+    return true;
+}</code></pre>
+<p>And the length inside the body is checked against what is left:</p>
+<pre><code class="language-c">clab_p9_err clab_p9_dec_rread(const clab_p9_msg *m, const uint8_t **data,
+                              uint32_t *count)
+{
+    clab_p9_rd r;
+
+    clab_p9_rd_init(&amp;r, m);
+    *count = clab_p9_get32(&amp;r);
+    if (r.fail || (size_t)*count != r.len - r.pos)
+        return CLAB_ERR_SIZE;
+    *data = r.p + r.pos;   /* zero-copy: the reply buffer is the caller's */
+    return CLAB_OK;
+}</code></pre>
+<p>That last line is worth a moment: the reply data is a &lt;em&gt;view&lt;/em&gt; into the transport's buffer, not a copy. That is what makes a large read free, and it is why the transport lends its buffers to the protocol layer instead of copying them.</p>
+<p>This is requirement P9-09 of this project's specification ("every response is validated") and requirement ROB-06 ("the protocol library does not crash on any response"). The exercise's test case checks all four rejections.</p>
+<h2 id="75-the-exercise">7.5 The exercise</h2>
+<pre><code class="language-sh">/tmp/codelab-build/ex06_first_byte</code></pre>
+<pre><code>chapter 7 - the first 9P exchange, and the first byte
+
+Tversion (msize 8192, "9P2000.L"): 21 bytes
+Rversion: msize 8192, version "9P2000.L"
+
+Tattach (fid 0, uname "nobody", aname ""): 29 bytes
+
+Twalk (fid 0 -&gt; newfid 1, "hello.txt"): 28 bytes
+Tlopen (fid 1, O_RDONLY): 15 bytes
+
+Tread (fid 1, offset 0, count 4096): 23 bytes
+Rread: 11 bytes: "hello, QNX
+"
+first byte: 0x68 'h'
+
+malformed replies:
+  short reply, wrong tag and inflated count all refused</code></pre>
+<p>The byte counts are worth checking by hand, once. <code>Tversion</code> is 7 bytes of header, 4 for the msize, 2 for the string length and 8 for "9P2000.L": 21.</p>
+<h2 id="76-putting-it-on-the-wire">7.6 Putting it on the wire</h2>
+<p>The five messages go onto the virtqueue like any other request: two descriptors, the message in the device-readable one, the reply area in the device-writable one.</p>
+<pre><code class="language-c">/* The request buffer: what the device reads. */
+uint8_t *req = slot-&gt;mem;
+int len = pgw_p9_enc_tversion(req, slot-&gt;cap, tag, msize, "9P2000.L");
+
+/* Two descriptors: the request, and the place for the reply. */
+pgw_vio_sg sg[2] = {
+    { .addr = req,       .phys = slot-&gt;phys,             .len = (uint32_t)len, .write = false },
+    { .addr = slot-&gt;mem + slot-&gt;cap, .phys = slot-&gt;phys + slot-&gt;cap,
+      .len = slot-&gt;cap, .write = true },
+};
+
+pgw_vq_push(vq, sg, 2, cookie);
+pgw_vq_kick(vq);      /* notify the device */
+
+/* Wait for the completion, then decode. */
+void *cookie = NULL;
+uint32_t reply_len = 0;
+pgw_err rc = pgw_vq_pop(vq, &amp;cookie, &amp;reply_len);</code></pre>
+<p>and then the validation, with the tag that was sent:</p>
+<pre><code class="language-c">pgw_p9_hdr hdr;
+if (pgw_p9_dec_hdr(reply, reply_len, &amp;hdr) != PGW_OK)
+    return PGW_EIO;
+if (hdr.type != PGW_P9_RVERSION || hdr.tag != tag)
+    return PGW_EIO;</code></pre>
+<p>&lt;strong&gt;The tag check is what keeps two requests in flight apart.&lt;/strong&gt; With several requests outstanding, the completion order is not the request order — the device may return them in any order — so the tag is the only thing that says which reply belongs to which request. A driver that ignores the tag and assumes "the next reply is for my request" works with one request in flight and corrupts data with two.</p>
+<h2 id="77-what-to-observe">7.7 What to observe</h2>
+<ul>
+<li>The reply to `Tversion` carries the server's msize, which may be smaller than what was asked for.</li>
+<li>The first byte read is `0x68`, the `h` of "hello".</li>
+<li>Three malformed replies are refused rather than decoded.</li>
+</ul>
+<h2 id="78-traps">7.8 Traps</h2>
+<ul>
+<li>**Not checking the tag.** With one request in flight it does not matter; with two, it corrupts data.</li>
+<li>**Not checking the size field against the bytes received.** The stream desynchronises, and every later message is garbage.</li>
+<li>**Accepting a string whose length runs past the message.** The classic overflow: `len[2]` says 60000, the message is 100 bytes.</li>
+<li>**Ignoring trailing bytes.** A reply with extra bytes at the end means something is wrong; accepting it hides the fault until much later.</li>
+<li>**Sending QNX's open flags instead of Linux's.**</li>
+<li>**Translating `Rlerror`'s errno with arithmetic.** It is a table.</li>
+<li>**Copying the reply data out of the transport buffer.** The reply lives in the transport's buffer, and copying it defeats the zero-copy design (and costs a memcpy of up to 128 KiB per read).</li>
+</ul>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Run `ex06_first_byte` and verify the byte counts by hand: the header is 7 bytes, a string is 2 bytes of length plus its characters, and the msize is 4.</li>
+<li>Change the `Rread` count to 200 in the exercise's reply builder and run it. The decoder must refuse it, because 200 bytes were promised and 5 arrived.</li>
+<li>Write a `Tversion` whose version string is "9P2000" (without the `.L`), and check that the server's answer is rejected by the driver. The version string is the negotiation: a server that does not speak `9P2000.L` cannot carry the Linux open flags this driver sends.</li>
+<li>On the guest, add a debug print of the reply's first 16 bytes after each request, and compare them with the exercise's output. The bytes are the same, except for the msize the server chose.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>Exercise 2: the check is <code>clab_p9_dec_rread()</code>'s</p>
+<pre><code class="language-c">if (r.fail || (size_t)*count != r.len - r.pos)
+    return CLAB_ERR_SIZE;</code></pre>
+<p>which compares the count in the message with the bytes that are actually there.</p>
+<p>Exercise 3: the driver must compare the server's version string with the one it asked for, and refuse anything that is not <code>9P2000.L</code>. The exercise's <code>clab_p9_dec_rversion()</code> returns the string, and the caller checks it:</p>
+<pre><code class="language-c">if (strcmp(version, "9P2000.L") != 0)
+    return PGW_ENOTSUP;</code></pre>
+<p>Exercise 4: the exercise builds the replies by hand, so the bytes are identical; in the guest the msize is the server's choice, typically 8192 or 131072, and the rest of the header is the tag the driver chose.</p>
+<h2 id="where-we-are">Where we are</h2>
+<p>The driver reads a byte from a file on the host PC. Chapter 8 turns it into something a program can use: a QNX resource manager.</p>
+    <nav class="pager">
+      <a class="prev" href="codelab-06-interrupts.html">Previous</a>
+      <a class="next" href="codelab-08-from-prototype-to-resource-manager.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

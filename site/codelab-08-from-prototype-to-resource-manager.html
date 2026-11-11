@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 08 - to a resource manager - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-8-from-prototype-to-resource-manager">Chapter 8 — From prototype to resource manager</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Turn the prototype into something a program can <code>open()</code>: a QNX resource manager that owns a mount point, serves the POSIX calls, and does it all at the priority of the caller.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 60 minutes.</p>
+<h2 id="81-what-a-prototype-is-missing">8.1 What a prototype is missing</h2>
+<p>The driver from chapter 7 does one thing: it reads a byte, on demand, from a program that called it. A filesystem is not that. Between the two there are four gaps:</p>
+<table>
+<thead>
+<tr>
+<th>The prototype</th>
+<th>A resource manager needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>one hard-coded path</td>
+<td>a &lt;em&gt;namespace&lt;/em&gt;: any path below the mount point</td>
+</tr>
+<tr>
+<td>one request at a time</td>
+<td>several requests in flight, from several threads</td>
+</tr>
+<tr>
+<td>the caller's thread does the work</td>
+<td>the work done at the &lt;strong&gt;caller's priority&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>a program calls it</td>
+<td>a program calls <code>open()</code>, and the resource manager answers</td>
+</tr>
+</tbody>
+</table>
+<p>The last one is the QNX-specific part, and it is what this chapter is about.</p>
+<h2 id="82-what-a-resource-manager-is">8.2 What a resource manager is</h2>
+<p>A QNX resource manager is a program that:</p>
+<ol>
+<li>creates a **channel** and attaches it to a **mount point**;</li>
+<li>receives **messages** from the programs that use it;</li>
+<li>answers them.</li>
+</ol>
+<p>The kernel does the POSIX translation: when a program calls <code>open("/mnt/host/a")</code>, the C library sends a &lt;em&gt;connect message&lt;/em&gt; to whoever is attached to <code>/mnt/host</code>. The resource manager answers with an OCB ("open control block") that the kernel turns into a file descriptor, and the program gets an <code>int</code> back. The same happens for <code>read</code>, <code>write</code>, <code>stat</code> and so on: each POSIX call becomes a message.</p>
+<p>The minimum is small:</p>
+<pre><code class="language-c">#include &lt;sys/dispatch.h&gt;
+#include &lt;sys/iofunc.h&gt;
+#include &lt;sys/resmgr.h&gt;
+
+int main(int argc, char **argv)
+{
+    const char *mount_point = argc &gt; 1 ? argv[1] : "/mnt/host";
+    dispatch_t *dpp = dispatch_create();
+    if (dpp == NULL)
+        return 1;
+
+    iofunc_mount_t mount;
+    iofunc_funcs_t funcs = { .ocb_alloc = my_ocb_alloc, .ocb_free = my_ocb_free };
+    iofunc_attr_t root_attr;
+    resmgr_attr_t attr;
+
+    memset(&amp;attr, 0, sizeof attr);
+    attr.send_func = iofunc_send;
+    attr.recv_func = iofunc_recv;
+    attr.ack_func = iofunc_ack;
+    attr.error_func = iofunc_error;
+    attr.hangup_func = iofunc_hangup;
+    attr.resmgr_funcs = &amp;funcs;
+    attr.mount_funcs = &amp;funcs;
+    attr.mount = &amp;mount;
+
+    resmgr_attach(dpp, &amp;mount_point, _FTYPE_ANY, 0, &amp;attr);
+    dispatch_loop(dpp);
+    return 0;
+}</code></pre>
+<p>Three of those lines carry most of the meaning:</p>
+<ul>
+<li>**`_FTYPE_ANY`** and the flags: the resource manager owns *everything* below the mount point, whatever its type. A filesystem has to say "any file type here is mine".</li>
+<li>**`iofunc_*` handlers**: the kernel's file-management library does the POSIX bookkeeping (permissions, open file descriptions, `lseek` offsets) so the driver only implements the operations that are actually remote.</li>
+<li>**`dispatch_loop()`**: the message loop. Everything from here on happens in a thread of the dispatch pool.</li>
+</ul>
+<h2 id="83-the-connection-between-the-layers">8.3 The connection between the layers</h2>
+<p>The prototype in chapter 7 has the transport, the protocol and the "read one byte" logic tangled together in one <code>main()</code>. The resource manager needs them separate, and this project's architecture separates them into three layers:</p>
+<pre><code>  the POSIX call        the resource manager      the protocol       the transport
+  ────────────          ────────────────────      ───────────       ───────────
+  read(fd, buf, n) ──► iofunc_read_verify() ──►  Tread         ──► virtqueue
+                        pgw_rmfs_read()          pgw_p9_read()      pgw_vq_push()
+                        ... the FS semantics ... ... the wire ...    ... the ring ...</code></pre>
+<p>The interfaces are in this repository:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Header</th>
+<th>What it offers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>transport</td>
+<td><code>virtio/include/pgw/virtio.h</code></td>
+<td><code>pgw_vio_pci_open()</code>, <code>pgw_vq_push()</code>, <code>pgw_vq_pop()</code>, the mock device for tests</td>
+</tr>
+<tr>
+<td>protocol</td>
+<td><code>proto9p/include/pgw/p9.h</code></td>
+<td><code>pgw_p9_enc_tread()</code>, <code>pgw_p9_dec_rread()</code>, the session, the id pools</td>
+</tr>
+<tr>
+<td>filesystem</td>
+<td><code>rmfs/include/pgw/rmfs.h</code></td>
+<td><code>pgw_rmfs_read()</code>, <code>pgw_rmfs_open()</code>, the priority scheduler, the permission checks</td>
+</tr>
+</tbody>
+</table>
+<p>The point of the middle layer is that the resource manager never sees a virtqueue, and the protocol never sees a POSIX file descriptor. A test can drive the whole filesystem layer on a PC, with a mock device underneath (<code>pgw_vio_mock_open()</code>), and the same code runs in the guest against the real device.</p>
+<h2 id="84-handling-a-read">8.4 Handling a read</h2>
+<p>The message the resource manager receives for a <code>read()</code> is an <code>_IO_READ</code>. The handler has three jobs: check the request is legitimate, do the remote read, and deliver the bytes.</p>
+<pre><code class="language-c">static int my_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_HANDLE_T *handle,
+                    void *ocb)
+{
+    iofunc_ocb_t *my_ocb = ocb;
+    my_node_t *node = (my_node_t *)my_ocb-&gt;attr;
+
+    /* 1. Let the kernel's library check the mode, the range and the file
+     *    type. A read on a directory, or a write on a read-only file, stops
+     *    here. */
+    if (iofunc_read_verify(ctp, msg, my_ocb, NULL) != EOK)
+        return EOK;
+
+    /* 2. Do the remote read. The reply data is a view into the transport's
+     *    buffer: it is valid until the next request on the same slot, which
+     *    is why it is delivered straight away and never kept. */
+    size_t got = 0;
+    pgw_err rc = pgw_rmfs_read(fs, node-&gt;fd, node-&gt;offset, msg-&gt;i.buf,
+                               msg-&gt;i.nbytes, &amp;got, priority_of(ctp));
+    if (rc != PGW_OK)
+        return errno_for(rc);
+
+    /* 3. Deliver the bytes to the client, straight from the transport's
+     *    buffer: resmgr_msgwrite() copies them into the client's message on
+     *    the way out. */
+    if (got &gt; 0)
+        resmgr_msgwrite(ctp, msg, (char *)node-&gt;reply_view, (int)got, 1);
+
+    node-&gt;offset += got;
+    _IO_SETUP_NBYTES(msg, got);
+    return EOK;
+}</code></pre>
+<p>Three properties of that handler are worth stating, because they are the differences between a filesystem and a toy:</p>
+<p>&lt;strong&gt;The permission check is done by the kernel's library&lt;/strong&gt;, with the caller's credentials. <code>iofunc_read_verify()</code> uses the iofunc attribute to know the file's mode and owner, and the message to know who is asking. The driver never re-implements POSIX.</p>
+<p>&lt;strong&gt;The reply data is delivered, not copied.&lt;/strong&gt; <code>resmgr_msgwrite()</code> writes straight into the client's message buffer. With a 128 KiB read, that is the difference between one copy and two.</p>
+<p>&lt;strong&gt;The priority is the caller's.&lt;/strong&gt; <code>priority_of(ctp)</code> is the priority the program that called <code>read()</code> is running at. The request is submitted with that priority, so a high-priority program is not stuck behind a low-priority one. This is requirement QNX-03 of this project's specification, and it is what a filesystem for a real-time system is judged on.</p>
+<h2 id="85-priority-and-the-queue-behind-it">8.5 Priority, and the queue behind it</h2>
+<p>The priority is not decoration: it decides the order in which requests are submitted when the transport cannot take them all at once.</p>
+<p>The transport has a fixed number of slots (8 in this project's transport, 4 by default in the configuration). When all of them are busy, a new request waits. The filesystem layer's scheduler keeps those waiting requests in priority order:</p>
+<pre><code class="language-c">/* The scheduler keeps waiting requests in priority order, so that a
+ * high-priority read overtakes a bulk copy. */
+pgw_prio_sched *sched = pgw_prio_sched_create(max_inflight);
+pgw_prio_sched_enqueue(sched, priority, work_fn, ctx);</code></pre>
+<p>When a slot frees up, the scheduler drains the &lt;em&gt;highest&lt;/em&gt; priority waiting request first. Requirement QNX-04 of this project's specification, and requirement PERF-05: "a 4 KiB priority read, launched during a bulk low-priority copy, takes no more than twice its empty-state time".</p>
+<p>Without it, a <code>dd</code> of a gigabyte through the share blocks a <code>cat</code> of a configuration file for as long as it takes, and the guest looks like it has hung.</p>
+<h2 id="86-the-ocb-and-the-node">8.6 The OCB and the node</h2>
+<p>Two structures, and the difference between them is a common source of bugs:</p>
+<ul>
+<li>The **node** holds the state of the *file*: its attributes (from `Tgetattr`), its 9P fid, its offset, whether it is open on the server. It belongs to the file, not to the descriptor.</li>
+<li>The **OCB** holds the state of the *open*: which node it refers to, and the kernel's own bookkeeping.</li>
+</ul>
+<p>A file can have several OCBs: when a program <code>mmap</code>s it — which happens every time a binary is executed from the share — the memory manager attaches a second one. The node's attribute must therefore be reachable from the OCB in one step, because the kernel's library expects <code>ocb-&gt;attr</code> to point at the attribute:</p>
+<pre><code class="language-c">typedef struct {
+    iofunc_ocb_t ocb;      /* must be first */
+    my_node_t *node;
+} my_ocb_t;</code></pre>
+<p>and the node:</p>
+<pre><code class="language-c">typedef struct {
+    iofunc_attr_t attr;    /* must be first: ocb-&gt;attr points here */
+    pgw_rmfs_fd *fd;       /* the open file, as the filesystem layer sees it */
+    uint32_t fid;          /* the 9P fid, until it is walked */
+    uint64_t offset;
+    bool opened;           /* Tlopen done */
+    atomic_uint ocbs;      /* OCBs bound to this node */
+} my_node_t;</code></pre>
+<p>The counting matters: the node may not be freed while an OCB still refers to it. The reference implementation had a double free here, found by running a binary from the share — a good illustration of why this chapter exists.</p>
+<h2 id="87-mounting-it">8.7 Mounting it</h2>
+<pre><code class="language-c">/* In the guest: */
+fs-9p -o msize=131072 hostshare /mnt/host</code></pre>
+<p>or, with the mount helper:</p>
+<pre><code>mount -T fs-9p /mnt/host</code></pre>
+<p>and then, from any program:</p>
+<pre><code>ls -l /mnt/host
+cat /mnt/host/some/file</code></pre>
+<p>What to look for:</p>
+<ul>
+<li>`df -g` shows the mount point, with the share's statistics.</li>
+<li>`mount` lists it with its type.</li>
+<li>A file opened on the PC appears, and a file created in the guest appears on the PC. That last check is the one that proves the write path.</li>
+</ul>
+<h2 id="88-what-to-observe">8.8 What to observe</h2>
+<ul>
+<li>The mount point appears in `/proc/mounts`.</li>
+<li>`ls -l /mnt/host` lists the host directory with the host's sizes and dates.</li>
+<li>`cat` of a file returns its exact contents.</li>
+<li>A file created in the guest appears in the host directory within a second.</li>
+</ul>
+<h2 id="89-traps">8.9 Traps</h2>
+<ul>
+<li>**Not setting `_FTYPE_ANY`.** The mount point refuses to accept files.</li>
+<li>**Forgetting `iofunc_read_verify()`.** The driver answers a read on a directory, or a read past the end of a file, and the kernel's library never gets to complain.</li>
+<li>**Copying the reply data.** The transport's buffer is valid only until the next request; keeping a pointer to it is a use-after-free waiting to happen. The reference implementation delivers it immediately with `resmgr_msgwrite()` for exactly this reason.</li>
+<li>**Handling the request at the resource manager's priority.** The whole point of priority inheritance is lost, and a bulk copy starves the interactive requests.</li>
+<li>**Freeing the node on the first close.** A mapped file has a second OCB.</li>
+<li>**Not clunking the 9P fid.** The server keeps the fid open forever, and the guest's fids run out. Requirement P9-07 of this project's specification: no leak after a million open/close cycles.</li>
+<li>**Not resetting the device on unmount.** Requirement VIO-09: at unmount, the device is reset and no interrupt remains attached.</li>
+<li>**Attaching the interrupt in a request thread.** The interrupt thread must be its own.</li>
+</ul>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Write the smallest resource manager that mounts an empty directory and answers a `stat` on the mount point. Compile it for the guest (`qcc -Vgcc_ntox86_64`) and run it: `ls -l /mnt/host` must show the directory.</li>
+<li>Add a `read` handler that answers with a fixed string instead of a remote read. `cat /mnt/host/x` must print it. This is the fastest way to see the message flow: every `cat` produces a read message, and `dmesg` or the `msg` utility shows them.</li>
+<li>Write the OCB and node structures of section 8.6 and check with `-Wpadded` that the attribute is the first member of the OCB's node.</li>
+<li>Read `rmfs/include/pgw/rmfs.h` and find the function that implements the priority scheduler. Write two lines describing what it does with a request that arrives while the transport is full.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>Exercise 1: the skeleton of section 8.2, with a <code>stat</code> handler that fills an <code>iofunc_attr_t</code> and calls <code>iofunc_attr_update()</code>. The mount point appears in <code>/proc/mounts</code>, and <code>ls -l</code> on it returns the attributes the handler set.</p>
+<p>Exercise 2: the handler is the one of section 8.4, with the remote read replaced by <code>resmgr_msgwrite(ctp, msg, "hello\n", 6, 1)</code>. The <code>msg</code> utility (or <code>dmesg | grep MsgSend</code>) shows the connect and read messages arriving.</p>
+<p>Exercise 3: the attribute must be the first member of the node, and the node must be reachable from the OCB, because <code>iofunc_read_verify()</code> and the kernel read <code>ocb-&gt;attr</code> directly. The check that catches a mistake is compiling with <code>-Wpadded</code> and reading the warnings.</p>
+<p>Exercise 4: the scheduler is <code>pgw_prio_sched_enqueue()</code> and <code>pgw_prio_sched_drain_next()</code> in <code>rmfs/include/pgw/rmfs.h</code>. A request that arrives while the transport is full is enqueued with the caller's priority; when a slot frees up, <code>drain_next()</code> takes the highest-priority waiting request first, so a priority read overtakes a bulk copy.</p>
+<h2 id="where-we-are">Where we are</h2>
+<p>The driver is a filesystem: a program can <code>open()</code> a file on the host PC from inside a QNX guest, and the guest sees a normal directory tree.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li>**virtiofs.** The successor of 9P: faster, and the protocol is FUSE instead of 9P2000.L. The transport is the same, which is why the layering in section 8.3 pays off twice. Requirement VFS-01 of this project's specification.</li>
+<li>**The priority scheduler.** Section 8.5 is the sketch; the interesting part is measuring it (requirement PERF-05).</li>
+<li>**The other side of the bridge.** A QNX guest *serving* its filesystem to a Linux host over the network is the same protocol in the other direction (requirement SRV-01).</li>
+<li>**The real driver.** `virtio/`, `proto9p/` and `rmfs/` in this repository are the versions of the code in this tutorial with the exercises' corners cut off.</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="codelab-07-the-first-9p-exchange.html">Previous</a>
+      <a class="next" href="upstream.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

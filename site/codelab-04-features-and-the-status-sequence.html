@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 04 - features and status - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-4-features-and-the-status-sequence">Chapter 4 — Features and the status sequence</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Reset the device, acknowledge it, negotiate the features both sides can live with, and reach <code>DRIVER_OK</code> — in exactly the order the virtio specification prescribes, and with a state machine you can test without a device.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 30 minutes.</p>
+<h2 id="41-the-status-byte">4.1 The status byte</h2>
+<p>The device status is a single byte at offset <code>0x14</code> of the common configuration structure. It is both a handshake and a health report:</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>ACK</td>
+<td>"I know this is a virtio device"</td>
+</tr>
+<tr>
+<td>1</td>
+<td>DRIVER</td>
+<td>"I have read the specification"</td>
+</tr>
+<tr>
+<td>2</td>
+<td>DRIVER_OK</td>
+<td>"the device is ready to be driven"</td>
+</tr>
+<tr>
+<td>3</td>
+<td>FEATURES_OK</td>
+<td>"the feature set is agreed"</td>
+</tr>
+<tr>
+<td>6</td>
+<td>NEEDS_RESET</td>
+<td>"the device is broken, reset me"</td>
+</tr>
+<tr>
+<td>7</td>
+<td>FAILED</td>
+<td>"the driver gave up"</td>
+</tr>
+</tbody>
+</table>
+<p>The driver sets bits; the device may clear <code>FEATURES_OK</code> and may set <code>NEEDS_RESET</code>. &lt;strong&gt;The driver never clears a bit the device set&lt;/strong&gt;, except by resetting the whole device.</p>
+<h2 id="42-the-sequence">4.2 The sequence</h2>
+<p>This is virtio 1.2, §3.1, and the order is not a suggestion:</p>
+<pre><code> 1. reset:  write 0 to the status byte, and read it back until it reads 0
+ 2. write ACK
+ 3. write DRIVER                       (the status is now ACK|DRIVER)
+ 4. read the device features
+ 5. write the driver's feature selection
+ 6. write FEATURES_OK, and read it back
+ 7. set up the queues
+ 8. write DRIVER_OK</code></pre>
+<p>Four of those steps have a trap attached.</p>
+<p>&lt;strong&gt;Step 1: the reset must be observed.&lt;/strong&gt; Writing 0 is not enough; the device must &lt;em&gt;read back&lt;/em&gt; 0 before the driver goes on, because a device that is still processing a request may take a moment. QEMU's reset waits for the requests it is still serving, so the read-back succeeds after a short delay. A driver that does not wait for it will start writing into a device that is still using the old state.</p>
+<p>&lt;strong&gt;Step 4 and 5: features are 64 bits, in two 32-bit halves.&lt;/strong&gt; The device features are read by writing a selector (<code>device_feature_select</code>) and reading <code>device_feature</code>; the driver writes its selection the same way with <code>driver_feature_select</code> and <code>driver_feature</code>. The selector is 0 for the low half and 1 for the high half, which is where bit 32 (<code>VIRTIO_F_VERSION_1</code>) lives.</p>
+<p>&lt;strong&gt;Step 5: never offer a bit the device did not offer.&lt;/strong&gt; The negotiated set is the &lt;em&gt;intersection&lt;/em&gt;. A driver that writes a bit the device did not advertise is undefined behaviour, and the symptom is a device that works until the day it does not.</p>
+<p>&lt;strong&gt;Step 6: read <code>FEATURES_OK</code> back.&lt;/strong&gt; This is the device's veto. A device that cannot live with the driver's selection clears the bit, and the driver must stop: set <code>FAILED</code>, reset, and either give up or offer fewer features. A driver that ignores the veto and goes on to <code>DRIVER_OK</code> is writing to a device that has already decided it does not want to talk.</p>
+<h2 id="43-the-features-a-9p-driver-needs">4.3 The features a 9P driver needs</h2>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Needed?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>VIRTIO_9P_F_MOUNT_TAG</code></td>
+<td>yes: the device tells the driver the name of the share</td>
+</tr>
+<tr>
+<td>28</td>
+<td><code>VIRTIO_F_RING_INDIRECT_DESC</code></td>
+<td>useful: one descriptor instead of N for a scatter-gather list</td>
+</tr>
+<tr>
+<td>29</td>
+<td><code>VIRTIO_F_RING_EVENT_IDX</code></td>
+<td>useful: the driver can be told which event to signal</td>
+</tr>
+<tr>
+<td>32</td>
+<td><code>VIRTIO_F_VERSION_1</code></td>
+<td>&lt;strong&gt;mandatory on the modern interface&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<p><code>VIRTIO_F_VERSION_1</code> deserves a word. A device that offers it speaks virtio 1.0 or later. A device that does not offer it is a legacy device, which uses a completely different register layout (I/O BARs, a different common configuration structure). On the modern PCI interface, the specification says the device must offer <code>VERSION_1</code>, so a driver that requires it is safe; the cost is that legacy devices are out of reach, which is the right trade for a new driver.</p>
+<p>The device-specific feature <code>MOUNT_TAG</code> is what makes requirement VIO-05 of this project's specification possible: without it, the driver cannot know which share it is talking to.</p>
+<h2 id="44-the-state-machine-testable">4.4 The state machine, testable</h2>
+<p>The exercise turns the sequence into a small state machine with no QNX header, so it runs on the PC and can be fed a device that misbehaves on purpose.</p>
+<pre><code class="language-c">/* clab_neg.h */
+typedef struct {
+    uint64_t offered;      /* what the device advertises */
+    uint64_t accepted;     /* what the driver wrote to driver_feature */
+    uint8_t status;        /* the status byte */
+    bool reject_features;  /* when true, the device clears FEATURES_OK */
+    bool needs_reset;      /* when true, the device sets NEEDS_RESET */
+    unsigned resets;       /* how many times the driver reset the device */
+} clab_neg_dev;
+
+typedef enum {
+    CLAB_NEG_OK = 0,
+    CLAB_NEG_ERR_ORDER = -1,    /* a status bit written out of order */
+    CLAB_NEG_ERR_FEATURES = -2, /* the device cleared FEATURES_OK */
+    CLAB_NEG_ERR_NEEDS_RESET = -3,
+    CLAB_NEG_ERR_UNSUPPORTED = -4 /* VIRTIO_F_VERSION_1 not offered */
+} clab_neg_err;</code></pre>
+<p>The two functions that matter:</p>
+<pre><code class="language-c">clab_neg_err clab_neg_features(clab_neg_dev *dev, uint64_t wanted,
+                               uint64_t *out_negotiated)
+{
+    if ((dev-&gt;status &amp; (CLAB_STATUS_ACK | CLAB_STATUS_DRIVER)) !=
+        (CLAB_STATUS_ACK | CLAB_STATUS_DRIVER))
+        return CLAB_NEG_ERR_ORDER;
+    /* A modern device must offer VIRTIO_F_VERSION_1. */
+    if ((dev-&gt;offered &amp; CLAB_F_VERSION_1) == 0u)
+        return CLAB_NEG_ERR_UNSUPPORTED;
+
+    const uint64_t negotiated = wanted &amp; dev-&gt;offered; /* never offer more */
+    dev-&gt;accepted = negotiated;
+    if (out_negotiated != NULL)
+        *out_negotiated = negotiated;
+
+    dev-&gt;status = (uint8_t)(dev-&gt;status | CLAB_STATUS_FEATURES_OK);
+    if (dev-&gt;reject_features) {
+        dev-&gt;status = (uint8_t)(dev-&gt;status &amp; ~CLAB_STATUS_FEATURES_OK);
+        return CLAB_NEG_ERR_FEATURES;
+    }
+    return CLAB_NEG_OK;
+}</code></pre>
+<p>and the last step:</p>
+<pre><code class="language-c">clab_neg_err clab_neg_ready(clab_neg_dev *dev)
+{
+    if ((dev-&gt;status &amp; CLAB_STATUS_FEATURES_OK) == 0u)
+        return CLAB_NEG_ERR_ORDER;   /* DRIVER_OK without FEATURES_OK is a bug */
+    dev-&gt;status = (uint8_t)(dev-&gt;status | CLAB_STATUS_DRIVER_OK);
+    return CLAB_NEG_OK;
+}</code></pre>
+<p>Note what <code>clab_neg_ready()</code> refuses: <code>DRIVER_OK</code> when <code>FEATURES_OK</code> is not set. That check is what stops a driver from talking to a device that has already refused the feature set.</p>
+<h2 id="45-the-real-thing">4.5 The real thing</h2>
+<p>In the driver, the same four steps, with the COMMON structure's fields:</p>
+<pre><code class="language-c">/* 1. reset, and wait for the device to read back 0 */
+set8(v, VPCI_COMMON_DEVICE_STATUS, 0);
+for (int i = 0; cfg8(v, VPCI_COMMON_DEVICE_STATUS) != 0; i++) {
+    if (i == 1000)
+        return -EIO;          /* a second is plenty */
+    usleep(1000);
+}
+
+/* 2 and 3. ACK, then DRIVER */
+set8(v, VPCI_COMMON_DEVICE_STATUS, VSTAT_ACK);
+set8(v, VPCI_COMMON_DEVICE_STATUS, VSTAT_ACK | VSTAT_DRIVER);
+
+/* 4. read the device features, both halves */
+set32(v, VPCI_COMMON_DEVICE_FEATURE_SELECT, 0);
+uint64_t dev = cfg32(v, VPCI_COMMON_DEVICE_FEATURE);
+set32(v, VPCI_COMMON_DEVICE_FEATURE_SELECT, 1);
+dev |= (uint64_t)cfg32(v, VPCI_COMMON_DEVICE_FEATURE) &lt;&lt; 32u;
+
+/* 5. write the driver's selection: the intersection, and no more */
+uint64_t want = VPCI_9P_F_MOUNT_TAG | VPCI_F_VERSION_1;
+uint64_t drv = dev &amp; want;
+set32(v, VPCI_COMMON_DRIVER_FEATURE_SELECT, 0);
+set32(v, VPCI_COMMON_DRIVER_FEATURE, (uint32_t)drv);
+set32(v, VPCI_COMMON_DRIVER_FEATURE_SELECT, 1);
+set32(v, VPCI_COMMON_DRIVER_FEATURE, (uint32_t)(drv &gt;&gt; 32u));
+
+/* 6. FEATURES_OK, and read it back */
+set8(v, VPCI_COMMON_DEVICE_STATUS, VSTAT_ACK | VSTAT_DRIVER | VSTAT_FEATURES_OK);
+if ((cfg8(v, VPCI_COMMON_DEVICE_STATUS) &amp; VSTAT_FEATURES_OK) == 0u)
+    return -EIO;
+
+/* ... queues, chapter 5 ... */
+
+/* 8. DRIVER_OK */
+set8(v, VPCI_COMMON_DEVICE_STATUS,
+     (uint8_t)(cfg8(v, VPCI_COMMON_DEVICE_STATUS) | VSTAT_DRIVER_OK));</code></pre>
+<p>Two details in that listing are easy to get wrong:</p>
+<ul>
+<li>**The feature bits are written as two separate 32-bit halves.** Writing the high half requires the selector to be 1 at that moment; forgetting to switch the selector back to 0 writes the high half twice and the low half never.</li>
+<li>**The status is written as a whole byte, not as "or this bit".** The device status is not a set of independent flags: writing `ACK` alone would clear `DRIVER`. Always read the current status, add your bit, and write the whole byte back.</li>
+</ul>
+<h2 id="46-what-to-observe">4.6 What to observe</h2>
+<p>Running the exercise:</p>
+<pre><code class="language-sh">/tmp/codelab-build/ex03_negotiate</code></pre>
+<pre><code>1. device offers everything
+  fresh                status 0x00  0
+  after reset          status 0x00  0
+  after ACK|DRIVER     status 0x03  ACK|DRIVER
+  after features       status 0x0b  ACK|DRIVER|FEATURES_OK
+  after DRIVER_OK      status 0x0f  ACK|DRIVER|FEATURES_OK|DRIVER_OK
+  negotiated 0x0000000100000009
+
+2. device offers less than we asked
+  ...
+  negotiated 0x0000000100000001     &lt;- only what was offered</code></pre>
+<p>The three runs are: a device that offers everything, one that offers less than the driver asked for, and one that refuses the driver's selection.</p>
+<h2 id="47-traps">4.7 Traps</h2>
+<ul>
+<li>**Writing the status byte instead of OR-ing into it.** `set8(v, STATUS, VSTAT_ACK)` after `DRIVER` has been set clears `DRIVER`. Read, OR, write.</li>
+<li>**Not checking `FEATURES_OK` after writing it.** The device may veto.</li>
+<li>**Offering features the device did not offer.** The intersection, always.</li>
+<li>**Forgetting `VIRTIO_F_VERSION_1`.** On the modern interface it is mandatory; a driver that negotiates without it may end up speaking the legacy layout to a modern device.</li>
+<li>**Skipping the reset's read-back.** The device may still be busy.</li>
+<li>**Not handling `NEEDS_RESET`.** A device that sets it after `DRIVER_OK` is telling the driver to reset and start over. The transport must check the status after every completion, not only at startup.</li>
+</ul>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Run `ex03_negotiate` and read the four status lines of each run. Explain why the status after `fresh` and after `after reset` are both `0x00`, and why that is not a bug.</li>
+<li>Change the device's offered set in run 2 to include `INDIRECT` but not `EVENT_IDX`, and check that the negotiated set matches. The rule is the intersection, always.</li>
+<li>In `clab_neg_ready()`, remove the `FEATURES_OK` check and run the tests. The test `test_ch4_failures` must fail. That check is the only thing standing between a driver and a device that has already refused it.</li>
+<li>Add a case where the device sets `NEEDS_RESET` after `DRIVER_OK`, and check `clab_neg_check_health()` reports it.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>Exercise 1: the status is 0 after a reset because a reset &lt;em&gt;is&lt;/em&gt; "the status is 0"; the two lines show the state before and after the reset, and they are the same because the driver had not set anything yet.</p>
+<p>Exercise 2: the negotiated set becomes <code>VERSION_1 | MOUNT_TAG | INDIRECT</code>, and the driver must not claim <code>EVENT_IDX</code>.</p>
+<p>Exercise 3: without the check, <code>clab_neg_ready()</code> returns <code>CLAB_OK</code> after the device cleared <code>FEATURES_OK</code>, and <code>test_ch4_failures</code> fails on <code>CLAB_CHECK_EQ(clab_neg_ready(&amp;dev), CLAB_NEG_ERR_ORDER)</code>.</p>
+<p>Exercise 4:</p>
+<pre><code class="language-c">sick.status = (uint8_t)(sick.status | CLAB_STATUS_NEEDS_RESET);
+CLAB_CHECK_EQ(clab_neg_check_health(&amp;sick), CLAB_NEG_ERR_NEEDS_RESET);</code></pre>
+<h2 id="where-we-are">Where we are</h2>
+<p>The device is initialised and the driver is allowed to talk to it. Chapter 5 builds the thing they talk through: the split virtqueue.</p>
+    <nav class="pager">
+      <a class="prev" href="codelab-03-finding-a-modern-virtio-device.html">Previous</a>
+      <a class="next" href="codelab-05-the-split-virtqueue.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

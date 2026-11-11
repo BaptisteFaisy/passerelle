@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gap analysis - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="gap-analysis-what-is-still-missing">Gap analysis — what is still missing</h1>
+<p>&lt;strong&gt;Date: 11 November 2026, 21:00 CET.&lt;/strong&gt; The specification (<a href="spec-en.html">spec-en.md</a>) has &lt;strong&gt;77 distinct numbered requirements&lt;/strong&gt; (87 lines if the grouped ranges are counted line by line). This file lists &lt;strong&gt;100 concrete gaps&lt;/strong&gt;: the requirement lines that are not fully satisfied, and everything else a submission is judged on that is not a requirement line.</p>
+<p>Where the 77 requirements stand:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Count</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Green</td>
+<td>50</td>
+<td>implemented &lt;strong&gt;and&lt;/strong&gt; covered by an automated test that runs here</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>21</td>
+<td>the code exists, only one side of the claim is proven</td>
+</tr>
+<tr>
+<td>Not started</td>
+<td>6</td>
+<td>the design is decided, the work is not done</td>
+</tr>
+</tbody>
+</table>
+<p>Legend: &lt;strong&gt;[S]&lt;/strong&gt; = needs the QNX SDP, blocked on a myQNX account · &lt;strong&gt;[P]&lt;/strong&gt; = doable here, now · &lt;strong&gt;[X]&lt;/strong&gt; = extreme tier of the specification, de-scoped on purpose.</p>
+<hr>
+<h2 id="a-the-29-requirement-gaps">A. The 29 requirement gaps</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+<th>Blocked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>&lt;strong&gt;QNX-01&lt;/strong&gt; — the resource manager is written but has never run: pathname-space attach, <code>iofunc</code> dispatch, teardown</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>2</td>
+<td>&lt;strong&gt;QNX-02&lt;/strong&gt; — startup from the boot image: the IFS fragment exists (<code>image/passerelle.build</code>), nothing was ever built or booted</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>3</td>
+<td>&lt;strong&gt;QNX-03&lt;/strong&gt; — request processed at the caller's priority, shown in the kernel trace: the code re-applies the priority, the trace was never taken</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>4</td>
+<td>&lt;strong&gt;QNX-04&lt;/strong&gt; — priority order when the transport is saturated: proven on the PC, not measured on QNX</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>5</td>
+<td>&lt;strong&gt;QNX-05&lt;/strong&gt; — a blocked client must not hold a driver thread: proven on the PC, not measured on QNX</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>6</td>
+<td>&lt;strong&gt;QNX-06&lt;/strong&gt; — run without root with the minimum capabilities: the privilege drop and the policy file exist, neither ran</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>7</td>
+<td>&lt;strong&gt;QNX-07&lt;/strong&gt; — <code>mount</code> / <code>umount</code> integration: written, never executed</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>8</td>
+<td>&lt;strong&gt;QNX-08&lt;/strong&gt; — system log and per-operation counters: counters proven on the PC, the slog2 backend never ran</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>9</td>
+<td>&lt;strong&gt;QNX-09&lt;/strong&gt; — kernel trace events on send and receive: written, never measured</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>10</td>
+<td>&lt;strong&gt;FS-06&lt;/strong&gt; — execute a program served by the share, shared libraries included: feasibility E3, the point of the project</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>11</td>
+<td>&lt;strong&gt;FS-16&lt;/strong&gt; — relay locks to the server (X tier)</td>
+<td>&lt;strong&gt;[X]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>12</td>
+<td>&lt;strong&gt;PERF-02&lt;/strong&gt; — never exceed the best existing client per call: needs both clients measured on the same machine</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>13</td>
+<td>&lt;strong&gt;PERF-03&lt;/strong&gt; — 1 GiB sequential throughput, at least half of a Linux guest</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>14</td>
+<td>&lt;strong&gt;PERF-04&lt;/strong&gt; — 10 000 metadata operations and a 50 000-entry tree</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>15</td>
+<td>&lt;strong&gt;PERF-05&lt;/strong&gt; — a priority read during a bulk copy: the scheduler is proven on the PC, the end-to-end latency is not</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>16</td>
+<td>&lt;strong&gt;PERF-06&lt;/strong&gt; — mount takes under 50 ms</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>17</td>
+<td>&lt;strong&gt;PERF-07&lt;/strong&gt; — published comparative report (this driver, A, B, <code>scp</code>, virtiofs): harness and Linux baseline exist, the four other rows do not</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>18</td>
+<td>&lt;strong&gt;ROB-03&lt;/strong&gt; — unmount under load</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>19</td>
+<td>&lt;strong&gt;ROB-04&lt;/strong&gt; — a file replaced on the PC while in use: partly covered, the replace case is not</td>
+<td>&lt;strong&gt;[P]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>20</td>
+<td>&lt;strong&gt;ROB-07&lt;/strong&gt; — a deliberately faulty server must not crash the client (X tier): no faulty server exists</td>
+<td>&lt;strong&gt;[P]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>21</td>
+<td>&lt;strong&gt;SEC-02&lt;/strong&gt; — the driver touches no device but its own: written, never audited on a running system</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>22</td>
+<td>&lt;strong&gt;DX-02&lt;/strong&gt; — the one-command demonstration: the demo script exists, it cannot run without an image</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>23</td>
+<td>&lt;strong&gt;DX-03&lt;/strong&gt; — <code>qrun</code> executes a program from the share and returns its output and exit code</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>24</td>
+<td>&lt;strong&gt;DX-06&lt;/strong&gt; — whole system rooted on the share (X tier)</td>
+<td>&lt;strong&gt;[X]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>25</td>
+<td>&lt;strong&gt;VFS-05&lt;/strong&gt; — the same conformance bench through the FUSE adapter: the adapter is built, the bench never ran through it</td>
+<td>&lt;strong&gt;[P]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>26</td>
+<td>&lt;strong&gt;VFS-07&lt;/strong&gt; — virtiofs included in the comparative bench</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>27</td>
+<td>&lt;strong&gt;VIO-04&lt;/strong&gt; — MSI-X with INTx fallback: the programming is proven against a fake config space, delivery on QNX is not</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>28</td>
+<td>&lt;strong&gt;SRV-01&lt;/strong&gt; — a QNX guest exporting its tree, read by the PC (X tier)</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt; &lt;strong&gt;[X]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>29</td>
+<td>&lt;strong&gt;SRV-02&lt;/strong&gt; — the export includes <code>/proc</code> and <code>/dev</code> (X tier)</td>
+<td>&lt;strong&gt;[S]&lt;/strong&gt; &lt;strong&gt;[X]&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<h2 id="b-the-71-gaps-that-are-not-requirement-lines">B. The 71 gaps that are not requirement lines</h2>
+<h3 id="b1-publishing-and-packaging-13">B1. Publishing and packaging (13)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>30</td>
+<td>No <code>CHANGELOG.md</code> — what changed, when, and against which requirement</td>
+</tr>
+<tr>
+<td>31</td>
+<td>No release notes for <code>v0.1.0</code>, the version a judge would point at</td>
+</tr>
+<tr>
+<td>32</td>
+<td>No git tag, no source tarball, no SHA256 of that tarball</td>
+</tr>
+<tr>
+<td>33</td>
+<td>The Python tools are not installable as a package (<code>pip install</code> is never tested)</td>
+</tr>
+<tr>
+<td>34</td>
+<td>No <code>qshare --version</code></td>
+</tr>
+<tr>
+<td>35</td>
+<td>The console entry points (<code>qshare</code>, <code>qrun</code>, <code>fsproof</code>, <code>pbench</code>) are declared but never installed and run in CI</td>
+</tr>
+<tr>
+<td>36</td>
+<td>No root <code>Makefile</code>: <code>make check</code>, <code>make bench</code>, <code>make demo</code> do not exist</td>
+</tr>
+<tr>
+<td>37</td>
+<td>No <code>cmake --install</code> target, no <code>pkg-config</code> file, no exported CMake package</td>
+</tr>
+<tr>
+<td>38</td>
+<td>No out-of-tree install check (install to a prefix, run the tools from there)</td>
+</tr>
+<tr>
+<td>39</td>
+<td>No SBOM, no build provenance</td>
+</tr>
+<tr>
+<td>40</td>
+<td>No <code>SECURITY.md</code> — how to report a vulnerability in a driver</td>
+</tr>
+<tr>
+<td>41</td>
+<td>No <code>CONTRIBUTING.md</code>, no <code>CODE_OF_CONDUCT.md</code></td>
+</tr>
+<tr>
+<td>42</td>
+<td>No <code>VERSION</code> file and no single source of truth for the version string</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b2-quality-gates-and-ci-14">B2. Quality gates and CI (14)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>43</td>
+<td>No coverage measurement (gcov/lcov) and no coverage report among the artifacts</td>
+</tr>
+<tr>
+<td>44</td>
+<td>No coverage badge</td>
+</tr>
+<tr>
+<td>45</td>
+<td>No static analysis job (clang-tidy / cppcheck)</td>
+</tr>
+<tr>
+<td>46</td>
+<td>No nightly job: the long campaigns and the fuzzing should run every night</td>
+</tr>
+<tr>
+<td>47</td>
+<td>No continuous fuzzing (libFuzzer with a corpus)</td>
+</tr>
+<tr>
+<td>48</td>
+<td>The fuzz corpus is not kept as a repository artifact for regression</td>
+</tr>
+<tr>
+<td>49</td>
+<td>No CTest presets (<code>ctest --preset quick</code>, <code>--preset long</code>)</td>
+</tr>
+<tr>
+<td>50</td>
+<td>No CI artifact upload (console logs, traces, bench reports)</td>
+</tr>
+<tr>
+<td>51</td>
+<td>No dependency cache for the QEMU and QNX downloads in CI</td>
+</tr>
+<tr>
+<td>52</td>
+<td>The QNX 7.1 guest job is not in CI — today it is only run by hand</td>
+</tr>
+<tr>
+<td>53</td>
+<td>The CI matrix covers one compiler only (gcc), not clang</td>
+</tr>
+<tr>
+<td>54</td>
+<td>CI does not run on tags</td>
+</tr>
+<tr>
+<td>55</td>
+<td>The 9P trace fixtures are never regenerated, so a parser change can keep passing on stale data</td>
+</tr>
+<tr>
+<td>56</td>
+<td>No formatting gate (<code>clang-format</code> + <code>.editorconfig</code> not enforced)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b3-verification-depth-13">B3. Verification depth (13)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>57</td>
+<td>&lt;strong&gt;No reference 9P server&lt;/strong&gt;: the client is only tested against an in-memory fake, never against a real server implementation</td>
+</tr>
+<tr>
+<td>58</td>
+<td>&lt;strong&gt;No reference FUSE backend&lt;/strong&gt;: the virtiofs client is only tested against a fake</td>
+</tr>
+<tr>
+<td>59</td>
+<td>No cross-check against a third-party 9P client (interoperability proof)</td>
+</tr>
+<tr>
+<td>60</td>
+<td>No cross-check against <code>diod</code>'s protocol description turned into an executable test</td>
+</tr>
+<tr>
+<td>61</td>
+<td>No property-based tests (Hypothesis) on the codec boundaries</td>
+</tr>
+<tr>
+<td>62</td>
+<td>The divergences reduced by the bench are not stored as regression cases</td>
+</tr>
+<tr>
+<td>63</td>
+<td>No load test: mount under a continuous workload</td>
+</tr>
+<tr>
+<td>64</td>
+<td>The 5 GiB file case of the directed suite is not implemented</td>
+</tr>
+<tr>
+<td>65</td>
+<td>The 100 000-entry directory case is not implemented</td>
+</tr>
+<tr>
+<td>66</td>
+<td>The maximum path length case is not implemented</td>
+</tr>
+<tr>
+<td>67</td>
+<td>Exotic names (UTF-8, combining marks, emoji) are only partly covered</td>
+</tr>
+<tr>
+<td>68</td>
+<td>Hard-link semantics beyond <code>nlink</code> are not checked</td>
+</tr>
+<tr>
+<td>69</td>
+<td><code>fsync</code> durability is not checked against a real disk (only against the host cache)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b4-the-qnx-71-guest-we-now-have-10">B4. The QNX 7.1 guest we now have (10)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>70</td>
+<td>The guest's <code>pci_hw.cfg</code> routes no interrupt for our device: there is no INTx entry for <code>B0:D05:F0</code></td>
+</tr>
+<tr>
+<td>71</td>
+<td>The guest image has no compiler, so nothing of ours can run inside it</td>
+</tr>
+<tr>
+<td>72</td>
+<td>The guest is QNX 7.1, not 8.0: the kernel differences the specification relies on are not exercised</td>
+</tr>
+<tr>
+<td>73</td>
+<td>No automation: booting the guest and capturing its PCI view is a manual command sequence</td>
+</tr>
+<tr>
+<td>74</td>
+<td>The 6.1 GiB guest image is not in the repository and not versioned: nobody can reproduce it from the repository alone</td>
+</tr>
+<tr>
+<td>75</td>
+<td>No check that the guest boots with the <code>qshare</code> options &lt;strong&gt;and&lt;/strong&gt; the <code>image/passerelle.build</code> fragment</td>
+</tr>
+<tr>
+<td>76</td>
+<td>The QNX 6.5 cross-check is not done: an SDP 6.5 (aarch64) exists in a public image and could at least prove the portable layers compile for a real QNX target, API generation aside</td>
+</tr>
+<tr>
+<td>77</td>
+<td>The INTx-versus-MSI-X question is measured but not &lt;em&gt;decided&lt;/em&gt; in the design</td>
+</tr>
+<tr>
+<td>78</td>
+<td>No <code>pci_hw.cfg</code> fragment for our device in <code>image/</code></td>
+</tr>
+<tr>
+<td>79</td>
+<td>No capture of the guest's kernel trace, so QNX-09 has no reference even guest-side</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b5-the-submission-itself-12">B5. The submission itself (12)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>80</td>
+<td>No Devpost submission text (the form wants a description, a video link, a repository link)</td>
+</tr>
+<tr>
+<td>81</td>
+<td>No 60-second "read this first" summary at the top of the repository</td>
+</tr>
+<tr>
+<td>82</td>
+<td>No submission checklist (dates, licence, video, repository, demo command, prior-art disclosure)</td>
+</tr>
+<tr>
+<td>83</td>
+<td>The demo video itself is not recorded (explicitly postponed)</td>
+</tr>
+<tr>
+<td>84</td>
+<td>No poster or one-pager for the judges</td>
+</tr>
+<tr>
+<td>85</td>
+<td>The Discord question on the submission category (D1) is drafted but not asked</td>
+</tr>
+<tr>
+<td>86</td>
+<td>No upstream pull request to the existing 9P client (the patches are ready, nobody sent them)</td>
+</tr>
+<tr>
+<td>87</td>
+<td>No architecture diagram as an image (the ASCII one is fine, a picture is better)</td>
+</tr>
+<tr>
+<td>88</td>
+<td>No English glossary — the specification has one in French only</td>
+</tr>
+<tr>
+<td>89</td>
+<td>No <code>docs/adr/</code> — the decisions live in prose, not as records</td>
+</tr>
+<tr>
+<td>90</td>
+<td>No "what we tried that failed" note, which judges appreciate</td>
+</tr>
+<tr>
+<td>91</td>
+<td>The requirement traceability matrix is hand-written; it should be generated from the specification and the code</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b6-everyday-use-of-the-tools-9">B6. Everyday use of the tools (9)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>92</td>
+<td>No <code>qshare doctor</code>: one command saying what is missing here (QEMU, virtiofsd, SDP, kernel)</td>
+</tr>
+<tr>
+<td>93</td>
+<td>No <code>qshare init</code>: scaffolding a guest project ready to be shared</td>
+</tr>
+<tr>
+<td>94</td>
+<td>No <code>qshare smoke</code>: one command proving the whole chain works on this machine</td>
+</tr>
+<tr>
+<td>95</td>
+<td>The CMake and Rust examples (<code>qshare --example</code>) are written but never executed by CI</td>
+</tr>
+<tr>
+<td>96</td>
+<td>No packaging of the tools for <code>pipx</code> or <code>apt</code></td>
+</tr>
+<tr>
+<td>97</td>
+<td>The <code>host/fsproof</code> guest agent has no way to run inside a guest yet (needs a cross-compiler)</td>
+</tr>
+<tr>
+<td>98</td>
+<td>No man pages for the four commands</td>
+</tr>
+<tr>
+<td>99</td>
+<td>The tools do not share one configuration file; each re-reads its own options</td>
+</tr>
+<tr>
+<td>100</td>
+<td>No <code>.devcontainer</code> or Dockerfile reproducing the development environment in one command</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="the-ten-i-would-do-next-in-order">The ten I would do next, in order</h2>
+<p>Ranked by &lt;em&gt;value to the submission&lt;/em&gt; over &lt;em&gt;effort&lt;/em&gt;. All ten are &lt;strong&gt;[P]&lt;/strong&gt;: doable on this machine, without an account and without a camera.</p>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>What</th>
+<th>Why it pays</th>
+<th>Effort</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>&lt;strong&gt;Reference 9P server + cross-check&lt;/strong&gt; (57, 59, 60)</td>
+<td>the client is only tested against a fake today; against a real server, PERF-01 becomes a measurement and P9-01…P9-10 stop being self-referential</td>
+<td>2 days</td>
+</tr>
+<tr>
+<td>2</td>
+<td>&lt;strong&gt;Reference FUSE backend + cross-check&lt;/strong&gt; (58, 25)</td>
+<td>same for virtiofs: VFS-01…VFS-07 and the VFS-05 bench through the adapter become real</td>
+<td>2 days</td>
+</tr>
+<tr>
+<td>3</td>
+<td>&lt;strong&gt;Host-side vhost-user backend&lt;/strong&gt; (58, 75)</td>
+<td>drive the real <code>virtiofsd</code> from our own mock transport: the first end-to-end proof of the virtiofs path, and it needs no QNX</td>
+<td>3 days</td>
+</tr>
+<tr>
+<td>4</td>
+<td>&lt;strong&gt;Submission pack&lt;/strong&gt; (80, 81, 82, 84, 90, 91)</td>
+<td>the deadline is 15 December; a judge must read, run and understand the project in five minutes, and the traceability matrix must be generated, not hand-written</td>
+<td>1 day</td>
+</tr>
+<tr>
+<td>5</td>
+<td>&lt;strong&gt;Automate the QNX 7.1 guest&lt;/strong&gt; (52, 70, 73, 78)</td>
+<td>what we discovered by hand today becomes a CI job, and the INTx entry for our device lands in <code>image/</code></td>
+<td>1 day</td>
+</tr>
+<tr>
+<td>6</td>
+<td>&lt;strong&gt;Publication pipeline&lt;/strong&gt; (30, 31, 32, 33, 34, 35, 36, 39)</td>
+<td>a tagged, checksummed, installable release is what "open source project" means to a judge</td>
+<td>1 day</td>
+</tr>
+<tr>
+<td>7</td>
+<td>&lt;strong&gt;Quality gates&lt;/strong&gt; (43, 44, 45, 46, 47, 48, 49, 50, 53, 56)</td>
+<td>coverage, static analysis, nightly fuzzing, formatting: the difference between "it works" and "it is maintained"</td>
+<td>2 days</td>
+</tr>
+<tr>
+<td>8</td>
+<td>&lt;strong&gt;Verification depth&lt;/strong&gt; (20, 61, 62, 63, 64, 65, 66, 67, 69)</td>
+<td>property-based tests, the faulty server, the load test and the missing directed cases — this is where the remaining crashes hide</td>
+<td>3 days</td>
+</tr>
+<tr>
+<td>9</td>
+<td>&lt;strong&gt;Documentation quality&lt;/strong&gt; (7, 8, 9, 87, 88, 89, 91)</td>
+<td>Doxygen for the C API, decision records, diagrams, glossary: a repository is read as much as it is run</td>
+<td>2 days</td>
+</tr>
+<tr>
+<td>10</td>
+<td>&lt;strong&gt;Everyday tooling&lt;/strong&gt; (92, 93, 94, 95, 96, 98, 99, 100)</td>
+<td><code>qshare doctor</code>, <code>qshare init</code>, <code>qshare smoke</code>, one command to reproduce the whole environment</td>
+<td>2 days</td>
+</tr>
+</tbody>
+</table>
+<p>Nothing on this list needs an account, a purchase or a camera.</p>
+    <nav class="pager">
+      <a class="prev" href="measurements-linux-baseline-9p.html">Previous</a>
+      <a class="next" href="video-script.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

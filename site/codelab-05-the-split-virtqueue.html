@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 05 - the virtqueue - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-5-the-split-virtqueue">Chapter 5 — The split virtqueue</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Put a request on the queue, let the device take it, and take the reply back — knowing exactly what each of the three rings contains at every step.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 60 minutes. This is the chapter where the work is.</p>
+<h2 id="51-the-three-rings">5.1 The three rings</h2>
+<p>A virtqueue is three structures in memory shared between the driver and the device (virtio 1.2, §2.7):</p>
+<pre><code>  descriptor table          the buffers, and how they are chained
+  available ring            what the driver offers:  flags, idx, ring[]
+  used ring                 what the device has finished: flags, idx, ring[]</code></pre>
+<h3 id="the-descriptor-table">The descriptor table</h3>
+<p>16 bytes per entry, and every field is little-endian:</p>
+<pre><code>  offset 0   8 bytes   addr     the address of the buffer
+  offset 8   4 bytes   len      its length, in bytes
+  offset 12  2 bytes   flags    NEXT (0x1), WRITE (0x2), INDIRECT (0x4)
+  offset 14  2 bytes   next     the next descriptor in the chain</code></pre>
+<p>Three flags matter here:</p>
+<ul>
+<li>**NEXT**: this descriptor is not the last of the chain; `next` says which is.</li>
+<li>**WRITE**: the buffer is *device-writable*. Without it, the buffer is device-readable. This flag is the whole difference between a request and a reply.</li>
+<li>**INDIRECT**: this descriptor does not describe a buffer; it describes a *table* of descriptors elsewhere. It is how a request with many scatter-gather elements fits in a queue with few descriptors.</li>
+</ul>
+<h3 id="the-available-ring">The available ring</h3>
+<pre><code>  offset 0   2 bytes   flags    NO_INTERRUPT (0x1), when the driver is asked
+  offset 2   2 bytes   idx      the number of entries the driver has published
+  offset 4   2*n bytes ring[]   the head descriptor of each chain</code></pre>
+<h3 id="the-used-ring">The used ring</h3>
+<pre><code>  offset 0   2 bytes   flags    (unused by the driver)
+  offset 2   2 bytes   idx      the number of entries the device has published
+  offset 4   8*n bytes ring[]   id (the head descriptor) and len (bytes used)</code></pre>
+<h2 id="52-one-request-step-by-step">5.2 One request, step by step</h2>
+<p>This is the sequence the driver performs for one 9P request. The exercise prints the ring at every step, which is the only reason this chapter is worth reading twice.</p>
+<p>&lt;strong&gt;Step 1 — fill the descriptors.&lt;/strong&gt; A 9P request is two buffers: the request the device reads, and the reply it writes.</p>
+<pre><code class="language-c">/* The request: the device reads it. */
+vq-&gt;desc[0].addr = request_phys;
+vq-&gt;desc[0].len  = request_len;
+vq-&gt;desc[0].flags = VRING_DESC_F_NEXT;
+vq-&gt;desc[0].next  = 1;
+
+/* The reply: the device writes it. */
+vq-&gt;desc[1].addr = reply_phys;
+vq-&gt;desc[1].len  = reply_capacity;
+vq-&gt;desc[1].flags = VRING_DESC_F_WRITE;   /* device-writable */
+vq-&gt;desc[1].next  = 0;</code></pre>
+<p>&lt;strong&gt;Step 2 — publish the head in the available ring.&lt;/strong&gt;</p>
+<pre><code class="language-c">vq-&gt;avail-&gt;ring[vq-&gt;avail-&gt;idx % qsize] = 0;   /* the head descriptor */</code></pre>
+<p>&lt;strong&gt;Step 3 — publish the index.&lt;/strong&gt; This is the step that makes the device look at the entry, and the order is not negotiable: the entry must be written &lt;em&gt;before&lt;/em&gt; the index.</p>
+<pre><code class="language-c">atomic_thread_fence(memory_order_release);   /* the entry is visible... */
+vq-&gt;avail-&gt;idx++;</code></pre>
+<p>&lt;strong&gt;Step 4 — notify the device.&lt;/strong&gt; Write the queue index to the notification address the NOTIFY capability designates:</p>
+<pre><code class="language-c">__cpu_membarrier();          /* ...and the index is visible to the device */
+*(volatile uint16_t *)(notify_base + notify_off * mult) = queue_index;</code></pre>
+<p>The barrier between the index store and the notify write deserves a note: the notify register is &lt;em&gt;device&lt;/em&gt; memory, and a C11 <code>atomic_thread_fence</code> orders normal memory against normal memory. <code>__cpu_membarrier()</code> (a <code>dmb sy</code> on ARM64, a <code>mfence</code> on x86_64) is what orders the two together. A driver that uses the C11 fence alone works most of the time and fails when the hypervisor is fast, which is the worst way to fail.</p>
+<p>&lt;strong&gt;Step 5 — the device works.&lt;/strong&gt; It reads the chain, writes the reply into the device-writable buffer, and publishes the completion:</p>
+<pre><code class="language-c">used-&gt;ring[used-&gt;idx % qsize].id  = head;   /* the head descriptor */
+used-&gt;ring[used-&gt;idx % qsize].len = bytes_written;
+used-&gt;idx++;                                  /* then the index */</code></pre>
+<p>&lt;strong&gt;Step 6 — the driver takes the completion.&lt;/strong&gt; The decision is made from <code>used-&gt;idx</code>, &lt;em&gt;never&lt;/em&gt; from the fact that an interrupt arrived:</p>
+<pre><code class="language-c">uint16_t idx = vq-&gt;used_hdr[1];
+atomic_thread_fence(memory_order_acquire);
+while (vq-&gt;last_used != idx) {
+    volatile struct vring_used_elem *e = &amp;vq-&gt;used_ring[vq-&gt;last_used % vq-&gt;qsize];
+    uint32_t id = e-&gt;id, len = e-&gt;len;
+    vq-&gt;last_used++;
+    /* the chain at `id` is complete; `len` bytes were written */
+}</code></pre>
+<p>The acquire fence comes &lt;em&gt;before&lt;/em&gt; reading <code>used-&gt;idx</code> and the elements, so the reply bytes the device wrote are visible before the driver reads them.</p>
+<p>&lt;strong&gt;Step 7 — recycle the descriptors.&lt;/strong&gt; The chain's descriptors go back on the free list.</p>
+<h2 id="53-why-the-chain-is-the-unit">5.3 Why "the chain is the unit"</h2>
+<p>Look at step 6: the used ring's <code>id</code> is the &lt;em&gt;head&lt;/em&gt; descriptor of the chain, not the last one. The device does not report "descriptor 1 is done"; it reports "the chain starting at descriptor 0 is done". That is why the descriptor table has a <code>next</code> field and why the driver has to walk the chain to recycle it.</p>
+<p>It is also why the free list lives &lt;em&gt;inside&lt;/em&gt; the descriptor table: a free descriptor's <code>next</code> field points at the next free descriptor, so recycling a chain is a matter of walking it and pushing each descriptor onto the list.</p>
+<pre><code class="language-c">void clab_vring_recycle(clab_vring *vq, uint16_t head)
+{
+    uint16_t idx = head;
+
+    for (;;) {
+        const bool has_next = (vq-&gt;desc[idx].flags &amp; CLAB_VRING_DESC_F_NEXT) != 0u;
+        const uint16_t next = vq-&gt;desc[idx].next;
+        vq-&gt;desc[idx].flags = 0;
+        vq-&gt;desc[idx].next = vq-&gt;free_head;
+        vq-&gt;free_head = idx;
+        vq-&gt;num_free++;
+        if (!has_next)
+            break;
+        idx = next;
+    }
+}</code></pre>
+<p>Forgetting this step leaks one descriptor per request, and the queue fills up after <code>size / 2</code> requests. The symptom is a driver that works for a while and then stops with "no descriptor available".</p>
+<h2 id="54-the-exercise">5.4 The exercise</h2>
+<pre><code class="language-sh">/tmp/codelab-build/ex04_vring</code></pre>
+<pre><code>chapter 5 - the split virtqueue
+
+direct descriptors
+empty ring:
+  desc  addr   len  flags  next
+  [0]      0     0   0x00   1
+  [1]      0     0   0x00   2
+  ...
+  avail: idx=0  ring[0]=0
+  used:  idx=0  last_used=0  free=8
+after add(), head = 0, 6 descriptors left:
+  desc  addr   len  flags  next
+  [0]      0    18   0x01   1
+  [1]     32    32   0x02   0
+  ...
+after publish(), avail.idx = 1 (this is what the device sees):
+device wrote 18 bytes, used.idx = 1
+reply: "TVERSION MSIZE=8192"
+after recycle(), free = 8</code></pre>
+<p>Read the flags column: descriptor 0 has <code>0x01</code> (NEXT) because the chain continues, and descriptor 1 has <code>0x02</code> (WRITE) because the device writes there. The two runs differ in one thing: with indirect descriptors enabled, the whole chain is described by &lt;em&gt;one&lt;/em&gt; descriptor, and <code>free</code> drops by one instead of two.</p>
+<h2 id="55-the-queue-size-and-how-to-set-it-up">5.5 The queue size, and how to set it up</h2>
+<p>Before any of the above can happen, the driver tells the device about the queue:</p>
+<pre><code class="language-c">/* 1. select the queue */
+set16(v, VPCI_COMMON_QUEUE_SELECT, 0);
+
+/* 2. read the maximum the device supports, and check the queue is free */
+uint16_t max = cfg16(v, VPCI_COMMON_QUEUE_SIZE);
+if (max &lt; 2u || cfg16(v, VPCI_COMMON_QUEUE_ENABLE) != 0u)
+    return -EIO;
+
+/* 3. choose a size: a power of two, no more than the device supports */
+vq-&gt;qsize = vpci_queue_size_clamp(max, 128);
+
+/* 4. tell the device */
+set16(v, VPCI_COMMON_QUEUE_SIZE, vq-&gt;qsize);
+
+/* 5. give the device the three addresses */
+set64(v, VPCI_COMMON_QUEUE_DESC,   desc_phys);
+set64(v, VPCI_COMMON_QUEUE_DRIVER, avail_phys);
+set64(v, VPCI_COMMON_QUEUE_DEVICE, used_phys);
+
+/* 6. and enable it */
+set16(v, VPCI_COMMON_QUEUE_ENABLE, 1);</code></pre>
+<p>&lt;strong&gt;The size must be a power of two.&lt;/strong&gt; The ring uses modular arithmetic (<code>idx % size</code>), and a size that is not a power of two is not supported by the specification. A driver that asks for 100 and gets 100 has a bug that appears as a ring that desynchronises after a few hundred requests.</p>
+<p><code>vpci_queue_size_clamp()</code> rounds down:</p>
+<pre><code class="language-c">uint16_t vpci_queue_size_clamp(uint16_t device_max, uint16_t wanted)
+{
+    uint16_t size = wanted &lt; device_max ? wanted : device_max;
+
+    if (size &lt; 2u)
+        return 2u;
+    while ((size &amp; (uint16_t)(size - 1u)) != 0u)
+        size = (uint16_t)(size &amp; (uint16_t)(size - 1u));
+    return size;
+}</code></pre>
+<h2 id="56-the-memory-the-ring-lives-in">5.6 The memory the ring lives in</h2>
+<p>The three rings must be in memory the device can reach: on QNX, memory that is physically contiguous and whose physical address the driver can give to the device.</p>
+<pre><code class="language-c">void *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_PHYS | MAP_ANON, NOFD, 0);
+off64_t phys;
+size_t contig;
+mem_offset64(p, NOFD, len, &amp;phys, &amp;contig);
+if (contig &lt; len)
+    return -ENOMEM;              /* not contiguous: the device cannot use it */</code></pre>
+<p><code>mem_offset64()</code> gives the physical address &lt;em&gt;and&lt;/em&gt; the size of the contiguous run. The check matters: on a machine with an IOMMU, the address the device wants is not the physical one, and the translation has to be done by the driver. On QEMU, without an IOMMU, the guest physical address is the device address.</p>
+<p>Two practical points:</p>
+<ul>
+<li>**Allocate the ring in one block.** Three separate mappings mean three physical addresses, and the driver has to know all three. One block, one address, and the offsets are computed from it.</li>
+<li>**Do not allocate per request.** A mapping per request is a syscall per request and it fragments the address space. The buffers are allocated once, at queue setup, and reused.</li>
+</ul>
+<h2 id="57-what-to-observe">5.7 What to observe</h2>
+<ul>
+<li>The descriptor table shows `NEXT` on the request and `WRITE` on the reply.</li>
+<li>`avail-&gt;idx` goes from 0 to 1 when the request is published, and the entry in `ring[]` is the head descriptor.</li>
+<li>`used-&gt;idx` goes from 0 to 1 when the device finishes, and `len` is the number of bytes it wrote.</li>
+<li>The reply buffer contains the device's answer.</li>
+<li>After the recycle, the free count is back to 8.</li>
+</ul>
+<h2 id="58-traps">5.8 Traps</h2>
+<ul>
+<li>**Publishing the index before the entry.** The device may read a stale entry, and the failure is intermittent.</li>
+<li>**A C11 fence instead of `__cpu_membarrier()` before the notify.** The notify register is device memory; only the full barrier orders the two.</li>
+<li>**Reading `used-&gt;idx` before the acquire fence.** The reply bytes may not be visible yet, and the driver reads yesterday's answer.</li>
+<li>**Deciding completion from the interrupt instead of from `used-&gt;idx`.** Spurious wakeups are normal — they were observed with virtio-mmio — and completion must be decided from the ring.</li>
+<li>**A queue size that is not a power of two.**</li>
+<li>**Forgetting to recycle.** The queue fills up and the driver stalls.</li>
+<li>**One mapping per request.** Slow, and it fragments memory.</li>
+<li>**Reusing the buffers of a request that timed out.** The device may still complete it later; this is why the real transport marks such a slot *stale* instead of freeing it.</li>
+</ul>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Run `ex04_vring` and follow the descriptor table through the six steps. Write down the flags of descriptors 0 and 1, and where the head descriptor index appears in the three rings.</li>
+<li>In a copy of `clab_vring.c`, swap the two lines of `clab_vring_publish()` — write the index first, then the entry. Run the test. What fails, and what would the symptom be on a real device?</li>
+<li>Comment out the `clab_vring_recycle()` call. The test `test_ch5_round_trip` checks the free count; what would a real driver do after `size/2` requests?</li>
+<li>Add a test that fills the ring completely and checks that the next add fails with -1. The exercise `test_ch5_indirect_and_full` already does this for the indirect case; do it for the direct case too.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>Exercise 2: the test that fails is the one checking <code>avail-&gt;idx</code>, because the entry is written to <code>ring[avail-&gt;idx % size]</code> &lt;em&gt;after&lt;/em&gt; the index was incremented, so it lands one slot further than the index points at. On a real device the request is simply never seen, and the driver waits for a completion that will not come.</p>
+<p>Exercise 3: after <code>size/2</code> requests (8 descriptors, 2 per request), the free list is empty, <code>clab_vring_add()</code> returns -1, and the driver reports "no descriptor available" — a stall that appears after a fixed number of requests, which is a much easier symptom to diagnose than an intermittent one.</p>
+<p>Exercise 4:</p>
+<pre><code class="language-c">unsigned added = 0;
+while (clab_vring_add(&amp;vq, sg, 1) &gt;= 0) {
+    clab_vring_publish(&amp;vq);
+    added++;
+}
+CLAB_CHECK_EQ(added, CLAB_VRING_SIZE);   /* one descriptor per request */
+CLAB_CHECK_EQ(clab_vring_add(&amp;vq, sg, 1), -1);</code></pre>
+<h2 id="where-we-are">Where we are</h2>
+<p>We can talk to the device. Chapter 6 makes the device talk back: the interrupt.</p>
+    <nav class="pager">
+      <a class="prev" href="codelab-04-features-and-the-status-sequence.html">Previous</a>
+      <a class="next" href="codelab-06-interrupts.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

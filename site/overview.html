@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Start</p>
+    <h1 id="passerelle">Passerelle</h1>
+<p>&lt;strong&gt;Passerelle&lt;/strong&gt; is a high-performance host-guest shared filesystem driver for &lt;strong&gt;QNX® Neutrino® 8.0&lt;/strong&gt; virtual machines under QEMU, providing seamless directory sharing via &lt;strong&gt;9P2000.L&lt;/strong&gt; and &lt;strong&gt;virtiofs&lt;/strong&gt; over modern virtio-PCI and virtio-MMIO.</p>
+<p>Submitted to the &lt;strong&gt;QNX Global Hackathon 2026&lt;/strong&gt; under the <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/LICENSE">Apache-2.0</a> license.</p>
+<hr>
+<h2 id="why-passerelle">Why Passerelle?</h2>
+<p>Developing software for QNX virtual machines today usually means suffering a slow iteration loop:</p>
+<pre><code>[Host] cross-compile  ──&gt;  [SCP / rebuild disk image]  ──&gt;  [Guest] boot / transfer  ──&gt;  [Guest] test run</code></pre>
+<p>Every change pays a "copy tax". If the VM image is read-only or minimal, you must regenerate the entire image just to test one binary.</p>
+<p>With Passerelle, your build directory on the host PC is mounted directly inside the QNX guest:</p>
+<pre><code>[Host] cross-compile  ──&gt;  [Guest] run immediately from /host</code></pre>
+<p>Binaries execute straight from the share, shared libraries load on demand, and files created or modified by QNX are instantly available on the host.</p>
+<hr>
+<h2 id="prior-art-what-passerelle-adds">Prior Art &amp; What Passerelle Adds</h2>
+<p>In accordance with open-source engineering ethics and hackathon standards, Passerelle explicitly acknowledges prior art. Two public 9P clients and one virtio transport library exist for QNX:</p>
+<ol>
+<li>**`gvergine/qnx-fs-9p`** (October 2026, Apache-2.0): A feature-rich 9P2000.L client designed for everyday development, but **strictly restricted to ARM64 guests** over virtio-mmio. It does not support x86_64 and has no PCI transport.</li>
+<li>**`eclipse-score/qnx_unit_tests` (`virtio9p`)** (March 2026, Apache-2.0): Supports both x86_64 (PCI) and ARM64 (MMIO), but is **intentionally stripped down to test runner needs**: no symbolic links, no permission or ownership changes (`chmod`/`chown`), no timestamp updates, no file locking.</li>
+<li>**`kodebooth/qnx-virtio`** (April 2026, MIT): A transport library for virtio on QNX 8.0 with a sample GPIO driver, but no filesystem implementation and no host-side testability.</li>
+</ol>
+<h3 id="what-passerelle-adds">What Passerelle Adds</h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th><code>qnx-fs-9p</code> (A)</th>
+<th><code>qnx_unit_tests</code> (B)</th>
+<th>&lt;strong&gt;Passerelle&lt;/strong&gt;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;Full x86_64 Guest Support&lt;/strong&gt; (PCI modern, MSI-X)</td>
+<td>❌ &lt;em&gt;ARM64 only&lt;/em&gt;</td>
+<td>⚠️ &lt;em&gt;Minimal ops only&lt;/em&gt;</td>
+<td>&lt;strong&gt;Target: complete POSIX share&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Full ARM64 Guest Support&lt;/strong&gt; (MMIO v1 &amp; v2)</td>
+<td>✅ Yes</td>
+<td>⚠️ &lt;em&gt;Minimal ops only&lt;/em&gt;</td>
+<td>&lt;strong&gt;Target: complete POSIX share&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;POSIX Operations&lt;/strong&gt; (symlinks, chmod, chown, utime, df)</td>
+<td>✅ Yes</td>
+<td>❌ No</td>
+<td>&lt;strong&gt;Target: yes (redirect symlinks, atomic renames)&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;virtiofs for QNX Guests&lt;/strong&gt; (FUSE over virtio)</td>
+<td>❌ No</td>
+<td>❌ No</td>
+<td>&lt;strong&gt;✅ Target (X tier)&lt;/strong&gt; — no public implementation found</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Real-Time Priority Scheduling&lt;/strong&gt;</td>
+<td>❌ FIFO</td>
+<td>❌ Unspecified</td>
+<td>&lt;strong&gt;Target: priority-ordered dispatch&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Host PC Testability without QNX SDP&lt;/strong&gt;</td>
+<td>❌ Needs SDP</td>
+<td>❌ Needs Bazel/SDP</td>
+<td>&lt;strong&gt;✅ Portable L1/L2/L3, PC unit tests&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Differential Conformance Testbed&lt;/strong&gt;</td>
+<td>❌ Trace-only</td>
+<td>❌ None</td>
+<td>&lt;strong&gt;✅ Harness written&lt;/strong&gt; (<code>host/fsproof</code>, 1M-op target)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;One-Command Setup CLI&lt;/strong&gt; (<code>qshare</code>)</td>
+<td>❌ Manual QEMU</td>
+<td>❌ Manual script</td>
+<td>&lt;strong&gt;✅ <code>qshare</code> tool written&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;Reading this table honestly.&lt;/strong&gt; The "Passerelle" column states what the project &lt;em&gt;provides by design and targets&lt;/em&gt;; the columns for projects A and B state what their code and documentation show today. Implementation status per requirement — including what is not yet done — is in <a href="verification-status.html">docs/verification-status.md</a>. The absence of a public QNX virtiofs guest driver is a &lt;strong&gt;search result, not a proof&lt;/strong&gt; (spec §14).</p>
+<p>See <a href="state-of-the-art.html">docs/state-of-the-art.md</a> for detailed code-level analysis and <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/NOTICE">NOTICE</a> for project attributions.</p>
+<hr>
+<h2 id="architecture">Architecture</h2>
+<p>Passerelle follows a modular three-layer design:</p>
+<pre><code>  QNX Applications: open, read, write, stat, readdir, execve...
+        │  QNX Messages handled at caller priority (QNX-03)
+ ┌──────▼────────────────────────────────────────────────────────┐
+ │ Layer 3 — Filesystem Resource Manager (`rmfs/`)               │
+ │   Path namespace, fids/inodes, permission checks (SEC-01),     │
+ │   guest-local range locks (FS-14), priority scheduler (QNX-04)│
+ ├──────────────────────────────┬────────────────────────────────┤
+ │ Layer 2 — 9P2000.L Protocol  │ Layer 2 — FUSE Protocol        │
+ │ (`proto9p/`)                 │ (`protofuse/` - virtiofs)      │
+ │ Pure C11, strict decoders    │ Pure C11, node refcounts       │
+ ├──────────────────────────────┴────────────────────────────────┤
+ │ Layer 1 — virtio Transport (`virtio/`)                        │
+ │   Split virtqueue, indirect descs (VIO-08), zero-copy (VIO-07) │
+ │   Backends: PCI Modern (x86_64), MMIO v1/v2 (ARM64), PC Mock  │
+ └──────┬────────────────────────────────────────────────────────┘
+        │
+   QEMU: `virtio-9p-pci` / `virtio-9p-device`  or  `virtiofsd`
+        │
+   Host Workstation Directory</code></pre>
+<p>See <a href="architecture.html">docs/architecture.md</a> for full design documentation.</p>
+<hr>
+<h2 id="one-command-demo">One-Command Demo</h2>
+<p>On the host workstation (tooling status: see <a href="verification-status.html">verification-status.md</a>):</p>
+<pre><code class="language-bash"># 1. Share your project directory and start the VM
+qshare ~/my-project
+
+# 2. Inside the QNX VM, the host folder is mounted at /host
+ls -la /host
+
+# 3. Cross-compile on the host, run in QNX with zero copying
+make -C ~/my-project
+/host/bin/my_program</code></pre>
+<p>See <a href="user-guide.html">docs/user-guide.md</a> for mount options, troubleshooting, and CMake/Rust workflows.</p>
+<hr>
+<h2 id="building">Building</h2>
+<p>Passerelle targets &lt;strong&gt;QNX SDP 8.0&lt;/strong&gt; (<code>x86_64le</code> and <code>aarch64le</code>) and builds natively on Linux for PC testing.</p>
+<h3 id="1-build-on-host-pc-portable-layers-unit-tests-no-sdp-needed">1. Build on Host PC (Portable Layers &amp; Unit Tests, No SDP Needed)</h3>
+<p>The transport abstraction, protocol codecs, and resource manager core are 100% portable C11 and run directly on your Linux host:</p>
+<pre><code class="language-bash"># Standard build and CTest execution
+cmake -B build -DPGW_MODULES="common;virtio;proto9p;protofuse;rmfs"
+cmake --build build -j8
+ctest --test-dir build --output-on-failure
+
+# Build with AddressSanitizer and UBSan
+cmake -B build-asan -DPGW_SANITIZERS=ON
+cmake --build build-asan -j8
+ctest --test-dir build-asan --output-on-failure</code></pre>
+<h3 id="2-cross-compile-for-qnx-80">2. Cross-Compile for QNX 8.0</h3>
+<p>Requires QNX SDP 8.0. Source the SDP environment, then use the toolchain file shipped with the SDP (no repository-local toolchain wrapper exists yet — see <a href="building.html">docs/building.md</a>):</p>
+<pre><code class="language-bash">source ~/qnx800/qnxsdp-env.sh
+
+# For an x86_64 guest
+cmake -B build-qnx-x86 \
+      -DCMAKE_TOOLCHAIN_FILE="$QNX_HOST/usr/cmake/QNXToolchain.cmake" \
+      -DCMAKE_SYSTEM_PROCESSOR=x86_64
+cmake --build build-qnx-x86 -j8
+
+# For an aarch64le guest
+cmake -B build-qnx-arm \
+      -DCMAKE_TOOLCHAIN_FILE="$QNX_HOST/usr/cmake/QNXToolchain.cmake" \
+      -DCMAKE_SYSTEM_PROCESSOR=aarch64le
+cmake --build build-qnx-arm -j8</code></pre>
+<p>Detailed step-by-step instructions and test level runner commands are available in <a href="building.html">docs/building.md</a>.</p>
+<hr>
+<h2 id="honest-verification-status">Honest Verification Status</h2>
+<p>Every requirement is tracked against automated testing, and this README only claims what a command in this repository actually proves. What still needs a QNX SDP or a QNX guest is said so explicitly.</p>
+<ul>
+<li>**Unit &amp; codec layers (level 0)** — implemented and green on the host PC for every portable layer: `common`, `virtio`, `proto9p`, `protofuse`, `rmfs` and the portable half of `drivers` (`ctest --test-dir build`). The QNX-only glue is compiled on the PC against `tests/qnx-stub` (job `qnx-syntax`), which proves it parses and type-checks, not that it runs.</li>
+<li>**Randomized input (level 1)** — `tests/fuzz` runs deterministic seeded campaigns against every wire decoder, in CI, under ASan+UBSan (`fuzz_p9`, `fuzz_fuse`). Measured out of CI: **5 000 000 iterations per decoder family, zero defect** — 11 s (9P) and 10 s (FUSE) in a normal build, 21 s and 18 s under sanitizers.</li>
+<li>**Differential conformance (level 2)** — `tests/e2e` replays seeded random operation suites through `pgw_rmfs` and compares every result with the PC folder, which is the truth (`test_diff`, plus the directed cases of spec 7.4 in `test_directed`). A divergence is automatically reduced to the shortest prefix that reproduces it. `host/fsproof` runs the same method against a real guest. Measured out of CI: **3 000 000 operations (3 seeds × 1 000 000), zero divergence**, in 60 s — the spec 7.6 "complete" threshold.</li>
+<li>**Host-side integration (E5)** — `tests/qemu` boots a minimal Linux guest on the exact options `qshare` emits and exchanges files both ways, for **9P and virtiofs**: feasibility test **E5 passed**, in 9 s per protocol ([docs/verification-status.md](docs/verification-status.md) §3.1).</li>
+<li>**A real QNX guest, and what it sees** — `tests/qemu/qnx71` boots QNX Neutrino **7.1.0** x86_64 on this PC with our `virtio-9p-pci` device attached. Its own `pci-tool` reports the device as `1af4:1009` with the MSI-X capability plus the five virtio vendor capabilities and three assigned BARs, and reports **no interrupt routed** to it — which is the actionable half of E1 ([EVIDENCE.md](tests/qemu/qnx71/EVIDENCE.md)). It has no compiler, so this says nothing about our driver yet.</li>
+<li>**Performance (level 3) and guest-side robustness (level 4)** — the harnesses are written (`host/bench`, `host/fsproof`). The **Linux reference baseline** of spec 7.5 is published in [docs/measurements/](docs/measurements/) (822 requests, round-trip table from a real QEMU 8.2 trace on an active guest). The numbers for our own QNX driver require a QNX guest and are **not** measured yet.</li>
+<li>**Feasibility tests E1–E4** — blocked on the QNX SDP (issues #2 to #6). E5 is done.</li>
+<li>**No QNX-side requirement is claimed as verified**: no QNX SDP is installed on the machine that produced this tree, and no public SDP 8.0 could be pulled without an account (the community image that ships one, `ghcr.io/kodebooth/qnx-sdp`, is private).</li>
+</ul>
+<p>See <a href="verification-status.html">docs/verification-status.md</a> for the full matrix and <a href="https://github.com/BaptisteFaisy/passerelle/tree/main/docs/measurements">docs/measurements/</a> for the numbers.</p>
+<hr>
+<h2 id="documentation-index">Documentation Index</h2>
+<ul>
+<li>[docs/spec-en.md](docs/spec-en.md) — Complete English Specification (Requirements VIO, P9, FS, QNX, PERF, ROB, SEC, DX, VFS, SRV)</li>
+<li>[docs/spec-fr.md](docs/spec-fr.md) — Original French Specification (authoritative text)</li>
+<li>[docs/architecture.md](docs/architecture.md) — Detailed Three-Layer Design &amp; Tricky Issues Resolution</li>
+<li>[docs/user-guide.md](docs/user-guide.md) — User Guide, Mounting Options, CMake and Rust Workflows</li>
+<li>[docs/state-of-the-art.md](docs/state-of-the-art.md) — Comprehensive Analysis of Existing Projects</li>
+<li>[docs/decisions.md](docs/decisions.md) — Architectural Decisions Log (D1–D4)</li>
+<li>[docs/verification-status.md](docs/verification-status.md) — Honest Requirements &amp; Feasibility (E1–E5) Status</li>
+<li>[docs/building.md](docs/building.md) — Compilation, Toolchain, and Test Runner Guide</li>
+<li>[docs/video-script.md](docs/video-script.md) — 3-Minute Hackathon Video Script</li>
+<li>[docs/ci.md](docs/ci.md) — Self-Hosted CI Infrastructure &amp; 5-Minute Budget Guard</li>
+</ul>
+<hr>
+<h2 id="repository-ci">Repository CI</h2>
+<p>This repository uses a self-hosted CI pipeline on dedicated Dell PowerEdge R630 workers enforcing strict C11 compliance, AddressSanitizer verification, a &lt;strong&gt;5-minute maximum runtime budget per job&lt;/strong&gt;, and automated merge queues via Mergify. Details are documented in <a href="ci.html">docs/ci.md</a>.</p>
+<hr>
+<h2 id="license-attribution">License &amp; Attribution</h2>
+<p>Passerelle is distributed under the &lt;strong&gt;Apache License, Version 2.0&lt;/strong&gt;. See <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/LICENSE">LICENSE</a> for full legal text and <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/NOTICE">NOTICE</a> for third-party project attributions.</p>
+    <nav class="pager">
+      <a class="prev" href="index.html">Previous</a>
+      <a class="next" href="user-guide.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

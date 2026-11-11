@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Use</p>
+    <h1 id="passerelle-detailed-architecture-technical-design">Passerelle — Detailed Architecture &amp; Technical Design</h1>
+<p>This document details the internal design of &lt;strong&gt;Passerelle&lt;/strong&gt;, a high-performance host-guest shared filesystem driver for &lt;strong&gt;QNX® Neutrino® 8.0&lt;/strong&gt; under QEMU. It covers the three-layer architectural model, the lifecycle of an I/O request, the resolution of delicate kernel and protocol challenges, and the source file mapping across the repository.</p>
+<hr>
+<h2 id="1-architectural-overview-three-layers">1. Architectural Overview: Three Layers</h2>
+<p>Passerelle decouples the guest operating system interface, the wire protocol, and the underlying hypervisor transport into three strict layers:</p>
+<pre><code>  QNX Applications: open(), read(), write(), stat(), readdir(), execve()...
+        │  QNX Neutrino IPC Messages handled at caller priority (QNX-03)
+ ┌──────▼────────────────────────────────────────────────────────┐
+ │ LAYER 3 — Filesystem Resource Manager (`rmfs/`)               │
+ │   - POSIX filesystem semantics &amp; namespace resolution         │
+ │   - Guest-side credential &amp; permission checks (FS-09, SEC-01) │
+ │   - Guest-local byte-range advisory locking (FS-14)           │
+ │   - Open-unlinked file retention (FS-11)                      │
+ │   - Real-time priority-ordered request scheduler (QNX-04)     │
+ ├──────────────────────────────┬────────────────────────────────┤
+ │ LAYER 2 — 9P2000.L Protocol  │ LAYER 2 — FUSE Wire Protocol   │
+ │ (`proto9p/`)                 │ (`protofuse/` - virtiofs)      │
+ │   - Portable C11 codecs      │   - Portable C11 codecs        │
+ │   - Bidirectional Linux/QNX  │   - Inode reference counting   │
+ │     errno and flag tables    │     table (lookup / forget)    │
+ │   - Fid/Tag lifecycle pools  │   - High-priority control pipe │
+ ├──────────────────────────────┴────────────────────────────────┤
+ │ LAYER 1 — virtio Transport (`virtio/`)                        │
+ │   - Split virtqueue management &amp; indirect descriptors (VIO-08)│
+ │   - Zero-copy scatter-gather lists (VIO-07)                   │
+ │   - Notification suppression via `EVENT_IDX`                  │
+ │   - Hardware backends:                                        │
+ │     * Modern PCI on x86_64 (`libpci` + MSI-X, VIO-01..VIO-04) │
+ │     * MMIO v1 and v2 on ARM64 (VIO-03)                        │
+ │     * In-memory mock transport for host PC testing (VIO-10)   │
+ └──────┬────────────────────────────────────────────────────────┘
+        │
+   QEMU Hypervisor: `virtio-9p-pci` / `vhost-user-fs-pci`
+        │
+   Host Workstation Filesystem (`/path/to/share`)</code></pre>
+<h3 id="layer-1-virtio-transport-virtio">Layer 1: Virtio Transport (<code>virtio/</code>)</h3>
+<ul>
+<li>**Role**: Discovers the hardware device, negotiates virtio feature bits with QEMU, configures split virtqueues, places descriptor chains in shared memory, kicks the host notification doorbells, and processes completion interrupts.</li>
+<li>**Independence**: Does not know anything about 9P or FUSE. It operates purely on raw scatter-gather buffers (`pgw_vio_sg`).</li>
+<li>**Portability**: All core virtqueue logic (`pgw_virtq`) compiles on host Linux and QNX Neutrino alike. When running on Linux hosts, an in-memory mock transport (`pgw_vio_mock_open`) emulates hypervisor device rings.</li>
+</ul>
+<h3 id="layer-2-wire-protocols-proto9p-protofuse">Layer 2: Wire Protocols (<code>proto9p/</code> &amp; <code>protofuse/</code>)</h3>
+<ul>
+<li>**Role**: Encodes and decodes the wire message formats.</li>
+<li>**Portability**: Pure ISO C11 with zero OS dependencies. Operates strictly over `pgw_buf` (safe memory-bounded reader/writer cursors).</li>
+<li>**Security &amp; Integrity (P9-09, ROB-06)**: Never casts C structs onto raw network buffers. Every packet header, payload size, string length, and array count is validated before dereferencing.</li>
+</ul>
+<h3 id="layer-3-filesystem-resource-manager-rmfs">Layer 3: Filesystem Resource Manager (<code>rmfs/</code>)</h3>
+<ul>
+<li>**Role**: Binds into the QNX pathname space (`resmgr_attach()`) and dispatches POSIX filesystem messages (`_IO_CONNECT`, `_IO_READ`, `_IO_WRITE`, `_IO_STAT`, `_IO_DEVCTL`).</li>
+<li>**VFS Interface**: Translates QNX I/O messages into protocol-neutral VFS operations (`pgw_fs_backend_ops`). Whether backed by 9P2000.L or FUSE (virtiofs), the top-level POSIX behavior is identical.</li>
+</ul>
+<hr>
+<h2 id="2-request-lifecycle-section-52-walkthrough">2. Request Lifecycle (Section 5.2 Walkthrough)</h2>
+<p>To illustrate how Passerelle maintains responsiveness without blocking driver worker threads:</p>
+<pre><code>[Caller Thread]              [RMFS Worker]            [Virtio Queue]          [QEMU / Host]
+      │                            │                        │                       │
+  1.  │─── read(fd, buf, 4096) ───&gt;│                        │                       │
+      │    (MsgSendv)              │                        │                       │
+  2.  │                            │ (inherits prio)        │                       │
+      │                            │ builds TREAD request   │                       │
+  3.  │                            │───────────────────────&gt;│                       │
+      │                            │ vq_push(sg) + vq_kick  │──────────────────────&gt;│
+  4.  │                            │                        │                       │ reads from host
+      │   (blocked in MsgSendv)    │ yields worker thread   │                       │ filesystem
+      │                            │ (handles other ops)    │                       │
+  5.  │                            │                        │&lt;──────────────────────│
+      │                            │                        │ writes RREAD to ring  │
+  6.  │                            │&lt;─── MSI-X / IRQ ───────│                       │
+      │                            │     (IST wakes)        │                       │
+  7.  │&lt;── MsgReplyv(4096 bytes) ──│                        │                       │</code></pre>
+<ol>
+<li>**POSIX Invocation**: An application thread calls `read(fd, buf, 4096)`. The QNX C library marshals an `_IO_READ` message and issues `MsgSendv()` to the driver's channel.</li>
+<li>**Priority-Inherited Reception**: A thread from the driver's thread pool receives the message via `MsgReceivev()`. Under Neutrino microkernel rules, the worker thread automatically inherits the client's scheduling priority (QNX-03).</li>
+<li>**Queue Submission**: The worker serializes a `Tread` request into a pre-allocated buffer cursor, submits the scatter-gather chain into the virtqueue, and kicks the device doorbell via MMIO/PCI write.</li>
+<li>**Non-Blocking Worker Yield (QNX-05)**: Instead of busy-waiting or sleeping inside the worker thread, the worker disassociates from the active request context, leaving the client blocked in `MsgSendv()`. The worker immediately returns to the dispatch loop to process requests from other clients.</li>
+<li>**Host Execution**: QEMU's v9fs worker thread or `virtiofsd` executes the read on the host PC filesystem and writes the completion response into the virtio used ring.</li>
+<li>**Interrupt Service Thread (IST)**: QEMU raises an interrupt (MSI-X on PCI or level line on MMIO). An `InterruptAttachThread()` handler wakes up, consumes the completed descriptor from the used ring, and matches the transaction via its unique tag (9P) or unique request ID (FUSE).</li>
+<li>**Client Unblocking**: The IST replies to the client using `MsgReplyv()`, placing data directly into caller memory and unblocking the caller thread.</li>
+</ol>
+<hr>
+<h2 id="3-tricky-technical-challenges-mitigations-section-53">3. Tricky Technical Challenges &amp; Mitigations (Section 5.3)</h2>
+<h3 id="31-linux-numeric-translation-p9-04">3.1 Linux Numeric Translation (P9-04)</h3>
+<ul>
+<li>**Challenge**: The 9P2000.L and FUSE wire protocols specify numeric errno codes, file type bits, and open flags defined by Linux. QNX Neutrino defines different numeric values for errors above 34 (e.g. `ENOSYS` is 38 on Linux, 89 on QNX; `ETXTBSY` is 26 on Linux, 63 on QNX). Open flags also differ (e.g. `O_SYNC`, `O_NONBLOCK`).</li>
+<li>**Mitigation**: Passerelle defines an internal, architecture-independent error enumeration `pgw_err` in `common/include/pgw/err.h`. Bidirectional lookup tables map `pgw_err` to/from Linux wire values (`pgw_linux_errno()`, `pgw_code_from_linux()`) and to/from host/QNX system values (`pgw_host_errno()`). Every single numeric mapping is pinned by exhaustive unit tests.</li>
+</ul>
+<h3 id="32-symbolic-links-by-redirection">3.2 Symbolic Links by Redirection</h3>
+<ul>
+<li>**Challenge**: In traditional POSIX environments, a filesystem driver resolves symlinks transparently. In QNX Neutrino, path resolution is distributed across resource managers. When resolving a symlink, the driver must NOT follow the link itself; it must inform `procnto` so the kernel path resolution engine restarts from the root namespace.</li>
+<li>**Mitigation** *(design; **to be validated** by a dedicated test — see spec 5.3 and [verification-status.md](verification-status.md))*: in Layer 3 (`rmfs`), when `lookup()` or `open()` encounters a symlink, the driver returns a redirect response so that `procnto` restarts path resolution with the link target (the exact QNX connect-message mechanism is confirmed during feasibility test E3). For explicit `readlink()` calls, the symlink target is returned directly via `pgw_p9_readlink` / `pgw_fuse_readlink`. Recursion loop detection is enforced up to `PGW_SYMLINK_MAX` (40 hops, FS-08).</li>
+</ul>
+<h3 id="33-binary-execution-from-share-fs-06">3.3 Binary Execution from Share (FS-06)</h3>
+<ul>
+<li>**Challenge**: To execute a binary located on the share (`/host/bin/program`), the QNX ELF program loader issues memory mapping requests (`mmap(PROT_EXEC)`). The resource manager must support offset reads, header inspection, and descriptor lifecycle tracking.</li>
+<li>**Mitigation**: `rmfs` fully implements `_IO_READ` with arbitrary byte offsets and sizes up to file boundaries. Code pages are loaded directly by `procnto`. Writable shared mappings (`MAP_SHARED` with write) are cleanly rejected with `ENODEV` (documented in spec 4.2), while read-only executable mappings succeed seamlessly.</li>
+</ul>
+<h3 id="34-qnx-80-interrupt-architecture-interruptattachthread">3.4 QNX 8.0 Interrupt Architecture (<code>InterruptAttachThread</code>)</h3>
+<ul>
+<li>**Challenge**: QNX 8.0 deprecated and removed the legacy `InterruptAttach()` API (which ran user ISR code in kernel context). Drivers must now use `InterruptAttachThread()` or `InterruptAttachEvent()`.</li>
+<li>**Mitigation**: Layer 1 spawns a dedicated Interrupt Service Thread (IST) bound via `InterruptAttachThread()`. The thread loops on `InterruptWait()`, unmasks the IRQ, extracts used descriptors from the virtqueue, and dispatches completion callbacks without doing any heap allocation on the interrupt path.</li>
+</ul>
+<h3 id="35-pci-modern-discovery-msi-x-vio-01vio-04">3.5 PCI Modern Discovery &amp; MSI-X (VIO-01..VIO-04)</h3>
+<ul>
+<li>**Challenge**: Modern virtio over PCI specifies capabilities located in PCI capability list space (`PCI_CAP_ID_VNDR = 0x09`). Configuring MSI-X vectors requires programming the PCI capability registers and unmasking table entries through `libpci`.</li>
+<li>**Mitigation**: The planned PCI backend uses the QNX 8.0 `libpci` API (`pci_device_attach`, `pci_device_read_cap`). It detects `common_cfg`, `notify_cfg`, `isr_cfg`, and `device_cfg` BAR offsets. For interrupts, it requests MSI-X vectors (`cap_msix_set_nirq`); if MSI-X allocation fails or is disabled by host configuration, it falls back to legacy pin interrupts (`pci_device_read_irq`). This exact sequence is exercised by feasibility test E1 — see [verification-status.md](verification-status.md).</li>
+</ul>
+<h3 id="36-tunable-message-size-msize-throughput">3.6 Tunable Message Size (<code>msize</code>) &amp; Throughput</h3>
+<ul>
+<li>**Challenge**: Small message buffers collapse network and filesystem performance due to round-trip latency. Linux guests historically defaulted to 8 KiB, causing poor throughput.</li>
+<li>**Mitigation**: Passerelle negotiates `msize = 131072` (128 KiB) by default during protocol initialization (P9-01, `PGW_MSIZE_DEFAULT`), configurable via mount options up to 4 MiB. Large reads and writes are automatically split across chunk boundaries (P9-08).</li>
+</ul>
+<h3 id="37-host-security-models-least-privilege-sec-01sec-03">3.7 Host Security Models &amp; Least Privilege (SEC-01..SEC-03)</h3>
+<ul>
+<li>**Challenge**: QEMU 9P offers `passthrough`, `none`, and `mapped-xattr` security models. `passthrough` requires running QEMU as root on the host workstation.</li>
+<li>**Mitigation**: Passerelle recommends and defaults to `security_model=mapped-xattr` (or `mapped-file`). File permissions and ownership are validated inside the QNX guest by `rmfs` according to the calling process credentials (`pgw_fs_cred`). Mounts default to `nosuid` (SEC-01).</li>
+</ul>
+<h3 id="38-inode-number-stability-collisions">3.8 Inode Number Stability &amp; Collisions</h3>
+<ul>
+<li>**Challenge**: If a host share spans multiple physical mounts or filesystems, host inode numbers can collide.</li>
+<li>**Mitigation**: Passerelle recommends configuring QEMU with `multidevs=remap`. Within the guest, Layer 3 tracks 64-bit inode identifiers stably across `Tgetattr` / `getattr` requests.</li>
+</ul>
+<h3 id="39-case-sensitivity-on-macos-hosts">3.9 Case-Sensitivity on macOS Hosts</h3>
+<ul>
+<li>**Challenge**: macOS development workstations frequently run APFS in case-insensitive mode.</li>
+<li>**Mitigation**: Passerelle preserves exact byte strings for all path lookups (FS-15). Case collisions caused by host APFS are documented transparently as host-induced behavior.</li>
+</ul>
+<hr>
+<h2 id="4-source-tree-component-mapping">4. Source Tree &amp; Component Mapping</h2>
+<p>Status legend: &lt;strong&gt;[exists]&lt;/strong&gt; = present in the repository today; &lt;strong&gt;[planned]&lt;/strong&gt; = contract fixed by the public header, implementation landing during the hackathon (file names below are the planned ones).</p>
+<table>
+<thead>
+<tr>
+<th>Architectural Layer</th>
+<th>Repository Path</th>
+<th>Status</th>
+<th>Key Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;Common Infrastructure&lt;/strong&gt;</td>
+<td><code>common/</code></td>
+<td>&lt;strong&gt;[exists]&lt;/strong&gt; — implemented &amp; tested</td>
+<td>Safe byte cursors (<code>pgw/buf.h</code>, <code>src/buf_reader.c</code>, <code>src/buf_writer.c</code>), errno/flags/mode translation tables (<code>pgw/err.h</code>, <code>src/err.c</code>, <code>src/flags.c</code>), tunable limits (<code>pgw/limits.h</code>), injectable monotonic clock (<code>pgw/time.h</code>, <code>src/time.c</code>), logging &amp; counters (<code>pgw/log.h</code>, <code>src/log.c</code>), C11 test harness (<code>pgw/test.h</code>, <code>src/test.c</code>)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Layer 1: Transport&lt;/strong&gt;</td>
+<td><code>virtio/</code></td>
+<td>contract &lt;strong&gt;[exists]&lt;/strong&gt; (<code>include/pgw/virtio.h</code>); sources &lt;strong&gt;[planned]&lt;/strong&gt;</td>
+<td>Split virtqueue with indirect descriptors &amp; <code>EVENT_IDX</code>, PCI modern backend (QNX <code>libpci</code>, MSI-X with INTx fallback), MMIO v1/v2 backend, in-memory mock backend for PC tests</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Layer 2: 9P Protocol&lt;/strong&gt;</td>
+<td><code>proto9p/</code></td>
+<td>contract &lt;strong&gt;[exists]&lt;/strong&gt; (<code>include/pgw/p9.h</code>); sources &lt;strong&gt;[planned]&lt;/strong&gt;</td>
+<td>9P2000.L wire encoders/decoders with strict validation (P9-09), fid/tag pools (P9-07), chunked read/write/readdir (P9-08), multi-request session over an abstract RPC callback (P9-05)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Layer 2: FUSE Protocol&lt;/strong&gt;</td>
+<td><code>protofuse/</code></td>
+<td>contract &lt;strong&gt;[exists]&lt;/strong&gt; (<code>include/pgw/fusep.h</code>); sources &lt;strong&gt;[planned]&lt;/strong&gt;</td>
+<td>FUSE 7.x wire codecs, <code>INIT</code> negotiation, node reference-count table with <code>FORGET</code>/<code>BATCH_FORGET</code> (VFS-04), hiprio-queue routing for control messages (VFS-02)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Layer 3: Resource Mgr&lt;/strong&gt;</td>
+<td><code>rmfs/</code></td>
+<td>contract &lt;strong&gt;[exists]&lt;/strong&gt; (<code>include/pgw/rmfs.h</code>); sources &lt;strong&gt;[planned]&lt;/strong&gt;</td>
+<td>Protocol-neutral VFS over <code>pgw_fs_backend_ops</code>, guest-side credential/permission checks (FS-09, SEC-01), mount options (ro/noexec/nosuid, attr cache TTL), guest-local byte-range locks (FS-14), open-unlinked retention (FS-11), priority-ordered scheduler (QNX-04, PERF-05)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;QNX Drivers&lt;/strong&gt;</td>
+<td><code>drivers/</code></td>
+<td>&lt;strong&gt;[planned]&lt;/strong&gt; (empty dir today)</td>
+<td>Driver executables wiring rmfs + one protocol + one transport: <code>qnx-fs-9p</code> (9P over PCI/MMIO) and <code>qnx-virtiofs</code> (FUSE over virtio)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Host CLI &amp; Utilities&lt;/strong&gt;</td>
+<td><code>host/</code></td>
+<td>&lt;strong&gt;[planned]&lt;/strong&gt; (empty dir today)</td>
+<td><code>host/qshare/</code> (one-command QEMU setup, DX-01/DX-02), <code>host/fsproof/</code> (differential tester + content exerciser), <code>host/bench/</code> (comparative benchmarks)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Image &amp; Policy&lt;/strong&gt;</td>
+<td><code>image/</code></td>
+<td>&lt;strong&gt;[planned]&lt;/strong&gt; (empty dir today)</td>
+<td><code>mkqnximage</code> snippets embedding the driver and mounting the share at boot (DX-01), QNX security policy (QNX-06)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Upstream Patches&lt;/strong&gt;</td>
+<td><code>upstream/</code></td>
+<td>&lt;strong&gt;[planned]&lt;/strong&gt; (empty dir today)</td>
+<td>PCI transport + x86_64 target offered back to <code>gvergine/qnx-fs-9p</code> (Decision D2)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Build Support&lt;/strong&gt;</td>
+<td><code>cmake/</code>, <code>tools/</code></td>
+<td>&lt;strong&gt;[exists]&lt;/strong&gt;</td>
+<td><code>cmake/passerelle.cmake</code> (<code>pgw_library</code>, <code>pgw_test</code>, <code>pgw_qnx_syntax</code> helpers), <code>tools/check-size.py</code> size guard run as the <code>size-guard</code> CTest</td>
+</tr>
+</tbody>
+</table>
+    <nav class="pager">
+      <a class="prev" href="user-guide.html">Previous</a>
+      <a class="next" href="building.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

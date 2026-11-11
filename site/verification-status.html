@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verification status - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="verification-status">Verification Status</h1>
+<blockquote><p>&lt;strong&gt;Snapshot date: 11 November 2026, 01:25 CET.&lt;/strong&gt; This table records the state of each requirement at the time of writing. Several modules are being implemented in parallel by other contributors, so a requirement marked &lt;em&gt;not started&lt;/em&gt; below may already be in progress. The authoritative source is always the CI run (<code>ctest</code> + <code>size-guard</code> + sanitizer build) on the branch head, not this file. Update this file whenever a requirement changes state.</p></blockquote>
+<h2 id="status-vocabulary">Status vocabulary</h2>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td>Code exists, compiles, and is exercised by an automated test</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>Portable code with an automated host-side test, no QNX needed</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;To validate under QNX&lt;/strong&gt;</td>
+<td>Code exists but can only be proven on a QNX 8.0 guest under QEMU</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Not started&lt;/strong&gt;</td>
+<td>Public contract (header) defined; implementation pending</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;Environment facts verified on the development PC&lt;/strong&gt; (<code>baptiste-MS-7D18</code>, Linux):</p>
+<ul>
+<li>QEMU **8.2.2** installed (`qemu-system-x86_64 --version`).</li>
+<li>`virtiofsd` present at `/usr/libexec/virtiofsd`.</li>
+<li>QEMU supports `virtio-9p-pci` and `vhost-user-fs-pci` (`qemu-system-x86_64 -device help`).</li>
+<li>**No QNX SDP installed**: `qcc` and `mkqnximage` are absent, `~/qnx800` does not exist. Cross-compiling for QNX is therefore impossible on this machine.</li>
+<li>**A real QNX guest does run here**: QNX Neutrino **7.1.0** x86_64, booted by QEMU with a `virtio-9p-pci` device attached (`tests/qemu/qnx71/`). It ships no compiler, so it cannot build our driver, but it answers what QNX sees of the device — see §3.2.</li>
+</ul>
+<hr>
+<h2 id="1-baseline-infrastructure-module-common">1. Baseline Infrastructure (module <code>common/</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>State</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Byte cursors, sticky-fail, zero-copy <code>pgw_take</code></td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>ctest -R common</code> → <code>test_buf_roundtrip</code>, <code>test_buf_sticky_fail_and_clamp</code></td>
+</tr>
+<tr>
+<td>Linux↔host errno / open-flags / mode tables</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>ctest -R common</code> → <code>test_err_linux_table</code>, <code>test_flags_and_modes</code></td>
+</tr>
+<tr>
+<td>Injectable monotonic clock</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>ctest -R common</code> → <code>test_time_fake_clock</code></td>
+</tr>
+<tr>
+<td>Logging + per-operation counters</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>ctest -R common</code> → <code>test_log_stats_and_pattern</code></td>
+</tr>
+<tr>
+<td>Tunable limits in one header</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>common/include/pgw/limits.h</code></td>
+</tr>
+<tr>
+<td>Size rule (&lt; 500 lines/file, &lt; 50 lines/function)</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>ctest -R size-guard</code>, <code>python3 tools/check-size.py --root .</code></td>
+</tr>
+</tbody>
+</table>
+<p>Baseline command:</p>
+<pre><code class="language-bash">cmake -B build -DPGW_MODULES=common &amp;&amp; cmake --build build -j8
+ctest --test-dir build --output-on-failure      # 2/2 tests passed</code></pre>
+<hr>
+<h2 id="11-conformance-and-randomized-input-benches-tests">1.1 Conformance and randomized-input benches (<code>tests/</code>)</h2>
+<p>Added at the second snapshot. These are the levels 1 and 2 of the validation plan (spec 7.1) running &lt;strong&gt;on the PC, in the CI&lt;/strong&gt;, without a QNX SDP.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>State</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Truth backend over a real POSIX directory</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>tests/posix_backend/</code>, an implementation of <code>pgw_fs_backend_ops</code></td>
+</tr>
+<tr>
+<td>Differential test, seeded and replayable (spec 7.2)</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_diff</code> — random suites through <code>pgw_rmfs</code>, compared field by field with the folder: names, types, sizes, modes, link targets, content digest</td>
+</tr>
+<tr>
+<td>Automatic reduction of a divergence</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>diff_reduce()</code> bisects the suite and reports the shortest prefix that reproduces, with the seed</td>
+</tr>
+<tr>
+<td>Directed cases (spec 7.4)</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_directed</code> — rename over an existing file, exclusive create, truncate, append, permission matrix with a non-owner caller, symlink loop, 255- and 256-byte names, non-empty <code>rmdir</code>, 600-entry directory read in pages of 7, <code>fsync</code>, <code>statfs</code>, local range locks</td>
+</tr>
+<tr>
+<td>FS-11 deleted-but-open stays readable</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>test_deleted_but_open_stays_readable</code></td>
+</tr>
+<tr>
+<td>FS-12 a change on the PC is seen without remounting</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>test_host_change_visible_without_remount</code></td>
+</tr>
+<tr>
+<td>ROB-02 / P9-07 no descriptor or fid leak</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>test_no_handle_leak_after_many_cycles</code> (20 000 open/close cycles, counters back to zero)</td>
+</tr>
+<tr>
+<td>ROB-06 randomized input on every decoder</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R fuzz</code> — noise plus five kinds of damage on well-formed messages, with a header invariant that fails the test when a decoder accepts garbage</td>
+</tr>
+<tr>
+<td>Priority conversion QNX → scheduler</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>ctest -R prio</code> (<code>common/tests/test_prio.c</code>)</td>
+</tr>
+<tr>
+<td>1 000 000-operation campaign (spec 7.6)</td>
+<td>&lt;strong&gt;Executed — 0 divergence&lt;/strong&gt;</td>
+<td><code>PGW_DIFF_OPS=1000000 build/tests/test_diff</code>: 3 seeds × 1 000 000 operations = &lt;strong&gt;3 000 000 operations&lt;/strong&gt;, 60 s, 11 Nov 2026. The CTest entry <code>e2e-long</code> stays disabled so it never runs on a PR</td>
+</tr>
+<tr>
+<td>Long randomized-input campaign</td>
+<td>&lt;strong&gt;Executed — 0 defect&lt;/strong&gt;</td>
+<td><code>PGW_FUZZ_ITERS=5000000</code>: &lt;strong&gt;5 000 000 iterations&lt;/strong&gt; on the 9P decoders (11 s) and 5 000 000 on the FUSE decoders (10 s), 11 Nov 2026; repeated under ASan+UBSan (21 s and 18 s), still zero defect. The spec's one-hour campaign (§7.6) is not run: at this rate it would be ~10⁹ iterations, and "5 million each" is the honest claim</td>
+</tr>
+<tr>
+<td>Coverage-guided fuzzing</td>
+<td>&lt;strong&gt;Optional&lt;/strong&gt;</td>
+<td><code>-DPGW_LIBFUZZER=ON</code> builds <code>fuzz_p9_lf</code>; never required, the deterministic campaigns run everywhere</td>
+</tr>
+</tbody>
+</table>
+<p>What the PC bench &lt;strong&gt;cannot&lt;/strong&gt; prove: anything that depends on the guest kernel — priority inheritance in the trace (QNX-03), interrupt delivery (VIO-04), running a binary straight from the share (FS-06), <code>mount</code>/<code>umount</code> (QNX-07), the security policy (QNX-06). Those need E1–E5.</p>
+<hr>
+<h2 id="2-requirement-matrix">2. Requirement Matrix</h2>
+<h3 id="21-virtio-transport-virtio">2.1 Virtio transport (<code>virtio/</code>)</h3>
+<p>Implemented and tested on the PC; the QNX-only parts (<code>pci_qnx.c</code>, <code>mmio_qnx.c</code>) are compile-checked against <code>tests/qnx-stub</code> in CI. What a real QNX guest reports about the same device is in <a href="#32-a-real-qnx-71-guest-on-this-pc">§3.2</a>.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VIO-01</td>
+<td>&lt;strong&gt;Tested on PC + observed on QNX&lt;/strong&gt;</td>
+<td>vendor/device matching: <code>ctest -R test_virtio_pci</code>; QNX 7.1's <code>pci-tool</code> reports <code>1af4/1009</code> for our device (EVIDENCE.md §2)</td>
+</tr>
+<tr>
+<td>VIO-02</td>
+<td>&lt;strong&gt;Tested on PC + observed on QNX&lt;/strong&gt;</td>
+<td>capability walk on a fake config space (<code>test_virtio_pci</code>); QNX exposes the MSI-X cap and the five vendor (virtio) caps</td>
+</tr>
+<tr>
+<td>VIO-03</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>MMIO v1 and v2 against a RAM-backed register file: <code>ctest -R test_virtio_mmio</code></td>
+</tr>
+<tr>
+<td>VIO-04</td>
+<td>Implemented, &lt;strong&gt;not verifiable here&lt;/strong&gt;</td>
+<td>MSI-X programming with INTx fallback is separated from bus access (<code>test_virtio_pci</code> covers the programming); delivery needs QNX + a routed vector — see §3.2 and E1</td>
+</tr>
+<tr>
+<td>VIO-05</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>mount tag read from device config: <code>ctest -R test_virtio_dev</code></td>
+</tr>
+<tr>
+<td>VIO-06</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>one device object per share: <code>test_virtio_dev</code></td>
+</tr>
+<tr>
+<td>VIO-07</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>zero-copy scatter-gather: <code>ctest -R test_virtio_vq</code> (no intermediate copy in the transport)</td>
+</tr>
+<tr>
+<td>VIO-08</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>indirect descriptors and notification suppression: <code>test_virtio_vq</code>, <code>test_virtio_dev</code></td>
+</tr>
+<tr>
+<td>VIO-09</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>reset and interrupt teardown: <code>test_virtio_dev</code></td>
+</tr>
+<tr>
+<td>VIO-10</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>the mock backend that makes all of the above possible without QNX: <code>ctest -R test_virtio_mock</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-9p2000l-protocol-proto9p">2.2 9P2000.L protocol (<code>proto9p/</code>)</h3>
+<p>Portable C11, no OS header, tested on the PC — this is requirement P9-10 applied to the whole layer.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P9-01</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>version and <code>msize</code> negotiation: <code>ctest -R test_p9_session</code></td>
+</tr>
+<tr>
+<td>P9-02</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>every core message encode/decode round trip: <code>ctest -R test_p9_codec</code></td>
+</tr>
+<tr>
+<td>P9-03</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>tsetattr</code>, <code>tsymlink</code>, <code>treadlink</code>, <code>tlink</code>: <code>test_p9_codec</code></td>
+</tr>
+<tr>
+<td>P9-04</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>Linux↔QNX tables (<code>test_err_linux_table</code>, <code>test_flags_and_modes</code>) and their use in the session: <code>test_p9_session</code></td>
+</tr>
+<tr>
+<td>P9-05</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>several requests in flight, one tag each: <code>test_p9_session</code></td>
+</tr>
+<tr>
+<td>P9-06</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>Tflush</code> on cancellation: <code>test_p9_session</code></td>
+</tr>
+<tr>
+<td>P9-07</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>1 000 000 alloc/free on the fid and tag pools, no leak: <code>ctest -R test_p9_idpool</code></td>
+</tr>
+<tr>
+<td>P9-08</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>reads/writes/readdir split across messages and resumed: <code>test_p9_session</code> (a 300 KiB read with <code>msize</code> 8192)</td>
+</tr>
+<tr>
+<td>P9-09</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>strict validation (size, type, tag, internal lengths, no trailing bytes): <code>ctest -R test_p9_validation</code>, plus <code>ctest -R fuzz_p9</code></td>
+</tr>
+<tr>
+<td>P9-10</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>the layer builds and its tests run with no QNX header: that is the CI <code>build-test</code> job</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-filesystem-behaviour-rmfs">2.3 Filesystem behaviour (<code>rmfs/</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FS-01</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>open/read/write/seek/close with 64-bit offsets: <code>ctest -R test_rmfs_open</code></td>
+</tr>
+<tr>
+<td>FS-02</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>size, type, mode, owner, ns timestamps, nlink, stable ino: <code>ctest -R test_rmfs_meta</code></td>
+</tr>
+<tr>
+<td>FS-03</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>readdir resumed by offset, no entry lost or doubled (600 entries in pages of 7): <code>ctest -R test_directed</code></td>
+</tr>
+<tr>
+<td>FS-04</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>exclusive create, <code>O_TRUNC</code>, <code>O_APPEND</code>: <code>test_directed</code>, <code>test_rmfs_open</code></td>
+</tr>
+<tr>
+<td>FS-05</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>mkdir/rmdir/unlink/atomic rename incl. across directories: <code>test_directed</code>, <code>test_rmfs_meta</code></td>
+</tr>
+<tr>
+<td>FS-06</td>
+<td>&lt;strong&gt;Not verified&lt;/strong&gt;</td>
+<td>needs a QNX guest that executes a binary from the share — E3</td>
+</tr>
+<tr>
+<td>FS-07</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>chmod/chown/truncate/utimens: <code>test_rmfs_meta</code>, <code>test_directed</code></td>
+</tr>
+<tr>
+<td>FS-08</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>symlink create/read/resolve, loop detection (<code>PGW_SYMLINK_MAX</code>), hard links: <code>ctest -R test_rmfs_path</code>, <code>test_directed</code></td>
+</tr>
+<tr>
+<td>FS-09</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>permission matrix with a non-owner caller, <code>ro</code>/<code>noexec</code>/<code>nosuid</code>: <code>ctest -R test_rmfs_perms</code>, <code>test_directed</code></td>
+</tr>
+<tr>
+<td>FS-10</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>fsync</code> reaches the backend, <code>statfs</code> reports the share: <code>test_directed</code></td>
+</tr>
+<tr>
+<td>FS-11</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>deleted-but-open stays readable until close: <code>ctest -R test_diff</code></td>
+</tr>
+<tr>
+<td>FS-12</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>a change made on the PC is seen without remounting (no data cache): <code>test_diff</code></td>
+</tr>
+<tr>
+<td>FS-13</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>bounded attribute cache, hits and misses counted, off by default: <code>ctest -R test_rmfs_cache</code></td>
+</tr>
+<tr>
+<td>FS-14</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>local byte-range locks between guest processes, released when the owner dies: <code>ctest -R test_rmfs_locks</code>, <code>test_directed</code></td>
+</tr>
+<tr>
+<td>FS-15</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>255-byte names accepted, 256 refused, UTF-8 preserved: <code>test_directed</code></td>
+</tr>
+<tr>
+<td>FS-16</td>
+<td>Not started</td>
+<td>X tier: relay locks to the server</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-qnx-integration-drivers">2.4 QNX integration (<code>drivers/</code>)</h3>
+<p>The driver sources exist and their portable half is tested; every requirement below needs a QNX build (SDP) to be &lt;em&gt;verified&lt;/em&gt;, and §3.2 records what a real QNX 7.1 guest already told us about the device itself.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof / next step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QNX-01</td>
+<td>Written, &lt;strong&gt;compiles on PC&lt;/strong&gt;, not run</td>
+<td>resource-manager glue in <code>drivers/common/src/resmgr_*_qnx.c</code>; type-checked by CI job <code>qnx-syntax</code></td>
+</tr>
+<tr>
+<td>QNX-02</td>
+<td>Written, not run</td>
+<td>IFS fragment in <code>image/passerelle.build</code>; the guest's own <code>/proc/boot</code> shows the minimum is realistic (kernel, libc, <code>pci-server</code>) — EVIDENCE.md §4</td>
+</tr>
+<tr>
+<td>QNX-03</td>
+<td>Written, not measured</td>
+<td><code>drivers/common/src/prio_qnx.c</code> re-applies the caller priority for the whole exchange; needs the kernel trace — E1</td>
+</tr>
+<tr>
+<td>QNX-04</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>priority-ordered submission: <code>ctest -R test_rmfs_sched</code> (a priority request overtakes eight low-priority ones)</td>
+</tr>
+<tr>
+<td>QNX-05</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>a parked request never holds the caller thread: <code>test_rmfs_sched</code></td>
+</tr>
+<tr>
+<td>QNX-06</td>
+<td>Written, not run</td>
+<td>privilege drop + <code>image/passerelle.sec</code>; the guest ships <code>ability</code> and <code>libsecpol.so</code>, so the mechanism exists — EVIDENCE.md §4</td>
+</tr>
+<tr>
+<td>QNX-07</td>
+<td>Written, not run</td>
+<td><code>mount_qnx.c</code>; E1</td>
+</tr>
+<tr>
+<td>QNX-08</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt; (counters), backend not run</td>
+<td><code>pgw_stat_*</code> table exported as <code>name=value</code>; slog2 backend is <code>drivers/common/src/syslog_qnx.c</code></td>
+</tr>
+<tr>
+<td>QNX-09</td>
+<td>Written, not measured</td>
+<td>trace events around each request in <code>drivers/common/src/trace_qnx.c</code>; needs the kernel trace tooling</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-performance">2.5 Performance</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof / next step</th>
+<th>Blocker</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PERF-01</td>
+<td>&lt;strong&gt;Baseline published&lt;/strong&gt;</td>
+<td><code>docs/measurements/linux-baseline-9p.md</code>: roundtrips per POSIX call from a real QEMU 8.2 trace (1 643 events, 822 requests) on an active Linux guest executing 30 create/stat/read/unlink cycles</td>
+<td>Passerelle's own numbers need a QNX guest</td>
+</tr>
+<tr>
+<td>PERF-02 … PERF-07</td>
+<td>Not started</td>
+<td><code>host/bench/</code> harness exists in Python (<code>pbench</code>), baseline recorded</td>
+<td>&lt;strong&gt;No SDP → no guest to measure&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26-robustness">2.6 Robustness</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof / next step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ROB-01</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>a refused operation comes back as a code, never as a hang: <code>ctest -R test_rmfs_meta</code>, <code>test_p9_validation</code></td>
+</tr>
+<tr>
+<td>ROB-02</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>no descriptor or fid left behind after a client disappears: <code>ctest -R test_diff</code> (20 000 open/close cycles, counters back to zero), <code>test_p9_idpool</code></td>
+</tr>
+<tr>
+<td>ROB-03</td>
+<td>Written, not run</td>
+<td>unmount under load in <code>drivers/*/src/mount_qnx.c</code>; needs QNX</td>
+</tr>
+<tr>
+<td>ROB-04</td>
+<td>&lt;strong&gt;Partly tested on PC&lt;/strong&gt;</td>
+<td>a file removed or replaced on the PC while in use gives clean errors: <code>test_diff</code>, <code>test_directed</code></td>
+</tr>
+<tr>
+<td>ROB-05</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>request abandoned after a configurable deadline, with an injected clock so no test sleeps: <code>ctest -R common</code> (<code>test_time_fake_clock</code>), <code>test_p9_session</code></td>
+</tr>
+<tr>
+<td>ROB-06</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>seeded campaigns against every decoder, under ASan+UBSan, with a header invariant that fails on a decoder accepting garbage: `ctest -R "fuzz_p9</td>
+<td>fuzz_fuse"`</td>
+</tr>
+<tr>
+<td>ROB-07</td>
+<td>Not started</td>
+<td>X tier: a deliberately faulty 9P server over the network</td>
+</tr>
+</tbody>
+</table>
+<h3 id="27-security">2.7 Security</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof / next step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEC-01</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>nosuid</code> on by default, read-only mount refuses writes, permission matrix enforced in the guest: <code>ctest -R test_rmfs_perms</code>, <code>test_directed</code></td>
+</tr>
+<tr>
+<td>SEC-02</td>
+<td>Written, not run</td>
+<td>the driver only opens its own device (single <code>pci_device_find</code> match); audit needs QNX</td>
+</tr>
+<tr>
+<td>SEC-03</td>
+<td>&lt;strong&gt;Implemented (docs)&lt;/strong&gt;</td>
+<td><a href="architecture.html">architecture.md</a> §3.7 documents the QEMU security models; <code>qshare</code> defaults to <code>mapped-xattr</code>, which needs no root, and E5 ran <code>virtiofsd</code> unprivileged</td>
+</tr>
+</tbody>
+</table>
+<h3 id="28-developer-experience">2.8 Developer experience</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof / next step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DX-01</td>
+<td>&lt;strong&gt;Verified on the host&lt;/strong&gt;</td>
+<td><code>qshare</code> emits the QEMU options and the <code>mkqnximage</code> fragment; those exact options booted a Linux guest (E5) and a QNX 7.1 guest (§3.2)</td>
+</tr>
+<tr>
+<td>DX-02</td>
+<td>Not started</td>
+<td>one-command demonstration needs the QNX driver</td>
+</tr>
+<tr>
+<td>DX-03</td>
+<td>Partial</td>
+<td><code>qrun</code> written; needs a QNX guest with the driver mounted</td>
+</tr>
+<tr>
+<td>DX-04</td>
+<td>&lt;strong&gt;Implemented (docs)&lt;/strong&gt;</td>
+<td><a href="user-guide.html">user-guide.md</a> §7 (CMake + Rust examples, also written by <code>qshare --example</code>)</td>
+</tr>
+<tr>
+<td>DX-05</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><a href="user-guide.html">user-guide.md</a>, <a href="architecture.html">architecture.md</a> and the eight-chapter <a href="codelab.html">codelab</a></td>
+</tr>
+<tr>
+<td>DX-06</td>
+<td>Not started</td>
+<td>X tier: whole system root on the share</td>
+</tr>
+</tbody>
+</table>
+<h3 id="29-virtiofs-protofuse-implemented-tested-on-pc">2.9 virtiofs (<code>protofuse/</code>) — implemented, tested on PC</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof / next step</th>
+<th>Blocker</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VFS-01</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>PGW_VIRTIO_ID_FS</code> = 26 and the tag/queue-count read: <code>ctest -R test_virtio_dev</code>, and confirmed against a real QEMU by E5 (guest reports device <code>0x001a</code>)</td>
+<td>Discovery on QNX pending (E1)</td>
+</tr>
+<tr>
+<td>VFS-02</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>hiprio lane for FORGET/INTERRUPT: <code>ctest -R protofuse_session</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-03</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>version negotiation with fallback, full operation set, splitting on <code>max_write</code>, 8-aligned <code>reclen</code>: `ctest -R "protofuse_codec</td>
+<td>protofuse_session"`</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-04</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td>node reference counts, forget/batch-forget, session close settles every reference: <code>ctest -R protofuse_refs</code> (100 000 lookup/forget cycles)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-05</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>pgw_rmfs_from_fuse()</code> in <code>rmfs/adapters/fuse_adapter.c</code>, built when <code>pgw_protofuse</code> exists</td>
+<td>Conformance run through the adapter needs a guest</td>
+</tr>
+<tr>
+<td>VFS-06</td>
+<td>&lt;strong&gt;Verified on the host&lt;/strong&gt;</td>
+<td><code>qshare</code> starts <code>virtiofsd</code> and a Linux guest mounts the share: <code>tests/qemu/run_share_check.py</code> (§3.1)</td>
+<td>QNX guest side pending (E1)</td>
+</tr>
+<tr>
+<td>VFS-07</td>
+<td>Not started</td>
+<td>Needs the comparative bench on a QNX guest</td>
+<td>No SDP</td>
+</tr>
+</tbody>
+</table>
+<h3 id="210-reverse-sharing-x-tier">2.10 Reverse sharing (X tier)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>State</th>
+<th>Proof / next step</th>
+<th>Blocker</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SRV-01, SRV-02</td>
+<td>Not started</td>
+<td>First item to de-scope if the schedule slips (spec §10)</td>
+<td>No SDP</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;Tally at snapshot time&lt;/strong&gt;: 1 module fully implemented and tested on PC (<code>common/</code>), ~11 requirements with design-level code present but not yet built (<code>rmfs/</code> sources, <code>host/</code> Python tools), the rest not started. &lt;strong&gt;Zero requirement is claimed as verified under QNX&lt;/strong&gt;, because no QNX SDP is available on this workstation.</p>
+<hr>
+<h2 id="3-feasibility-tests-e1e5">3. Feasibility Tests E1–E5</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Question</th>
+<th>State</th>
+<th>What blocks it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;E1&lt;/strong&gt;</td>
+<td>Under QEMU x86_64, does a QNX driver obtain the virtio PCI interrupt and exchange a first 9P message?</td>
+<td>&lt;strong&gt;Half answered&lt;/strong&gt; (11 Nov 2026, 17:20 CET)</td>
+<td>&lt;strong&gt;Enumeration and capability discovery: answered yes on a real QNX 7.1 guest&lt;/strong&gt; — <code>pci-tool</code> reports our device <code>1af4:1009</code> with the MSI-X capability and the five virtio vendor capabilities, and three assigned BARs. **Interrupt: measured as &lt;em&gt;not routed&lt;/em&gt; for this device** (<code>Interrupt list - 0 assigned</code>), because the image only routes INTx for other bus/device addresses — see §3.2. Still blocked for the remaining half: the driver itself needs the SDP to be built</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;E2&lt;/strong&gt;</td>
+<td>Do clients A and B behave as advertised, and what do they measure?</td>
+<td>&lt;strong&gt;Blocked&lt;/strong&gt;</td>
+<td>Both require the SDP to build; A is aarch64-only (needs <code>qemu-system-aarch64</code>, present, but no guest image), B needs Bazel + SDP</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;E3&lt;/strong&gt;</td>
+<td>Does QNX execute a program served by a third-party resource manager, shared libraries included?</td>
+<td>&lt;strong&gt;Blocked&lt;/strong&gt;</td>
+<td>No SDP, no <code>mkqnximage</code> image. Fallback: limit the objective to data sharing</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;E4&lt;/strong&gt;</td>
+<td>Does <code>mkqnximage</code> accept extra QEMU options?</td>
+<td>&lt;strong&gt;Blocked&lt;/strong&gt;</td>
+<td><code>mkqnximage</code> ships with the SDP and is absent. Fallback already planned: <code>qshare</code> launches QEMU itself on the produced image</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;E5&lt;/strong&gt;</td>
+<td>On this PC, do <code>virtiofsd</code> and shared memory work with a Linux guest?</td>
+<td>&lt;strong&gt;Done — PASS&lt;/strong&gt; (11 Nov 2026, 10:47 CET)</td>
+<td>Nothing. Executed by <code>python3 tests/qemu/run_share_check.py</code>: a minimal Alpine guest on the host kernel, booted by QEMU 8.2.2 with &lt;strong&gt;the options <code>qshare</code> emits&lt;/strong&gt;, mounted both shares, read what the PC had written and wrote what the PC then read back. See §5 below</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;Unblocking checklist&lt;/strong&gt; (in order):</p>
+<ol>
+<li>Install QNX SDP 8.0 (QNX Everywhere) → unblocks E2, E3, E4 and the rest of E1.</li>
+<li>Build one `mkqnximage` x86_64le image with the driver embedded → unblocks E1, E3.</li>
+<li>~~Boot a minimal Linux guest with `virtiofsd`~~ → **done**, `tests/qemu/`.</li>
+<li>~~Boot a real QNX guest and ask its PCI server about the device~~ → **done**, `tests/qemu/qnx71/`, see §3.2.</li>
+</ol>
+<hr>
+<h2 id="31-e5-measured">3.1 E5, measured</h2>
+<p>Command and prerequisites (<code>tests/qemu/README.md</code> explains the mechanism):</p>
+<pre><code class="language-bash">python3 tests/qemu/run_share_check.py --protos 9p,virtiofs</code></pre>
+<p>Host: <code>baptiste-MS-7D18</code>, QEMU &lt;strong&gt;8.2.2&lt;/strong&gt;, <code>virtiofsd</code> &lt;strong&gt;1.10.0&lt;/strong&gt; (<code>/usr/lib/qemu/virtiofsd</code>), guest kernel <code>6.14.0-37-generic</code> (direct boot, no disk), initramfs = Alpine minirootfs 3.21.9 + the host kernel's <code>netfs</code>, <code>9pnet</code>, <code>9pnet_virtio</code>, <code>9p</code> and <code>virtiofs</code> modules.</p>
+<table>
+<thead>
+<tr>
+<th>Protocol</th>
+<th>virtio device seen by the guest</th>
+<th>Mount</th>
+<th>PC → guest</th>
+<th>guest → PC</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9P2000.L (<code>-fsdev local,…,security_model=mapped-xattr</code> + <code>virtio-9p-pci</code>)</td>
+<td><code>0x0009</code></td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>9.0 s</td>
+</tr>
+<tr>
+<td>virtiofs (<code>memory-backend-memfd,share=on</code> + <code>vhost-user-fs-pci</code>)</td>
+<td><code>0x001a</code> = 26</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td>9.0 s</td>
+</tr>
+</tbody>
+</table>
+<p>Two side results worth keeping:</p>
+<ul>
+<li>The device identifiers the guest reports match the constants the driver uses (`PGW_VIRTIO_ID_9P` = 9, `PGW_VIRTIO_ID_FS` = 26), which cross-checks VIO-01 and VFS-01 against a real QEMU rather than against a datasheet.</li>
+<li>`virtiofsd` runs **without root** here (`--cache=never`, warnings about setuid only), which is what SEC-03 recommends for the QEMU side too.</li>
+</ul>
+<p>Re-run in CI the same day, on a GitHub-hosted <code>ubuntu-24.04</code> runner (job <code>e5-guest-share</code>, workflow <code>qemu-e2e</code>, out of pull requests): kernel <code>7.0.0-1017-azure</code>, &lt;strong&gt;virtiofs PASS in 7.2 s and 9P PASS in 6.7 s&lt;/strong&gt;, four markers each, job total 40 s. Two runner facts had to be handled, and both are documented in <a href="ci.html">ci.md</a> §3: the runner kernel is <code>-rw-------</code> so a step runs <code>sudo chmod a+r /boot/vmlinuz-*</code>, and <code>linux-modules-extra</code> is not installable there — the Azure kernel already ships <code>netfs</code>, <code>9pnet</code>, <code>9pnet_virtio</code>, <code>9p</code> and <code>virtiofs</code> as modules, which is all the guest needs. The R630 workers have neither QEMU nor <code>virtiofsd</code>, so the same step there reports an explicit skip.</p>
+<p>What E5 does &lt;strong&gt;not&lt;/strong&gt; cover: the QNX client. The guest above is Linux, so this proves the host half of the plumbing (options, daemon, shared memory, tag, read/write both ways) and nothing about our driver.</p>
+<hr>
+<hr>
+<h3 id="32-a-real-qnx-71-guest-on-this-pc">3.2 A real QNX 7.1 guest on this PC</h3>
+<p><code>tests/qemu/qnx71/</code> boots QNX Neutrino &lt;strong&gt;7.1.0&lt;/strong&gt; x86_64 (community image, 2022-07-12) under QEMU 8.2.2 with the same <code>virtio-9p-pci</code> options <code>qshare</code> emits, then asks the guest's own tools what it sees. Full transcript and the reasoning line by line: <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/tests/qemu/qnx71/EVIDENCE.md"> 3 </a>.</p>
+<p>Measured, copy-pasted from the guest:</p>
+<table>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Meaning for the project</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>uname -a</code> → <code>QNX vm1 7.1.0 ... x86pc x86_64</code></td>
+<td>a genuine QNX kernel, not a stub</td>
+</tr>
+<tr>
+<td><code>pci-tool -vv</code> → <code>vid/did: 1af4/1009</code> at <code>B000:D05:F00</code></td>
+<td>QNX's PCI server enumerates our device with exactly the IDs in <code>limits.h</code> (&lt;strong&gt;VIO-01&lt;/strong&gt; premise verified on QNX)</td>
+</tr>
+<tr>
+<td><code>Capabilities list (6): 11 (MSI-X) --&gt; 09 (VEND) ×5</code></td>
+<td>the five vendor capabilities a modern virtio device exposes are readable through QNX's PCI API, and MSI-X is present (&lt;strong&gt;VIO-02&lt;/strong&gt;, &lt;strong&gt;VIO-04&lt;/strong&gt;)</td>
+</tr>
+<tr>
+<td><code>Address Space list - 3 assigned</code> (I/O <code>c000</code>, MEM <code>feb96000</code>, 64-bit prefetch <code>fe000000</code>)</td>
+<td>QEMU assigned the legacy PIO window, the modern configuration window and the shared-memory window; QNX reports them (&lt;strong&gt;VIO-07&lt;/strong&gt; premise)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;<code>Interrupt list - 0 assigned</code>&lt;/strong&gt;</td>
+<td>&lt;strong&gt;no interrupt is routed to the device.&lt;/strong&gt; <code>pci_hw.cfg</code> in the image routes INTx only for <code>B0:D17:F0</code> and <code>B3:D0:F0</code>. A driver must either add its own entry (bus, device, pin — QEMU chose <code>pin A</code>) or take the MSI-X path, for which the image already ships <code>pci_cap-0x11.so</code></td>
+</tr>
+<tr>
+<td><code>pci_server.cfg</code> → <code>DO_BUS_CONFIG=no</code></td>
+<td>the PCI server does &lt;strong&gt;not&lt;/strong&gt; program BARs itself; they are assigned here by QEMU's firmware. A driver must not assume that on real hardware (decision D3)</td>
+</tr>
+<tr>
+<td><code>/proc/boot</code> contains <code>fs-dos.so</code>, <code>fs-qnx6.so</code>, &lt;strong&gt;no 9P or virtiofs client&lt;/strong&gt;</td>
+<td>the gap this project fills, now &lt;em&gt;observed&lt;/em&gt; instead of asserted: a stock QNX runtime image cannot mount a host share</td>
+</tr>
+<tr>
+<td>ships <code>libsecpol.so</code>, <code>ability</code>, <code>qconn</code>; &lt;strong&gt;no <code>qcc</code>, no <code>mkifs</code>&lt;/strong&gt;</td>
+<td>the QNX-06/SEC-01 mechanisms exist in a runtime image; but nothing can be compiled in or for it without the SDP</td>
+</tr>
+</tbody>
+</table>
+<p>What this does &lt;strong&gt;not&lt;/strong&gt; do: build or run our driver. QNX 7.1 is also not QNX 8.0 — the kernel changes the specification relies on (no <code>InterruptAttach()</code>, capability model) are not exercised by this image. It answers the &lt;em&gt;device&lt;/em&gt; question, not the &lt;em&gt;driver&lt;/em&gt; question.</p>
+<h2 id="4-known-issues-at-snapshot-time">4. Known Issues at Snapshot Time</h2>
+<p>Third snapshot, &lt;strong&gt;11 November 2026, 17:30 CET&lt;/strong&gt;: every module has a <code>CMakeLists.txt</code>, the whole stack builds, both guards are green, E5 passes in CI, and a real QNX 7.1 guest runs on this PC and confirms what the device looks like from the QNX side.</p>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Impact</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;No QNX SDP on the workstation&lt;/strong&gt;</td>
+<td>The driver cannot be built for QNX, so E2, E3, E4 and the driver half of E1 remain impossible; PERF-02…07 have no number</td>
+<td>&lt;strong&gt;Open&lt;/strong&gt;, the single blocking item (issues #2–#6)</td>
+</tr>
+<tr>
+<td>The QNX 7.1 guest ships no compiler</td>
+<td>It answers device questions (enumeration, capabilities, BARs, interrupt routing) but cannot build or run our driver</td>
+<td>&lt;strong&gt;Open&lt;/strong&gt;, inherent to a runtime image</td>
+</tr>
+<tr>
+<td>No interrupt routed to the device in the reference image</td>
+<td><code>pci_hw.cfg</code> only routes INTx for other bus/device addresses, so <code>pci-tool</code> reports <code>Interrupt list - 0 assigned</code></td>
+<td>&lt;strong&gt;Measured&lt;/strong&gt; (§3.2): the driver must add its own INTx entry or use MSI-X, for which <code>pci_cap-0x11.so</code> is present</td>
+</tr>
+<tr>
+<td>No published performance number</td>
+<td>PERF-01…PERF-07 have harnesses (<code>host/bench</code>) but no measurement</td>
+<td>&lt;strong&gt;Open&lt;/strong&gt;: needs a QNX guest, nothing is claimed in the README</td>
+</tr>
+<tr>
+<td><code>lookup</code> / <code>getattr</code> symlink convention was inverted between <code>rmfs</code> and its backends</td>
+<td><code>lstat</code> answered <code>ELOOP</code> on a link loop while <code>stat</code> answered <code>OK</code>: FS-08 unreachable, every <code>lstat</code> on a symlink wrong</td>
+<td>&lt;strong&gt;Fixed&lt;/strong&gt; by the PC conformance bench; convention now written in <code>pgw/rmfs.h</code></td>
+</tr>
+<tr>
+<td>QNX priority passed through to the submission scheduler without conversion</td>
+<td>A background copy at QNX priority 250 overtook a priority-10 read: PERF-05 inverted on target</td>
+<td>&lt;strong&gt;Fixed&lt;/strong&gt;: single conversion point <code>pgw_prio_from_qnx()</code> (<code>common/include/pgw/prio.h</code>), pinned by <code>common/tests/test_prio.c</code></td>
+</tr>
+<tr>
+<td><code>*.log</code> in <code>.gitignore</code> swallowed the recorded QEMU traces under <code>host/tests/fixtures/</code></td>
+<td><code>host-tools</code> failed on the runner with "missing trace fixture" while passing locally</td>
+<td>&lt;strong&gt;Fixed&lt;/strong&gt;: explicit negation in <code>.gitignore</code></td>
+</tr>
+<tr>
+<td><code>qnx-syntax</code> include list was hard-coded to the portable modules</td>
+<td>The job failed on <code>pgw/drvsrv.h</code>, the drivers' shared service layer</td>
+<td>&lt;strong&gt;Fixed&lt;/strong&gt;: the job now discovers every <code>include/</code> directory of the stack</td>
+</tr>
+</tbody>
+</table>
+<p>Both fixes in the middle of this table were found by &lt;em&gt;running&lt;/em&gt; the code, not by reading it: the first by <code>tests/e2e</code>, the second by writing the directed case for PERF-05. That is the argument for the bench being part of the CI rather than a pre-submission chore.</p>
+<p>Re-check everything with:</p>
+<pre><code class="language-bash">python3 tools/check-size.py --root .          # &lt; 500 lines/file, &lt; 50 lines/function
+python3 tools/check-spdx.py --root .          # Apache-2.0 header on every source file
+cmake -B build &amp;&amp; cmake --build build -j8 &amp;&amp; ctest --test-dir build --output-on-failure
+cmake -B build-asan -DPGW_SANITIZERS=ON &amp;&amp; cmake --build build-asan -j8 \
+    &amp;&amp; ctest --test-dir build-asan --output-on-failure
+(cd host &amp;&amp; python3 -m pytest tests -q)</code></pre>
+<p>At the second snapshot: &lt;strong&gt;28/28 C tests&lt;/strong&gt; in both the normal and the ASan+UBSan build, &lt;strong&gt;133 pytest tests&lt;/strong&gt; green (2 skipped: they need a QNX guest), both guards OK.</p>
+    <nav class="pager">
+      <a class="prev" href="decisions.html">Previous</a>
+      <a class="next" href="measurements.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

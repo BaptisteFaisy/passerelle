@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of the art - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="state-of-the-art">State of the Art</h1>
+<p>This document extends Section 2 of the <a href="spec-en.html">specification</a> with &lt;strong&gt;code-level verification&lt;/strong&gt; of the three existing public projects, performed on 10–11 November 2026 by reading the repositories vendored read-only for this study.</p>
+<blockquote><p>&lt;strong&gt;Honesty rule (spec Section 14).&lt;/strong&gt; For every fact below we state its source: &lt;strong&gt;[code]&lt;/strong&gt; = read directly in the project's source files (file paths given); &lt;strong&gt;[docs]&lt;/strong&gt; = read only in the project's documentation, not verified by execution; &lt;strong&gt;[unverified]&lt;/strong&gt; = claimed by us but not yet confirmed. &lt;strong&gt;None of the three projects has been executed&lt;/strong&gt; — the host PC has no QNX SDP.</p></blockquote>
+<hr>
+<h2 id="1-comparative-table">1. Comparative Table</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>&lt;strong&gt;A — <code>gvergine/qnx-fs-9p</code>&lt;/strong&gt;</th>
+<th>&lt;strong&gt;B — <code>eclipse-score/qnx_unit_tests</code>&lt;/strong&gt; (folder <code>src/common/virtio9p</code>)</th>
+<th>&lt;strong&gt;C — <code>kodebooth/qnx-virtio</code>&lt;/strong&gt;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Date / activity</td>
+<td>Created 3 Oct 2026, single commit &lt;strong&gt;[docs]&lt;/strong&gt;</td>
+<td>Created Mar 2026, active &lt;strong&gt;[docs]&lt;/strong&gt;</td>
+<td>April 2026 &lt;strong&gt;[docs]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>License</td>
+<td>Apache-2.0 &lt;strong&gt;[code: <code>LICENSE</code>]&lt;/strong&gt;</td>
+<td>Apache-2.0, Eclipse Foundation headers &lt;strong&gt;[code: file headers]&lt;/strong&gt;</td>
+<td>MIT, © 2026 Abe Kohandel &lt;strong&gt;[code: <code>LICENSE.md</code>, SPDX headers]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Language</td>
+<td>C &lt;strong&gt;[code: <code>src/*.c</code>, <code>lib9p/</code>]&lt;/strong&gt;</td>
+<td>C++ (namespaces, <code>iofunc_*</code> C++ wrappers) &lt;strong&gt;[code]&lt;/strong&gt;</td>
+<td>C &lt;strong&gt;[code: <code>src/virtio*/</code>]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Size (measured)</td>
+<td>~5,500 lines (<code>src/</code> + <code>lib9p/</code>) &lt;strong&gt;[code: <code>wc -l</code>]&lt;/strong&gt;</td>
+<td>~1,200 lines (<code>virtio9p/</code>) &lt;strong&gt;[code: <code>wc -l</code>]&lt;/strong&gt;</td>
+<td>~2,700 lines (<code>src/virtio*</code>) &lt;strong&gt;[code: <code>wc -l</code>]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Stated goal</td>
+<td>Everyday development; image stays minimal, programs and libraries run straight from the share &lt;strong&gt;[docs: README]&lt;/strong&gt;</td>
+<td>Share test binaries and data; "test infrastructure only" &lt;strong&gt;[docs: README]&lt;/strong&gt;</td>
+<td>Generic virtio transport library + sample GPIO driver &lt;strong&gt;[docs: README]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Guest architectures</td>
+<td>&lt;strong&gt;aarch64 only&lt;/strong&gt;; "x86_64 guests are not supported and were never tested" &lt;strong&gt;[docs: README — confirmed by code: only a <code>virtio-mmio</code> backend exists in <code>src/transport_virtio.c</code>, no PCI file]&lt;/strong&gt;</td>
+<td>x86_64 (PCI) and ARM64 (MMIO) &lt;strong&gt;[code: <code>src/transport/pci_transport.cpp</code>, <code>mmio_transport.cpp</code>]&lt;/strong&gt;</td>
+<td>x86_64 and aarch64le &lt;strong&gt;[code: <code>cmake/toolchains/qnx_x86_64.cmake</code>, <code>qnx_aarch64.cmake</code>; README presets]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Filesystem protocol</td>
+<td>Full 9P2000.L: message enum incl. <code>Tsymlink</code>, <code>Tstatfs</code>, setattr path &lt;strong&gt;[code: <code>lib9p/include/lib9p/p9.h</code>]&lt;/strong&gt;</td>
+<td>Reduced 9P2000.L subset: <code>Tversion, Tattach, Twalk, Tlopen, Tlcreate, Tread, Twrite, Tclunk, Tgetattr, Treaddir, Tmkdir, Tunlinkat, Trenameat</code> — &lt;strong&gt;no&lt;/strong&gt; setattr/symlink/readlink/link/fsync/statfs/flush &lt;strong&gt;[code: <code>include/protocol/nine_p_types.h</code>]&lt;/strong&gt;</td>
+<td>None — transport only &lt;strong&gt;[code: no filesystem protocol in <code>src/</code>]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Transport</td>
+<td>virtio-mmio only, QEMU <code>virt</code> machine &lt;strong&gt;[code: <code>src/transport_virtio.c</code> header comment]&lt;/strong&gt;</td>
+<td>PCI modern (vendor 0x1AF4, device 0x1009) + MMIO v1 and v2 &lt;strong&gt;[docs: README; code: both transport files exist]&lt;/strong&gt;</td>
+<td>PCI &lt;strong&gt;modern-only&lt;/strong&gt; (<code>0x1040 + type</code> device IDs, <code>dev-&gt;leagcy = false</code>) + MMIO v1 &amp; v2 registers incl. queue reset &lt;strong&gt;[code: <code>src/virtio_pci/virtio_pci.c</code> L16/L616, <code>src/virtio_mmio/virtio_mmio.c</code>]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Interrupts</td>
+<td>Not examined in depth</td>
+<td>MSI-X programmed manually via raw config-space reads (<code>kCapIdMsix = 0x11</code>, table BIR/offset, APIC vector arithmetic) with INTx fallback &lt;strong&gt;[code: <code>pci_transport.cpp</code> L147–361]&lt;/strong&gt;</td>
+<td>MSI-X via QNX <code>libpci</code> (<code>cap_msix_set_nirq</code>, <code>cap_msix_set_irq_entry</code>, <code>pci_device_cfg_cap_enable</code>, <code>cap_msix_unmask_irq_entry</code>), one IST per device using <code>InterruptAttachThread()</code> + <code>InterruptWait()</code> &lt;strong&gt;[code: <code>virtio_pci.c</code> L655–690, <code>virtio.c</code> L37–48]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Linux↔QNX errno mapping</td>
+<td>Explicit table, "never a cast", every asm-generic value mapped, fallback <code>EIO</code> &lt;strong&gt;[code: <code>src/errno_map.c</code> header + switch]&lt;/strong&gt;</td>
+<td>Linux open-flag constants present &lt;strong&gt;[code: <code>nine_p_types.h</code> L109]&lt;/strong&gt;; errno mapping not examined</td>
+<td>N/A (transport only)</td>
+</tr>
+<tr>
+<td>Operations coverage</td>
+<td>read, write, create, truncate, chmod/chown/utime, fsync, mkdir/rmdir, rename, symlinks, hard links, <code>df</code>, exec from share &lt;strong&gt;[docs: README — consistent with the message enum in <code>lib9p/p9.h</code>, but not executed]&lt;/strong&gt;</td>
+<td>read, write, create, dirs, unlink, rename &lt;strong&gt;[code: message enum]&lt;/strong&gt;</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>Privileges</td>
+<td>Non-root with three abilities: <code>mem_phys</code>, <code>interrupt</code>, <code>pathspace</code> &lt;strong&gt;[docs: README + <code>docs/user/integrating.md</code>; exact <code>on -u ... -A</code> command line shown there]&lt;/strong&gt;</td>
+<td>Unspecified</td>
+<td>Sample uses <code>ThreadCtl(_NTO_TCTL_IO)</code> (root or IO privilege) &lt;strong&gt;[code: <code>src/gpio/main.c</code>]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Queue features</td>
+<td>Unspecified</td>
+<td>Unspecified</td>
+<td>Descriptor chains via <code>virtq_put_desc_chain</code>; ring layout reserves <code>avail_event</code>/<code>used_event</code> slots; &lt;strong&gt;no indirect-descriptor support and no <code>EVENT_IDX</code> negotiation found&lt;/strong&gt; &lt;strong&gt;[code: <code>src/virtio/virtq.h</code>, <code>virtq.c</code>]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Concurrency model</td>
+<td>Multiple in-flight requests, signal interruption, clean unmount, timeout recovery, optional metadata cache &lt;strong&gt;[docs: README — <code>src/cache.c</code> exists in code]&lt;/strong&gt;</td>
+<td>Unspecified; global OCB state (<code>g_last_ext_ocb</code>) suggests a simplified single-threaded model &lt;strong&gt;[code: <code>fs_virtio9p.cpp</code> L108–214]&lt;/strong&gt;</td>
+<td>pthread spinlock around device ops; reset with polling timeout &lt;strong&gt;[code: <code>virtio.c</code>]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Testing</td>
+<td>Comparison against QEMU 9P server trace events &lt;strong&gt;[docs: README Credits]&lt;/strong&gt;; <code>tests/unit</code> + <code>tests/integration</code> directories exist &lt;strong&gt;[code: file listing]&lt;/strong&gt;</td>
+<td>Unspecified; part of a Bazel-based QEMU test runner &lt;strong&gt;[docs: top-level README]&lt;/strong&gt;</td>
+<td>pytest integration tests driving QEMU over serial (<code>tests/gpio/test_gpio.py</code>); &lt;strong&gt;requires SDP + QEMU, no PC unit tests&lt;/strong&gt; &lt;strong&gt;[code: test sources]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>PC buildability (no SDP)</td>
+<td>No — requires QNX SDP 8.0 &lt;strong&gt;[docs: README "Requires QNX SDP 8.0 to build"]&lt;/strong&gt;</td>
+<td>No — Bazel + QNX cross-toolchain &lt;strong&gt;[docs]&lt;/strong&gt;</td>
+<td>No — <code>src/virtio/virtio.c</code> includes <code>&lt;sys/neutrino.h&gt;</code> directly &lt;strong&gt;[code]&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="2-what-we-read-in-the-code-vs-only-in-the-documentation">2. What We Read in the Code vs Only in the Documentation</h2>
+<h3 id="read-in-the-code-paths-are-inside-the-vendored-copies">Read in the code (paths are inside the vendored copies)</h3>
+<ul>
+<li>**A**: `lib9p/include/lib9p/p9.h` (full 9P2000.L message enum incl. `Tsymlink=16`, `Tstatfs=8`), `src/errno_map.c` (Linux→QNX errno table with explicit switch, `EIO` fallback), `src/transport_virtio.c` (mmio-only backend), `LICENSE` (Apache-2.0).</li>
+<li>**B**: `include/protocol/nine_p_types.h` (exact 13-message subset), `src/transport/pci_transport.cpp` (manual MSI-X programming with INTx fallback; device ID 0x1009 per README), `src/resmgr/fs_virtio9p.cpp` (resmgr/iofunc integration), Eclipse Apache-2.0 headers.</li>
+<li>**C**: `src/virtio/virtio.c` (`InterruptAttachThread` IST loop, spinlocks, polled device reset), `src/virtio/virtq.h/.c` (descriptor allocation/chaining API, no indirect descriptors, no EVENT_IDX feature negotiation), `src/virtio_pci/virtio_pci.c` (modern-only PCI IDs `0x1040+type`, full `libpci` MSI-X sequence, capability parsing incl. `SHARED_MEMORY_CFG=8`), `src/virtio_mmio/virtio_mmio.c` (v1 and v2 register maps incl. per-queue reset), `tests/gpio/` (QEMU/serial integration tests), `cmake/toolchains/` (x86_64 + aarch64le), `LICENSE.md` (MIT).</li>
+</ul>
+<h3 id="read-only-in-documentation-not-verified-by-execution">Read only in documentation (not verified by execution)</h3>
+<ul>
+<li>**A**: all functional claims (exec-from-share, symlink behavior, timeout recovery, cache semantics, ability set); its "gaps" list in the user guide was **not read**.</li>
+<li>**B**: claimed PCI auto-discovery details beyond what the code inspection showed; performance characteristics; ARM64 MMIO base addresses (`smem=0xa003600,irq=75` in README examples).</li>
+<li>**C**: README build/test workflow; the claim that the library is reusable "for other virtio drivers".</li>
+<li>**All three**: runtime behavior under QEMU. Nothing was executed — feasibility tests E1–E5 cover this (see [verification-status.md](verification-status.md)).</li>
+</ul>
+<hr>
+<h2 id="3-gaps-passerelle-fills">3. Gaps Passerelle Fills</h2>
+<table>
+<thead>
+<tr>
+<th>Gap (spec Section 2)</th>
+<th>Evidence from this study</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;Complete share on x86_64 guest&lt;/strong&gt;</td>
+<td>A has no PCI backend in code; B's x86_64 client implements only 13 of the ~25 messages needed for POSIX parity (no setattr, symlink, fsync, statfs)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;virtiofs for a QNX guest&lt;/strong&gt;</td>
+<td>None of A/B/C contains any FUSE protocol code; QNX Hypervisor's virtio-fs is host-side only &lt;strong&gt;[docs: QNX hypervisor page, spec §2]&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Conformance + benchmark testbed applicable to all clients&lt;/strong&gt;</td>
+<td>A tests against server traces; B has none documented; C tests only its GPIO sample — none provides a differential harness runnable against a third-party client</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Priority-ordered request scheduling&lt;/strong&gt;</td>
+<td>No priority logic found in A/B/C code; C uses a plain spinlock-serialized queue</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;One-command setup on <code>mkqnximage</code> images&lt;/strong&gt;</td>
+<td>A requires manual snippet + QEMU flags &lt;strong&gt;[docs: README quickstart]&lt;/strong&gt;; B is embedded in a Bazel runner; C has no host tooling</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;PC-buildable, fuzz-testable protocol layers (P9-10)&lt;/strong&gt;</td>
+<td>None of the three builds without the QNX SDP (A: SDP required; B: Bazel+SDP; C: <code>&lt;sys/neutrino.h&gt;</code> in core transport)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-other-observations">4. Other Observations</h2>
+<ul>
+<li>**QNX Hypervisor virtio-fs**: QNX documents a virtio-fs *device* where QNX is the **host** sharing folders with Linux/Android guests **[docs: spec §16 link]**. No guest-side QNX virtiofs driver was found; absence remains **unproven** — the question will be asked on the hackathon Discord (spec §11, §14).</li>
+<li>**Reuse posture**: per [decisions.md](decisions.md), Passerelle writes its own transport (D3) and offers the PCI/x86_64 work back to project A (D2). No file is copied from any of the three repositories; see [NOTICE](../NOTICE).</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="ci.html">Previous</a>
+      <a class="next" href="decisions.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 03 - finding a device - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-3-finding-a-modern-virtio-device-by-its-capabilities">Chapter 3 — Finding a modern virtio device by its capabilities</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Read the virtio PCI capability table, map the BARs it points at, and know the address of every structure the driver will use: the common configuration, the notification area, the ISR byte and the device configuration.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 45 minutes.</p>
+<h2 id="31-why-capabilities-and-why-that-is-a-problem-worth-solving">3.1 Why capabilities, and why that is a problem worth solving</h2>
+<p>A PCI device is described by two things: the standard header, and a list of &lt;em&gt;capabilities&lt;/em&gt; — optional structures that extend the header. A virtio device uses them to say where its registers are, because the modern virtio PCI interface deliberately does not fix any addresses: the device may put them anywhere, in any BAR, and the driver has to be told.</p>
+<p>The list is a linked list, and the standard way to walk it is:</p>
+<pre><code>  status register (0x06), bit 4:   "there is a capability list"
+  capability pointer (0x34):       the first capability
+  each capability:  cap_next points at the next one, 0 ends the list</code></pre>
+<p>On QNX, the capability pointer is at <code>0x34</code>, and QNX's libpci cannot read below <code>0x40</code>. The textbook walk is therefore unavailable, and a driver has to do something else.</p>
+<h2 id="32-the-scan-that-works-everywhere-a-linear-sweep">3.2 The scan that works everywhere: a linear sweep</h2>
+<p>Since QEMU's virtio devices put their capabilities in the <code>0x40..0xFF</code> region and the region is small, the practical answer on QNX is to &lt;strong&gt;sweep the region and recognise the capabilities by their header&lt;/strong&gt;. A virtio capability always starts with:</p>
+<pre><code>  byte 0 = 0x09   (cap_vndr: vendor-specific)
+  byte 1 = cap_next
+  byte 2 = cap_len
+  byte 3 = cfg_type</code></pre>
+<p>So the sweep is: read 4 bytes at a time from <code>0x40</code> to <code>0xFC</code>; if byte 0 is <code>0x09</code> and byte 3 is between 1 and 5, decode it; then &lt;strong&gt;skip the rest of that capability&lt;/strong&gt; and continue.</p>
+<p>The skip is the part people get wrong. If you do not skip, a length field that happens to start with <code>0x09</code> is decoded as a second capability, and you end up with a capability table that is subtly wrong. <code>cap_len</code> tells you how many bytes the capability occupies; the next one starts at the next 4-byte boundary after it.</p>
+<h2 id="33-the-decoder">3.3 The decoder</h2>
+<p>Here is the complete decoder, which is also the exercise's <code>code/src/clab_pci.c</code>. It takes a &lt;em&gt;callback&lt;/em&gt; to read configuration space, rather than calling libpci itself — that is what makes it testable on a PC with no device at all, and it is how this project's own transport does it (<code>virtio/src/virtio_pci_caps.c</code>).</p>
+<pre><code class="language-c">/* Reads `len` bytes of config space at `off`. Returns 0, or -1 on failure. */
+typedef int (*clab_cfg_read)(void *ctx, uint32_t off, void *dst, size_t len);
+
+typedef struct {
+    uint8_t cfg_type;
+    uint8_t bar;
+    uint32_t offset;
+    uint32_t length;
+    uint32_t notify_mult;   /* NOTIFY only */
+} clab_pci_cap;
+
+typedef struct {
+    clab_pci_cap common, notify, isr, device, pci;
+    bool have_common, have_notify, have_isr, have_device, have_pci;
+} clab_pci_caps;</code></pre>
+<p>The decode of one capability:</p>
+<pre><code class="language-c">static void decode_vendor(clab_cfg_read read, void *ctx, uint32_t off,
+                          const uint8_t *hdr, clab_pci_caps *out)
+{
+    clab_pci_cap cap;
+    uint32_t bar_word = 0;
+    uint32_t mult = 0;
+
+    if (hdr[2] &lt; CAP_MIN_LEN || hdr[3] &lt; CLAB_VIRTIO_CFG_COMMON ||
+        hdr[3] &gt; CLAB_VIRTIO_CFG_PCI)
+        return;
+    if (read(ctx, off + 4u, &amp;bar_word, sizeof bar_word) != 0)
+        return;
+    memset(&amp;cap, 0, sizeof cap);
+    cap.cfg_type = hdr[3];
+    cap.bar = (uint8_t)(bar_word &amp; 0xFFu);
+    if (read(ctx, off + 8u, &amp;cap.offset, sizeof cap.offset) != 0)
+        return;
+    if (read(ctx, off + 12u, &amp;cap.length, sizeof cap.length) != 0)
+        return;
+    if (cap.cfg_type == CLAB_VIRTIO_CFG_NOTIFY &amp;&amp; hdr[2] &gt;= 20u) {
+        if (read(ctx, off + 16u, &amp;mult, sizeof mult) != 0)
+            return;
+        cap.notify_mult = mult;
+    }
+    if (cap.bar &gt; 5u || cap.length == 0u)
+        return;
+    store(out, &amp;cap);
+}</code></pre>
+<p>and the sweep:</p>
+<pre><code class="language-c">int clab_pci_scan_linear(clab_cfg_read read, void *ctx, clab_pci_caps *out)
+{
+    if (read == NULL || out == NULL)
+        return -1;
+    memset(out, 0, sizeof *out);
+
+    for (uint32_t off = 0x40u; off &lt;= 0xFCu; off += 4u) {
+        uint32_t word = 0;
+        uint8_t hdr[4];
+        if (read(ctx, off, &amp;word, sizeof word) != 0)
+            return -1;
+        hdr[0] = (uint8_t)(word &amp; 0xFFu);
+        hdr[1] = (uint8_t)((word &gt;&gt; 8u) &amp; 0xFFu);
+        hdr[2] = (uint8_t)((word &gt;&gt; 16u) &amp; 0xFFu);
+        hdr[3] = (uint8_t)((word &gt;&gt; 24u) &amp; 0xFFu);
+        if (hdr[0] != CLAB_PCI_CAP_VENDOR)
+            continue;
+        decode_vendor(read, ctx, off, hdr, out);
+        if (hdr[2] &gt;= CAP_MIN_LEN)
+            off += ((uint32_t)hdr[2] + 3u) / 4u * 4u - 4u;
+    }
+    return 0;
+}</code></pre>
+<p>The skip line is the whole trick: <code>cap_len</code> bytes, rounded up to a multiple of four, and the loop continues after them.</p>
+<h2 id="34-two-more-scans-for-two-more-situations">3.4 Two more scans, for two more situations</h2>
+<p>The linear sweep works on QEMU's virtio devices. Two other scans are worth having, and the real implementation has all three:</p>
+<p>&lt;strong&gt;The chain walk&lt;/strong&gt;, for hosts where reading <code>0x34</code> works. It is the specification's method and it is exact:</p>
+<pre><code class="language-c">if (read(ctx, 0x06u, &amp;status, sizeof status) != 0)
+    return -1;
+if ((status &amp; 0x10u) == 0u)
+    return 0;                     /* no capability list at all */
+if (read(ctx, 0x34u, &amp;off, sizeof off) != 0)
+    return -1;
+for (unsigned hops = 0; hops &lt; CHAIN_MAX &amp;&amp; off &gt;= 0x40u; hops++) {
+    uint8_t hdr[4];
+    if (read(ctx, off, hdr, sizeof hdr) != 0 || hdr[0] == 0u)
+        break;
+    if (hdr[0] == CLAB_PCI_CAP_VENDOR)
+        decode_vendor(read, ctx, off, hdr, out);
+    if (hdr[1] == 0u || hdr[1] == off)
+        break;                     /* end of list, or a self-loop */
+    off = hdr[1];
+}</code></pre>
+<p>The <code>hops</code> bound and the self-loop test are not paranoia: a malformed or hostile device must not hang the driver.</p>
+<p>&lt;strong&gt;The combined entry point&lt;/strong&gt;, which tries the chain and falls back:</p>
+<pre><code class="language-c">int clab_pci_scan(clab_cfg_read read, void *ctx, clab_pci_caps *out)
+{
+    clab_pci_caps chain;
+
+    if (clab_pci_scan_chain(read, ctx, &amp;chain) == 0 &amp;&amp; clab_pci_usable(&amp;chain)) {
+        *out = chain;
+        return 0;
+    }
+    return clab_pci_scan_linear(read, ctx, out);
+}</code></pre>
+<p><code>clab_pci_usable()</code> asks the only question that matters: are the two mandatory structures there? COMMON and NOTIFY are mandatory; the ISR byte and the device configuration are not.</p>
+<h2 id="35-mapping-the-bars-and-the-addresses-that-come-out-of-it">3.5 Mapping the BARs, and the addresses that come out of it</h2>
+<p>Now that the capabilities are decoded, the driver can compute every address it needs:</p>
+<pre><code class="language-c">/* Map the BARs the capabilities name. */
+for (int_t i = 0; i &lt; nba; i++) {
+    uint8_t num = (uint8_t)bars[i].bar_num;
+    size_t size = (size_t)bars[i].size;
+    if (size == 0u)
+        size = 4096u;            /* the PCI server may not have sized it */
+    bar[num] = mmap_device_memory(NULL, size, PROT_READ | PROT_WRITE | PROT_NOCACHE,
+                                  0, (uint64_t)bars[i].addr);
+    bar_len[num] = size;
+}
+
+/* Then the structures. */
+common = bar[caps.common.bar] + caps.common.offset;
+notify = bar[caps.notify.bar] + caps.notify.offset;
+isr    = caps.have_isr    ? bar[caps.isr.bar]    + caps.isr.offset    : NULL;
+devcfg = caps.have_device ? bar[caps.device.bar] + caps.device.offset : NULL;</code></pre>
+<p>and the notification address for a queue:</p>
+<pre><code class="language-c">uint32_t notify_addr = caps.notify.offset + queue_notify_off * caps.notify.notify_mult;</code></pre>
+<p>The <code>queue_notify_off</code> is itself a field of the COMMON structure (offset <code>0x1E</code>), so the driver reads it after mapping. A multiplier of zero means every queue uses the first word.</p>
+<h2 id="36-the-common-configuration-structure">3.6 The common configuration structure</h2>
+<p>Once mapped, the COMMON structure is a fixed layout of 8-bit, 16-bit and 32-bit fields, and it is where the driver spends most of its time:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x00</code></td>
+<td>4</td>
+<td>device_feature_select</td>
+</tr>
+<tr>
+<td><code>0x04</code></td>
+<td>4</td>
+<td>device_feature</td>
+</tr>
+<tr>
+<td><code>0x08</code></td>
+<td>4</td>
+<td>driver_feature_select</td>
+</tr>
+<tr>
+<td><code>0x0C</code></td>
+<td>4</td>
+<td>driver_feature</td>
+</tr>
+<tr>
+<td><code>0x10</code></td>
+<td>2</td>
+<td>config_msix_vector</td>
+</tr>
+<tr>
+<td><code>0x12</code></td>
+<td>2</td>
+<td>num_queues</td>
+</tr>
+<tr>
+<td><code>0x14</code></td>
+<td>1</td>
+<td>device_status</td>
+</tr>
+<tr>
+<td><code>0x15</code></td>
+<td>1</td>
+<td>config_generation</td>
+</tr>
+<tr>
+<td><code>0x16</code></td>
+<td>2</td>
+<td>queue_select</td>
+</tr>
+<tr>
+<td><code>0x18</code></td>
+<td>2</td>
+<td>queue_size</td>
+</tr>
+<tr>
+<td><code>0x1A</code></td>
+<td>2</td>
+<td>queue_msix_vector</td>
+</tr>
+<tr>
+<td><code>0x1C</code></td>
+<td>2</td>
+<td>queue_enable</td>
+</tr>
+<tr>
+<td><code>0x1E</code></td>
+<td>2</td>
+<td>queue_notify_off</td>
+</tr>
+<tr>
+<td><code>0x20</code></td>
+<td>8</td>
+<td>queue_desc</td>
+</tr>
+<tr>
+<td><code>0x28</code></td>
+<td>8</td>
+<td>queue_driver (the available ring)</td>
+</tr>
+<tr>
+<td><code>0x30</code></td>
+<td>8</td>
+<td>queue_device (the used ring)</td>
+</tr>
+</tbody>
+</table>
+<p>Chapter 4 uses the status and feature fields; chapter 5 uses the queue ones.</p>
+<h2 id="37-the-device-configuration-and-the-mount-tag">3.7 The device configuration and the mount tag</h2>
+<p>The DEVICE capability points at the device's own configuration space. For a 9P device it starts with the mount tag:</p>
+<pre><code>  2 bytes   tag_len
+  N bytes   the tag, not NUL-terminated</code></pre>
+<p>So reading the tag is: read <code>tag_len</code>, check it is sane, read that many bytes, NUL-terminate them yourself. QEMU's tag is the <code>mount_tag=</code> value from the command line.</p>
+<p>Two rules a driver needs here, and they are the reason the tag is read &lt;em&gt;after&lt;/em&gt; the feature negotiation has started:</p>
+<ul>
+<li>**Reading device configuration is only allowed once the driver has begun negotiating** (virtio 1.2, §3.1.1 step 4). Before that, the device may change the configuration under you.</li>
+<li>**The tag distinguishes shares.** Two virtio-9p devices on the same bus have the same vendor and device id; only the tag tells them apart. This is requirement VIO-05 of this project's specification, and it is what lets a guest mount two shares.</li>
+</ul>
+<h2 id="38-the-exercise">3.8 The exercise</h2>
+<p><code>code/src/ex02_pci_caps.c</code> builds a synthetic 256-byte configuration space that looks like QEMU's device, decodes it three ways, and prints the result:</p>
+<pre><code>chapter 3 - virtio PCI capabilities
+capability chain (from 0x34):
+  COMMON  bar 4  offset 0x1000  length 0x1000
+  NOTIFY  bar 4  offset 0x2000  length 0x1000  multiplier 4
+  ISR     bar 4  offset 0x3000  length 0x1000
+  DEVICE  bar 4  offset 0x4000  length 0x1000
+linear sweep (0x40..0xFF, 32-bit reads):
+  COMMON  bar 4  offset 0x1000  length 0x1000
+  ...
+same device, config space unreadable below 0x40:
+  ...
+notify address: queue 0 -&gt; +0x2000, queue 3 -&gt; +0x200c
+queue size: device max 1024, we want 128 -&gt; 128; want 100 -&gt; 64</code></pre>
+<p>Run it with:</p>
+<pre><code class="language-sh">cmake --build /tmp/codelab-build
+/tmp/codelab-build/ex02_pci_caps</code></pre>
+<h2 id="39-what-to-observe">3.9 What to observe</h2>
+<ul>
+<li>The three scans produce the same table.</li>
+<li>The notify address for queue 3 is the notify offset plus three times the multiplier.</li>
+<li>The queue size is clamped to a power of two: a request for 100 gives 64, because a virtqueue size must be a power of two.</li>
+</ul>
+<h2 id="310-traps">3.10 Traps</h2>
+<ul>
+<li>**Not skipping a capability's interior.** A `length` field whose low byte is `0x09` is decoded as a capability header, and the table becomes nonsense. The exercise's test case 5 reproduces this.</li>
+<li>**Reading `0x34` on QNX.** It does not work. The fallback is not a convenience, it is the only option on this platform.</li>
+<li>**Forgetting `PROT_NOCACHE`.** Reading a register through the cache gives you a value from before your own last write.</li>
+<li>**Trusting a capability that points past the end of its BAR.** A malformed or lying device can make the driver read outside its mapping. Check `offset + length` against the mapped size.</li>
+<li>**Reading the tag before the device status is set.** The device is allowed to change its configuration while the driver is still looking at it; read it after ACK|DRIVER, and read the `config_generation` field around the read if you want to be sure it did not change under you.</li>
+</ul>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Run `ex02_pci_caps` and read its output. Explain, in one sentence each, why the chain walk fails when `0x34` cannot be read, and why the linear sweep does not.</li>
+<li>Break the skip rule in a *copy* of `clab_pci.c` (comment out the `off +=` line) and run the test again. Which check fails, and what does the broken table look like? This is the bug you will meet in the field.</li>
+<li>Add a case to `test_clab.c`: a device whose NOTIFY capability has a multiplier of 0 (the legacy-compatible layout), and check that `clab_pci_notify_addr()` returns the same address for queues 0 and 3.</li>
+<li>On the guest, print the real capability table of QEMU's device. The expected result is four capabilities — COMMON, NOTIFY, ISR, DEVICE — all in the same BAR, with the NOTIFY multiplier at 4.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>Exercise 1 is answered by the two scans' implementations: the chain walk &lt;em&gt;starts&lt;/em&gt; at <code>0x34</code> and has nowhere to go if that read fails, while the linear sweep starts at <code>0x40</code> and never looks below it.</p>
+<p>Exercise 2: the failing check is <code>caps.isr.offset == 0x3000</code> — without the skip, the dword inside NOTIFY's multiplier field is decoded as an ISR capability at BAR 0, offset 0, and the real ISR capability is then either overwritten or never reached.</p>
+<p>Exercise 3: with a multiplier of 0, <code>notify_addr</code> is <code>offset + 0</code> for every queue, so all the queues share one word. The check is</p>
+<pre><code class="language-c">CLAB_CHECK_EQ(clab_pci_notify_addr(&amp;caps, 0), clab_pci_notify_addr(&amp;caps, 3));</code></pre>
+<p>Exercise 4: the real table is in the driver's <code>-o debug</code> output; the multiplier is 4 on QEMU's modern devices.</p>
+<h2 id="where-we-are">Where we are</h2>
+<p>We know where everything is. Chapter 4 does what the specification says to do with it: reset the device, acknowledge it, negotiate features, and set <code>DRIVER_OK</code>.</p>
+    <nav class="pager">
+      <a class="prev" href="codelab-02-the-pci-bus-under-qnx-8.html">Previous</a>
+      <a class="next" href="codelab-04-features-and-the-status-sequence.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>
