@@ -48,6 +48,35 @@ merge_queue:
   # Mergify reste bornee a 4, ajustable.
   max_parallel_checks: 4
 
+# File automatique. Le produit natif « Merge Queue » (merge_protections_settings
+# ci-dessous) ne suffit pas a mettre une PR en file sur ce depot : mesure le
+# 11/11/2026 sur la PR #1, tous les checks verts et la file vide. On declare donc
+# aussi la regle d'empilement, comme sur BaptisteFaisy/duello (ou mergify merge
+# bien, mergedBy = app/mergify). Les deux mecanismes sont cote Mergify : le seul
+# pilote de merge reste Mergify, le gate hermes-lite etant en dry-run.
+pull_request_rules:
+  - name: file automatique des PR pretes
+    conditions:
+      # Budget CI 5 min : le garde-fou du socle.
+      - check-success = ci-budget
+      # CI reelle du depot (.github/workflows/ci.yml).
+      - check-success = build-test
+      - check-success = sanitize
+      - check-success = host-tools
+      - check-success = qnx-syntax
+      - check-success = rules
+      - -closed
+      - -draft
+      - -conflict
+      # Freins manuels : `hold` (regle du compte) et l'etiquette posee par le
+      # gate quand un rebase humain est necessaire.
+      - -label = hold
+      - -label = hermes/conflit
+      - base = main
+    actions:
+      queue:
+        name: default
+
 # Auto-queue natif (produit Merge Queue) : évite de dépendre du produit
 # « Workflow Automation » (pull_request_rules), constaté désactivé le 24/10.
 merge_protections_settings:
