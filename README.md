@@ -164,22 +164,30 @@ SDP or a QNX guest is said so explicitly.
   proves it parses and type-checks, not that it runs.
 - **Randomized input (level 1)** — `tests/fuzz` runs deterministic seeded
   campaigns against every wire decoder, in CI, under ASan+UBSan
-  (`fuzz_p9`, `fuzz_fuse`). The long campaigns (`fuzz-*-long`, millions of
-  iterations) are registered but disabled: they run outside pull requests.
+  (`fuzz_p9`, `fuzz_fuse`). Measured out of CI: **5 000 000 iterations per
+  decoder family, zero defect** — 11 s (9P) and 10 s (FUSE) in a normal build,
+  21 s and 18 s under sanitizers.
 - **Differential conformance (level 2)** — `tests/e2e` replays seeded random
   operation suites through `pgw_rmfs` and compares every result with the PC
   folder, which is the truth (`test_diff`, plus the directed cases of spec 7.4
   in `test_directed`). A divergence is automatically reduced to the shortest
   prefix that reproduces it. `host/fsproof` runs the same method against a real
-  guest. The 1 000 000-operation campaign of spec 7.6 is `e2e-long`, out of PR.
-- **Performance (level 3) and robustness under QEMU (level 4)** — the harnesses
+  guest. Measured out of CI: **3 000 000 operations (3 seeds × 1 000 000), zero
+  divergence**, in 60 s — the spec 7.6 "complete" threshold.
+- **Host-side integration (E5)** — `tests/qemu` boots a minimal Linux guest on
+  the exact options `qshare` emits and exchanges files both ways, for **9P and
+  virtiofs**: feasibility test **E5 passed**, in 9 s per protocol
+  ([docs/verification-status.md](docs/verification-status.md) §3.1).
+- **Performance (level 3) and guest-side robustness (level 4)** — the harnesses
   are written (`host/bench`, `host/fsproof`); the numbers require a QNX guest
   and are **not** published yet. Only the round-trip *counting* method is
   implemented and unit-tested against recorded QEMU traces.
-- **Feasibility tests E1–E5** — all blocked on the QNX SDP except E5, which only
-  needs a Linux guest. Tracked as issues #2 to #6.
+- **Feasibility tests E1–E4** — blocked on the QNX SDP (issues #2 to #6). E5 is
+  done.
 - **No QNX-side requirement is claimed as verified**: no QNX SDP is installed on
-  the machine that produced this tree.
+  the machine that produced this tree, and no public SDP 8.0 could be pulled
+  without an account (the community image that ships one,
+  `ghcr.io/kodebooth/qnx-sdp`, is private).
 
 See [docs/verification-status.md](docs/verification-status.md) for the full matrix.
 
