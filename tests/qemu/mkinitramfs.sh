@@ -37,6 +37,7 @@ mkdir -p "${ROOT}/modules"
 # Load order matters and the names below enforce it: netfs first (9pnet needs
 # it, and it carries the fscache symbols since 6.x), then the 9p stack, then the
 # filesystems. A missing module is not fatal: it may be built into the kernel.
+found_count=0
 i=10
 for mod in fs/netfs/netfs net/9p/9pnet net/9p/9pnet_virtio fs/9p/9p \
            fs/fuse/virtiofs; do
@@ -51,6 +52,7 @@ for mod in fs/netfs/netfs net/9p/9pnet net/9p/9pnet_virtio fs/9p/9p \
         echo "mkinitramfs: ${mod} not a module (built into the kernel?) - skipped"
         continue
     fi
+    found_count=$((found_count + 1))
     name=$(basename "$found")
     name=${name%.ko.zst}; name=${name%.ko.xz}; name=${name%.ko}
     dest="${ROOT}/modules/${i}-${name}.ko"
@@ -62,6 +64,14 @@ for mod in fs/netfs/netfs net/9p/9pnet net/9p/9pnet_virtio fs/9p/9p \
     i=$((i + 10))
 done
 ls -1 "${ROOT}/modules" | sed 's/^/mkinitramfs:   + /'
+
+# Neither virtiofs nor 9p available as a module: this kernel cannot take part in
+# the test. Exit 3 so the caller reports an explicit skip rather than booting a
+# guest that cannot mount anything and reporting a bogus failure.
+if [ "$found_count" -eq 0 ]; then
+    echo "mkinitramfs: no filesystem module found for ${KVER}" >&2
+    exit 3
+fi
 
 cp "${HERE}/guest-init.sh" "${ROOT}/init"
 chmod 0755 "${ROOT}/init"
