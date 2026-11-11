@@ -69,6 +69,24 @@ jobs:
             qemu-system-x86 virtiofsd cpio zstd
           qemu-system-x86_64 --version | head -1
           command -v virtiofsd || ls /usr/lib/qemu/virtiofsd /usr/libexec/virtiofsd
+      - name: Kernel situation (diagnostic + readability)
+        run: |
+          set -uo pipefail
+          # The harness boots the *host* kernel, so E5 needs a readable
+          # /boot/vmlinuz-* with its /lib/modules tree. Runners often ship the
+          # kernel 0600; making it world-readable costs nothing on an ephemeral
+          # runner and turns a skip into a real test. The 9P client module lives
+          # in linux-modules-extra on Ubuntu, hence the best-effort install.
+          ls -l /boot/vmlinuz-* 2>/dev/null || echo "no /boot/vmlinuz-* at all"
+          ls -d /lib/modules/* 2>/dev/null || echo "no /lib/modules/* at all"
+          sudo chmod a+r /boot/vmlinuz-* 2>/dev/null || echo "chmod refused"
+          sudo apt-get install -y --no-install-recommends \
+            "linux-modules-extra-$(uname -r)" 2>/dev/null \
+            || echo "linux-modules-extra not installable here"
+          echo "--- after ---"
+          ls -l /boot/vmlinuz-* 2>/dev/null | head -3
+          ls /lib/modules/$(uname -r)/kernel/fs/9p/ /lib/modules/$(uname -r)/kernel/fs/fuse/ \
+            2>/dev/null | head -8 || echo "no 9p/virtiofs modules for $(uname -r)"
       - name: Boot the guest on the qshare options (E5)
         run: |
           set -uo pipefail

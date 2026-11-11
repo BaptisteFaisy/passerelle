@@ -76,6 +76,10 @@ def build_initramfs(work: pathlib.Path, cache: pathlib.Path,
         capture_output=True, text=True, check=False,
     )
     sys.stdout.write(proc.stdout)
+    if proc.returncode == 3:
+        # The kernel has neither virtiofs nor 9p as a module: nothing to mount,
+        # so this is a missing prerequisite, not a failure of the share.
+        raise Skipped(f"kernel {kernel.name} ships no 9p/virtiofs module")
     if proc.returncode != 0 or not image.exists():
         sys.stderr.write(proc.stderr)
         raise Skipped(f"mkinitramfs.sh failed (rc={proc.returncode})")
@@ -204,6 +208,12 @@ def check_prerequisites(protos: list[str]) -> tuple[pathlib.Path, list[str]]:
     return kernel, protos
 
 
+def skip(exc: Skipped) -> int:
+    """Report a missing prerequisite the CI way: a notice, and exit status 2."""
+    print(f"::notice::E5 skipped, prerequisite missing: {exc}")
+    return 2
+
+
 def prepare_workdir(args: argparse.Namespace) -> pathlib.Path:
     """Create (or reuse) the artefact directory and announce it."""
     work = (pathlib.Path(args.workdir) if args.workdir
@@ -231,8 +241,7 @@ def main() -> int:
     try:
         kernel, protos = check_prerequisites(protos)
     except Skipped as exc:
-        print(f"::notice::E5 skipped, prerequisite missing: {exc}")
-        return 2
+        return skip(exc)
 
     work = prepare_workdir(args)
     print(f"kernel: {kernel}")
@@ -248,6 +257,8 @@ def main() -> int:
             results[proto] = check_proto(proto, work, pathlib.Path(args.cache),
                                          kernel, initrd, args.workload,
                                          trace if proto == "9p" else None)
+    except Skipped as exc:
+        return skip(exc)
     finally:
         if not args.workdir:
             shutil.rmtree(work, ignore_errors=True)
