@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisions - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="architecture-strategy-decisions-log">Architecture &amp; Strategy Decisions Log</h1>
+<p>This document records the four key architectural and organizational decisions (D1–D4) identified in Section 3.2 of the <a href="spec-en.html">specification</a>. In particular, Decision &lt;strong&gt;D3&lt;/strong&gt; records the &lt;strong&gt;actual code-level evaluation&lt;/strong&gt; of <code>kodebooth/qnx-virtio</code> performed on 10–11 November 2026.</p>
+<hr>
+<h2 id="summary-of-decisions">Summary of Decisions</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Options</th>
+<th>Recommendation</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;D1&lt;/strong&gt;</td>
+<td>Submission Category</td>
+<td>Low-Level Software vs Developer Tools vs Open Source Contribution</td>
+<td>Ask Discord organizers; default to Developer Tools</td>
+<td>&lt;strong&gt;Pending (awaiting Discord feedback)&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;D2&lt;/strong&gt;</td>
+<td>9P Approach: Rewrite vs Upstream Contribution</td>
+<td>(1) Rewrite from scratch, (2) Contribute to Project A (<code>qnx-fs-9p</code>), (3) virtiofs first</td>
+<td>Combine 2 &amp; 3: build PCI transport, offer upstream to A, implement in new repo as fallback</td>
+<td>&lt;strong&gt;Decided&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;D3&lt;/strong&gt;</td>
+<td>Transport: Reuse <code>kodebooth/qnx-virtio</code> or Write Ours</td>
+<td>(1) Vendor <code>qnx-virtio</code>, (2) Write clean portable Layer 1 (<code>virtio/</code>)</td>
+<td>&lt;strong&gt;Write our own portable Layer 1&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Decided (backed by code evaluation)&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;D4&lt;/strong&gt;</td>
+<td>Caching Policy</td>
+<td>(1) Aggressive page + attr cache, (2) Bounded attr cache only, (3) Zero data cache by default</td>
+<td>&lt;strong&gt;Zero data cache by default&lt;/strong&gt;; optional bounded attr cache</td>
+<td>&lt;strong&gt;Decided&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="detailed-decisions">Detailed Decisions</h2>
+<h3 id="decision-d1-hackathon-submission-category">Decision D1: Hackathon Submission Category</h3>
+<ul>
+<li>**Context**: The QNX Global Hackathon 2026 defines three eligible categories: 1. *Low-Level Software*: defined by the QNX Driver Development Kit (DDK), covering serial, I2C, SPI, HID, touch, network, and CAN. 2. *Developer Tools*: development utilities, test frameworks, automation, and workflow accelerators. 3. *Open Source Contributions &amp; Ports*: porting existing OSS or contributing major upstream enhancements.</li>
+<li>**The Dilemma**: A virtio-based shared filesystem driver is fundamentally low-level kernel/driver software (it programmes PCI BARs, registers virtqueues, configures MSI-X, and registers a filesystem resource manager with `procnto`). However, it uses **none** of the official QNX DDK frameworks (the DDK has no class for virtio devices or filesystem drivers).</li>
+<li>**Options**: - *Option 1*: Submit under "Low-Level Software", highlighting PCI, interrupts, and hardware interaction. Risk: judges disqualify based on strict DDK definition. - *Option 2*: Submit under "Developer Tools", presenting Passerelle as the ultimate tool accelerating the edit-compile-test loop. Risk: stiffest competition, but zero qualification ambiguity. - *Option 3*: Submit under "Open Source Contributions &amp; Ports" by virtue of our upstream patch to `gvergine/qnx-fs-9p` and Linux 9P/FUSE standards.</li>
+<li>**Recommendation**: Inquire directly with hackathon organizers on the official Discord server during Week 1. Unless organizers explicitly confirm that non-DDK virtio drivers qualify for "Low-Level Software", **submit under "Developer Tools"**.</li>
+<li>**Status**: **Pending** (inquiry queued for Discord; non-blocking for development).</li>
+</ul>
+<hr>
+<h3 id="decision-d2-9p-client-rewrite-vs-upstream-contribution">Decision D2: 9P Client — Rewrite vs Upstream Contribution</h3>
+<ul>
+<li>**Context**: `gvergine/qnx-fs-9p` (Project A) already implements a rich 9P2000.L client for QNX 8.0, but supports **only ARM64** over virtio-mmio.</li>
+<li>**Options**: - *Option 1 (Rewrite everything)*: Write a third 9P client from scratch. Duplicates existing effort without novelty. - *Option 2 (Contribute upstream)*: Add PCI transport and x86_64 target to Project A, offering patches via `upstream/qnx-fs-9p/`. Highly ethical and collaborative. - *Option 3 (virtiofs first)*: Skip 9P entirely and focus on virtiofs. Leaves x86_64 users without the simplest out-of-the-box sharing mechanism.</li>
+<li>**Recommendation**: **Combine Options 2 and 3**. Implement a common Layer 1 (PCI modern transport) that serves both 9P and virtiofs. Offer the PCI transport and x86_64 support back to Project A as a clean pull request. If Project A's maintainer is unresponsive, Passerelle maintains the complete 9P client in its own repository, reusing protocol concepts with full attribution (per [NOTICE](../NOTICE)).</li>
+<li>**Status**: **Decided**.</li>
+</ul>
+<hr>
+<h3 id="decision-d3-transport-layer-detailed-code-evaluation-of-kodeboothqnx-virtio">Decision D3: Transport Layer — Detailed Code Evaluation of <code>kodebooth/qnx-virtio</code></h3>
+<ul>
+<li>**Context**: `kodebooth/qnx-virtio` (April 2026, MIT license) is a public virtio library for QNX 8.0 containing core virtqueue, PCI, and MMIO implementations, plus a sample GPIO driver.</li>
+<li>**Code Inspection Findings**: On 10–11 November 2026, we performed a thorough line-by-line inspection of the repository in `passerelle-refs/qnx-virtio/`: 1. **Tight Coupling to QNX Neutrino APIs**: - `src/virtio/virtio.c` includes `&lt;sys/neutrino.h&gt;` and calls `InterruptAttachThread()` and `InterruptUnmask()` directly. - `src/virtio_pci/virtio_pci.c` directly calls QNX `libpci` functions (`pci_device_attach`, `pci_device_read_cap`, `cap_msix_set_nirq`, etc.). - **Impact**: It is impossible to compile or unit-test `qnx-virtio` on a Linux host PC without the QNX SDP. This directly violates requirement **P9-10** and the foundational design rule that Layers 1 and 2 must build and run tests natively on the host workstation. 2. **Modern-Only PCI Addressing**: - In `src/virtio_pci/virtio_pci.c`, line 16 defines: ```c #define VIRTIO_PCI_DID(type) ((uint16_t)(0x1040 + (uint16_t)(type))) ``` - Line 616 sets `dev-&gt;leagcy = false`. - It exclusively searches for modern device IDs (`0x1049` for 9P) and does **not** recognize transitional device IDs (`0x1009`, required by VIO-01 and standard QEMU configurations). 3. **Lack of Advanced Virtqueue Features**: - In `src/virtio/virtq.h` and `virtq.c`, descriptor chains are allocated one by one via `virtq_alloc_desc()` and linked via `virtq_put_desc_chain()`. - **No indirect descriptor tables** (`VIRTIO_F_INDIRECT_DESC`, requirement **VIO-08**) are supported. - **No event index notification suppression** (`VIRTIO_F_EVENT_IDX`, requirement **VIO-08**) is negotiated; rings merely reserve bytes for event fields without using them. 4. **Allocation and Concurrency Patterns**: - Transport operations lock a single coarse `pthread_spinlock_t`. - Device reset polls in a `delay()` loop (`virtio_reset_device`), which blocks the calling thread instead of integrating cleanly with asynchronous event loops. - No scatter-gather zero-copy abstraction matching filesystem payloads (`pgw_vio_sg`, requirement **VIO-07**). 5. **Adaptation Cost**: - Decoupling `qnx-virtio` into an OS-independent core plus OS-specific bus accessors would require rewriting ~80% of `src/virtio/` and `src/virtio_pci/`. - The maintenance burden of maintaining an internal fork with diverged APIs exceeds writing a purpose-built, clean-room C11 Layer 1.</li>
+<li>**Conclusion**: - We do **NOT** vendor or depend on `kodebooth/qnx-virtio`. - Passerelle implements its own Layer 1 (`virtio/`, header `pgw/virtio.h`), designed from day one with an abstract bus operations table (`pgw_vio_bus_ops`), supporting PC mock backends (`pgw_vio_mock_open`), indirect descriptors, zero-copy scatter-gather, and both modern/transitional PCI IDs. - `kodebooth/qnx-virtio` is cited with gratitude in [NOTICE](../NOTICE) and [state-of-the-art.md](state-of-the-art.md) for illustrating the QNX 8.0 `libpci` MSI-X API calls.</li>
+<li>**Status**: **Decided (Evaluated &amp; Rejected)**.</li>
+</ul>
+<hr>
+<h3 id="decision-d4-caching-strategy">Decision D4: Caching Strategy</h3>
+<ul>
+<li>**Context**: Traditional remote filesystems rely on aggressive data caching to mask round-trip latency.</li>
+<li>**The Problem**: In a software development workflow (the primary use case for Passerelle), aggressive data caching is actively dangerous. When a developer edits or recompiles source files on the host PC, the guest must observe the updated file contents **immediately**. The QEMU 9P documentation explicitly highlights that Linux guest data caches do not revalidate changes made on the host, leading to stale reads and phantom bugs.</li>
+<li>**Options**: - *Option 1 (Aggressive Cache)*: Cache both file data and directory attributes. High benchmark numbers, broken developer experience. - *Option 2 (Zero Cache)*: Read and write directly through to the hypervisor on every call. Guarantees strict consistency; lower synthetic metadata benchmark numbers. - *Option 3 (Hybrid / Bounded Attribute Cache)*: **Zero data cache by default**; optional, bounded-TTL attribute cache for metadata-heavy builds (e.g. `attr_ttl=1000ms`, ceiling 10 s).</li>
+<li>**Recommendation**: **Adopt Option 3**. - Requirement **FS-12** is paramount: a file modified on the host PC must be visible and updated on the guest's very next `read()` without requiring a remount. - Data caching is disabled by default (`PGW_DATA_CACHE_DEFAULT = 0`). - Metadata attribute caching is off by default (`PGW_ATTR_CACHE_NS_DEFAULT = 0`), with an explicit command-line opt-in (`attr_ttl=&lt;ms&gt;`) capped at 10 seconds (`PGW_ATTR_CACHE_NS_MAX`).</li>
+<li>**Status**: **Decided**.</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="state-of-the-art.html">Previous</a>
+      <a class="next" href="verification-status.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI and merge process - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Use</p>
+    <h1 id="ci-self-hosted-pipeline-and-the-5-minute-budget">CI — self-hosted pipeline and the 5-minute budget</h1>
+<p>This document describes the whole CI of the Passerelle repository: what runs on a pull request, what runs outside of it, why the budget is five minutes, how to read a failure, how to replay the long job by hand, and who merges.</p>
+<p>The policy reference is <code>~/Bureau/CI-BUDGET-5MIN.md</code> (user rule of 2026-10-24): &lt;strong&gt;a CI run is broken when it is slow.&lt;/strong&gt; Every run must render its verdict in five minutes or less, from the first job started to the last one finished. The rule is enforced by a guard (<code>.github/ci-budget/</code>), not by good intentions.</p>
+<hr>
+<h2 id="1-where-the-jobs-run">1. Where the jobs run</h2>
+<p>The pipeline runs on &lt;strong&gt;four self-hosted runners&lt;/strong&gt; hosted on the R630, all carrying the labels <code>self-hosted</code>, <code>Linux</code>, <code>X64</code>, <code>passerelle-worker</code> and <code>ci-node</code>:</p>
+<pre><code>runs-on: [self-hosted, passerelle-worker]</code></pre>
+<p>Each runner owns its own workspace (<code>_work1</code> … <code>_work4</code>), so two jobs never share a working directory, and one runner never runs two jobs at the same time. The four jobs of the pull-request pipeline therefore really run in parallel.</p>
+<p>Toolchain available on the runners:</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Version</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cmake</code> / <code>ctest</code></td>
+<td>3.31</td>
+<td>installed in <code>~/ci-tools/cmake</code> (see §9)</td>
+</tr>
+<tr>
+<td><code>gcc</code></td>
+<td>14.2</td>
+<td>also provides <code>cc</code>, used by the <code>qnx-syntax</code> job</td>
+</tr>
+<tr>
+<td><code>python3</code></td>
+<td>3.13</td>
+<td><code>pytest</code> 9.2 is available through the user site-packages</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="2-what-runs-on-a-pull-request">2. What runs on a pull request</h2>
+<p>Workflow: <code>.github/workflows/ci.yml</code> — triggered by <code>pull_request</code> (and by a push on <code>main</code>, documentation-only pushes excluded). One <code>concurrency</code> group per ref with <code>cancel-in-progress: true</code>: a new push cancels the previous run.</p>
+<p>Five independent jobs, all with <code>timeout-minutes: 5</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>What it does</th>
+<th>Build directory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>build-test</code></td>
+<td><code>cmake -B build</code> + <code>cmake --build</code> + <code>ctest</code> (RelWithDebInfo)</td>
+<td><code>build/</code></td>
+</tr>
+<tr>
+<td><code>sanitize</code></td>
+<td>same stack with <code>-DPGW_SANITIZERS=ON</code> (ASan + UBSan) + <code>ctest</code></td>
+<td><code>build-asan/</code></td>
+</tr>
+<tr>
+<td><code>host-tools</code></td>
+<td><code>python3 -m pytest host/tests -q</code> + <code>python3 -m compileall</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>qnx-syntax</code></td>
+<td>compiles every <code>*_qnx.c</code> against <code>tests/qnx-stub/include</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>rules</code></td>
+<td><code>tools/check-size.py</code> + <code>tools/check-spdx.py</code> + the CI budget guard</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>The verdict of the pull request is the &lt;strong&gt;slowest&lt;/strong&gt; of those five jobs, which is why the budget applies to the workflow and not to each step.</p>
+<p>The socle workflows of the repository run alongside:</p>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Role</th>
+<th>Blocking?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ci-budget</code></td>
+<td>checks that no job declares more than 5 minutes</td>
+<td>yes (<code>queue_conditions</code>)</td>
+</tr>
+<tr>
+<td><code>hermes-lite</code></td>
+<td>freshness gate before the merge</td>
+<td>no — &lt;strong&gt;dry-run&lt;/strong&gt; (<code>HERMES_LITE_DRY_RUN=1</code>)</td>
+</tr>
+<tr>
+<td><code>stale-base-guard</code></td>
+<td>reports how far the branch is behind <code>main</code></td>
+<td>no — informational</td>
+</tr>
+</tbody>
+</table>
+<h3 id="explicit-skips-never-silent-greens">Explicit skips, never silent greens</h3>
+<p><code>host-tools</code> and <code>qnx-syntax</code> depend on parts of the tree that are still being written (<code>host/tests</code>, <code>tests/qnx-stub/include</code>, the <code>*_qnx.c</code> sources). When an input is missing, the job prints an explicit <code>::notice::</code> line and exits successfully:</p>
+<pre><code>::notice::tests/qnx-stub/include is missing - QNX syntax check skipped (explicit skip, not a silent green)</code></pre>
+<p>A skip is always visible in the log: a green job always says what it did &lt;em&gt;not&lt;/em&gt; check. Nothing is ever green by accident.</p>
+<h3 id="the-build-directories-are-kept">The build directories are kept</h3>
+<p>On a persistent runner, a blind <code>git clean -ffdx</code> throws away every compiled object and forces a cold rebuild on the next run (measured on another repository: a Gradle build dropped from 77 s to 33 s once the outputs were kept). Each job therefore:</p>
+<ol>
+<li>cleans the workspace **before** the checkout, excluding `/build`, `/build-asan` and `/.ci-tools`;</li>
+<li>checks out with `clean: false` and `fetch-depth: 1` (no full clone);</li>
+<li>drops a build tree whose `CMakeCache.txt` points at another source directory — such a cache cannot be reused and would abort the configure step.</li>
+</ol>
+<hr>
+<h2 id="3-what-runs-outside-a-pull-request">3. What runs outside a pull request</h2>
+<p>Workflow: <code>.github/workflows/qemu-e2e.yml</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workflow_dispatch</code> (manual)</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>push</code> on <code>main</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>pull_request</code></td>
+<td>&lt;strong&gt;never&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<p>It hosts the jobs that are genuinely long: the differential conformance bench (millions of operations), the QNX guest boot under QEMU, and the throughput measurements. Its ceiling is explicit and justified in the YAML:</p>
+<pre><code class="language-yaml">    # 30 min : banc de conformite differential (1M operations) + boot QNX
+    # sous QEMU + mesures de debit, hors PR (regle CI 5 min).
+    timeout-minutes: 30</code></pre>
+<p>This is the only exception to the five-minute rule, and it is allowed because the job never runs on a pull request. The file is therefore listed in <code>SKIP_FILES</code> of <code>.github/ci-budget/check_timeouts.py</code> — the guard checks every other workflow, but cannot judge a job that is allowed to be long.</p>
+<h3 id="two-jobs-two-runners-and-why">Two jobs, two runners, and why</h3>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>Runner</th>
+<th>Why there</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qemu-e2e</code></td>
+<td><code>[self-hosted, passerelle-worker]</code> (R630)</td>
+<td>the long conformance and fuzz campaigns; no QEMU needed</td>
+</tr>
+<tr>
+<td><code>e5-guest-share</code></td>
+<td><code>ubuntu-24.04</code> (GitHub-hosted)</td>
+<td>the R630 workers have neither <code>qemu-system-x86_64</code> nor <code>virtiofsd</code>, so E5 would only ever skip there. The repository is public, so hosted runners cost nothing</td>
+</tr>
+</tbody>
+</table>
+<p><code>e5-guest-share</code> installs <code>qemu-system-x86</code>, <code>virtiofsd</code>, <code>cpio</code> and <code>zstd</code>, then boots a minimal Linux guest on the options <code>qshare</code> emits. Two runner facts had to be handled, both visible in the job log:</p>
+<ul>
+<li>the runner's kernel is `-rw-------` (root only), so a step runs `sudo chmod a+r /boot/vmlinuz-*` — without it the harness reports "no readable host kernel" and skips;</li>
+<li>`linux-modules-extra-$(uname -r)` is not installable there, but the Azure kernel already ships `netfs`, `9pnet`, `9pnet_virtio`, `9p` and `virtiofs` as modules, which is all the guest needs.</li>
+</ul>
+<p>Measured on 11 November 2026: &lt;strong&gt;virtiofs PASS in 7.2 s, 9P PASS in 6.7 s&lt;/strong&gt;, four markers each, job total 40 s (ceiling 900 s). A runner that lacks any of this gets an explicit <code>::notice::</code> skip from the harness (exit status 2), never a false green — and if the kernel ships neither 9p nor virtiofs as a module, <code>mkinitramfs.sh</code> exits 3, which the harness also reports as a skip.</p>
+<hr>
+<h2 id="4-why-five-minutes">4. Why five minutes</h2>
+<ul>
+<li>**A slow CI is a broken CI.** Beyond a few minutes, people stop waiting for the verdict and start merging blind; the check becomes decoration.</li>
+<li>**The build dominates, not the tests.** On a previous project, 97 s of a 118 s CI was compilation and only 4 s was the test suite. The budget is spent where it must be spent: on the build, never on waiting.</li>
+<li>**It forces the right design.** Parallel jobs, one build directory per job, kept caches, shallow clones, filtered triggers. Nothing is left to chance or to "it was fast when I tried it".</li>
+<li>**A verdict that arrives late is not a verdict.** The five-minute budget is measured from the first job started to the last one finished, so a workflow of ten sequential jobs is as much a violation as one slow job.</li>
+</ul>
+<hr>
+<h2 id="5-how-to-read-a-failure">5. How to read a failure</h2>
+<ol>
+<li>Open the failed run, click on the red job, read the **first** red line — the rest is usually noise.</li>
+<li>Every job ends with a duration notice: `::notice::build-test: 87s (budget 300s)`. If the job failed after 300 s, the job hit its `timeout-minutes` and the log is truncated: look at the last line reached, not at the last error.</li>
+<li>`::notice::` lines are information, not errors: they announce explicit skips and the toolchain that was picked.</li>
+</ol>
+<p>Typical failures and what they mean:</p>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>Typical cause</th>
+<th>Where to look</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>build-test</code></td>
+<td>compiler error (<code>-Werror</code>, <code>-Wconversion</code>)</td>
+<td>the CMake output, then the source file</td>
+</tr>
+<tr>
+<td><code>sanitize</code></td>
+<td>ASan/UBSan report, leak, or a slow test</td>
+<td>the <code>ctest --output-on-failure</code> block</td>
+</tr>
+<tr>
+<td><code>host-tools</code></td>
+<td>a failing <code>pytest</code> test, or a Python syntax error</td>
+<td>the <code>pytest</code> output</td>
+</tr>
+<tr>
+<td><code>qnx-syntax</code></td>
+<td>a <code>*_qnx.c</code> file that does not compile against the stubs</td>
+<td>the <code>cc -fsyntax-only</code> output</td>
+</tr>
+<tr>
+<td><code>rules</code></td>
+<td>file ≥ 500 lines, function ≥ 50 lines, missing SPDX header, or a job over 5 minutes</td>
+<td>the <code>SIZE VIOLATION</code> / <code>SPDX VIOLATION</code> lines</td>
+</tr>
+</tbody>
+</table>
+<p>Reproduce a failure locally with the exact commands of the job:</p>
+<pre><code class="language-bash">cd /home/baptiste/Bureau/passerelle
+cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build -j4
+ctest --test-dir build --output-on-failure --no-tests=error
+
+cmake -B build-asan -DPGW_SANITIZERS=ON
+cmake --build build-asan -j4
+ctest --test-dir build-asan --output-on-failure
+
+python3 -m pytest host/tests -q
+python3 tools/check-size.py --root .
+python3 tools/check-spdx.py --root .
+python3 .github/ci-budget/check_timeouts.py</code></pre>
+<hr>
+<h2 id="6-replaying-the-long-job-by-hand">6. Replaying the long job by hand</h2>
+<p>The long bench never runs on a pull request, so it is replayed explicitly:</p>
+<pre><code class="language-bash"># From the repository (on GitHub, with the gh CLI)
+gh workflow run qemu-e2e.yml --ref main -f ops=1000000
+
+# Locally, with the same commands
+cmake -B build &amp;&amp; cmake --build build -j4
+PGW_BENCH_OPS=1000000 timeout 1500 python3 host/bench/run-bench.py
+timeout 1500 python3 host/qshare/run-e2e.py</code></pre>
+<p>The number of operations is passed to the bench scripts through the <code>PGW_BENCH_OPS</code> environment variable, so a bench script does not have to know any command-line convention. Each step of the workflow is individually bounded by <code>timeout</code>, so a hung bench is killed and reported instead of eating the 30-minute ceiling.</p>
+<hr>
+<h2 id="7-mergify-and-hermes-lite">7. Mergify and hermes-lite</h2>
+<p>&lt;strong&gt;Mergify is the only merge pilot.&lt;/strong&gt; <code>.mergify.yml</code> describes the queue: a pull request enters the queue when the required checks are successful, it is not a draft, it has no conflict, and its base is <code>main</code>.</p>
+<pre><code>queue_conditions:
+  - check-success = ci-budget
+  - check-success = build-test
+  - check-success = sanitize
+  - check-success = host-tools
+  - check-success = qnx-syntax
+  - check-success = rules
+  - -conflict
+  - -draft
+  - base = main</code></pre>
+<p>Two priority rules (<code>urgent</code> → high, <code>priority-low</code> → low) order the queue, and <code>merge_queue.max_parallel_checks: 4</code> matches the four workers of the pool. Mergify rebases (<code>merge_method: rebase</code>) and refreshes the branch itself before merging.</p>
+<p>&lt;strong&gt;hermes-lite is a gate, not a merge.&lt;/strong&gt; It watches the freshness of the branch, rebases it through the API when it lags behind <code>main</code>, and labels the pull request <code>hermes/conflit</code> when a real conflict appears. It is configured in dry-run (<code>HERMES_LITE_DRY_RUN=1</code>): it observes and alerts, but it never merges. There is exactly one merge pilot — Mergify.</p>
+<p><code>stale-base-guard</code> is purely informative: it reports how many commits the branch is behind <code>main</code> and always succeeds.</p>
+<p>&lt;strong&gt;A red <code>Verdict</code> check does not always mean the gate disagreed.&lt;/strong&gt; The hermes-lite workflow carries <code>concurrency: cancel-in-progress: true</code>, so when a new commit arrives while a gate run is still going, GitHub cancels the older run and that run's check turns red with the annotation &lt;em&gt;"Canceling since a higher priority waiting request … exists"&lt;/em&gt;. The newer run posts its own <code>hermes-lite/verdict</code> check. Since <code>Verdict</code> is not a required check (see the branch-protection list above), a cancelled run never blocks a merge — read <code>hermes-lite/verdict</code> for the actual verdict.</p>
+<h3 id="branch-protection-must-not-require-up-to-date-branches">Branch protection must NOT require up-to-date branches</h3>
+<p>Measured on 11 November 2026, on PR #13: with <code>required_status_checks.strict: true</code> ("Require branches to be up to date before merging") on <code>main</code>, the Mergify queue &lt;strong&gt;refuses to queue anything&lt;/strong&gt; and posts a failing <code>Mergify Merge Queue</code> check with the reason &lt;em&gt;"Configuration not compatible with a branch protection setting"&lt;/em&gt;. The queue tests a pull request through a draft PR built on the latest base, then merges the original branch, which GitHub then considers out of date.</p>
+<p>The protection of this repository is therefore:</p>
+<pre><code class="language-bash">gh api -X PUT repos/BaptisteFaisy/passerelle/branches/main/protection --input - &lt;&lt;'JSON'
+{
+  "required_status_checks": {
+    "strict": false,
+    "contexts": ["ci-budget", "build-test", "sanitize", "host-tools",
+                 "qnx-syntax", "rules", "stale-base-guard"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON</code></pre>
+<p>Losing <code>strict</code> costs nothing here: the queue re-tests every pull request on the latest base together with the ones queued ahead of it, and <code>hermes-lite</code> separately watches freshness. Two traps found the same day, worth remembering: the update endpoint is <code>PUT</code> (a <code>PATCH</code> answers 404), and all four keys must be supplied or GitHub answers 422.</p>
+<p>If <code>strict</code> ever has to come back, the queue must switch to <code>merge_method: fast-forward</code>, or to serial in-place checks (<code>merge_queue.mode: serial</code>, <code>max_parallel_checks: 1</code>, <code>batch_size: 1</code>) — see the Mergify documentation on GitHub rulesets.</p>
+<h3 id="what-the-queue-needs-to-actually-run">What the queue needs to actually run</h3>
+<p>Two things, both easy to miss because a valid configuration is not enough:</p>
+<ol>
+<li>`pull_request_rules` with a `queue` action. `queue_rules` alone only *defines* the queue; nothing ever puts a pull request in it. The action takes no option here: `method` and `allow_merging_configuration_change` are rejected by the current schema (`mergify config validate` says so), and the merge method comes from the queue rule.</li>
+<li>The Merge Queue product activated for the repository. `mergify config simulate` answering "1 rule matches" proves nothing about activation: it evaluates the rule, it does not run the engine. The signs that the engine is off are an empty `mergify queue status`, no event at all in `mergify events`, and no reaction to a `@Mergifyio queue` comment.</li>
+</ol>
+<hr>
+<h2 id="8-adding-a-job">8. Adding a job</h2>
+<p>Any new job of the pull-request pipeline must respect the whole contract:</p>
+<pre><code class="language-yaml">  my-job:
+    name: my-job
+    runs-on: [self-hosted, passerelle-worker]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false</code></pre>
+<ul>
+<li>its own build directory, cleaned but never blindly (`git clean -ffdx` with the build trees excluded);</li>
+<li>no `sleep` longer than 30 seconds — poll a condition instead;</li>
+<li>if the job is genuinely long, it does not belong to a pull request: move it to `qemu-e2e.yml` with an explicit, justified `timeout-minutes`;</li>
+<li>if the job is required for the merge, add it to `queue_conditions` of `.mergify.yml` — otherwise the pull request waits forever for a check that never comes.</li>
+</ul>
+<hr>
+<h2 id="9-maintenance-notes">9. Maintenance notes</h2>
+<ul>
+<li>**The CI budget guard** (`.github/ci-budget/check_timeouts.py`) fails when a job has no `timeout-minutes` or declares more than five minutes, and warns when `concurrency` or `fetch-depth: 1` are missing. Run it locally: `python3 .github/ci-budget/check_timeouts.py`.</li>
+<li>**The long-job exception** is declared in `SKIP_FILES` of that guard (`qemu-e2e.yml`). If the guard is refreshed from the central socle, the entry must be re-added.</li>
+<li>**The runner toolchain** is installed by hand: `python3 -m pip install --target ~/ci-tools/cmake "cmake&lt;4"` on the R630 (the system Python is externally managed, so no root install is needed). The workflows look for `cmake` in `PATH`, then in `~/ci-tools/cmake`, and finally fall back to a local `pip install --target` inside the workspace (cached in `.ci-tools/`, excluded from the workspace cleanup).</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="building.html">Previous</a>
+      <a class="next" href="state-of-the-art.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

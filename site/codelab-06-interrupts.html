@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 06 - interrupts - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-6-interrupts">Chapter 6 — Interrupts</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Get the device's completion interrupt into the driver, on QNX 8.0, with MSI-X when the machine allows it and the classic INTx line when it does not.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 45 minutes, and the part where the afternoon goes.</p>
+<h2 id="61-what-changed-in-qnx-80">6.1 What changed in QNX 8.0</h2>
+<p>QNX 7.1 had <code>InterruptAttach()</code>, which took a handler function: the kernel called it in interrupt context, and the handler had to do everything without sleeping, without locking, and without allocating.</p>
+<p>QNX 8.0 &lt;strong&gt;removed it&lt;/strong&gt;. What replaced it is a model where the interrupt &lt;em&gt;wakes a thread&lt;/em&gt;:</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>InterruptAttachThread(irq, flags)</code></td>
+<td>the &lt;strong&gt;calling thread&lt;/strong&gt; becomes the interrupt thread: it is the one the kernel wakes</td>
+</tr>
+<tr>
+<td><code>InterruptAttachEvent(irq, &amp;event, flags)</code></td>
+<td>the kernel sends an &lt;strong&gt;event&lt;/strong&gt;; any thread can receive it</td>
+</tr>
+</tbody>
+</table>
+<p>For a driver, <code>InterruptAttachThread()</code> is almost always the right choice, and the reason has nothing to do with style:</p>
+<blockquote><p>&lt;strong&gt;Requests are submitted from resource-manager threads, not from the interrupt thread.&lt;/strong&gt; The thread that attaches is not the thread that waits for a completion. The interrupt thread must therefore be able to take a mutex, touch the rings, and wake other threads — that is exactly what a thread in ordinary context can do, and exactly what an interrupt-context handler cannot.</p></blockquote>
+<p>The <code>InterruptAttachEvent()</code> form is for drivers that want the completion to land in a pulse, for instance to feed an existing event-driven design. It works, but it adds a channel, a connection and a pulse, and the wakeup still has to be turned into "look at the used ring".</p>
+<h2 id="62-the-interrupt-thread">6.2 The interrupt thread</h2>
+<pre><code class="language-c">static void *ist_main(void *arg)
+{
+    struct vio_pci *v = arg;
+
+    /* The calling thread becomes the IST. Needs PROCMGR_AID_INTERRUPT. */
+    int id = InterruptAttachThread(v-&gt;irq, 0);
+    if (id == -1) {
+        /* errno says why: EPERM if the ability is missing */
+        return NULL;
+    }
+
+    for (;;) {
+        /* Wait for the interrupt. The flags argument must be
+         * _NTO_INTR_WAIT_FLAGS_UNMASK, and the timeout argument must be NULL. */
+        if (InterruptWait(_NTO_INTR_WAIT_FLAGS_UNMASK, NULL) == -1) {
+            if (errno == EINTR)
+                continue;       /* a signal arrived; not an error */
+            break;              /* something is wrong with the attachment */
+        }
+
+        /* Acknowledge the device, so the line drops. */
+        vpci_ack_interrupt(v);
+
+        /* Take the completed chains off the used ring and wake the waiters. */
+        pthread_mutex_lock(&amp;v-&gt;lock);
+        vpci_reap_locked(v);
+        pthread_mutex_unlock(&amp;v-&gt;lock);
+    }
+
+    InterruptDetach(id);
+    return NULL;
+}</code></pre>
+<p>Four things in that listing are load-bearing.</p>
+<p>&lt;strong&gt;<code>InterruptWait()</code> takes two arguments, and the second must be NULL.&lt;/strong&gt; The signature is <code>InterruptWait(int flags, const struct sigevent *timeout)</code>, and passing anything but NULL is not supported.</p>
+<p>&lt;strong&gt;The <code>_UNMASK</code> flag re-arms the line.&lt;/strong&gt; The kernel masks the interrupt line before waking the thread; <code>_NTO_INTR_WAIT_FLAGS_UNMASK</code> tells it to unmask it again as part of the wait. Without it, the thread wakes once and never again.</p>
+<p>&lt;strong&gt;The interrupt is acknowledged before the work.&lt;/strong&gt; For an INTx device the line is level-triggered: it stays asserted until the device is acknowledged. The acknowledgement is a read of the ISR byte, and reading it clears the pending bits (virtio 1.2, §4.1.4.5):</p>
+<pre><code class="language-c">void vpci_ack_interrupt(struct vio_pci *v)
+{
+    if (v-&gt;isr != NULL)
+        (void)*(volatile uint8_t *)v-&gt;isr;
+}</code></pre>
+<p>&lt;strong&gt;Completion is decided from the used ring, not from the wakeup.&lt;/strong&gt; This is the single most important rule in the chapter. Spurious wakeups &lt;em&gt;happen&lt;/em&gt;: with the virtio-mmio transport, the thread often wakes with an empty ISR status, and the real completion follows a moment later. If the driver treats "I was woken" as "a request is complete", it reads a ring that has not been updated yet and reports garbage. So the wakeup is only a hint; the ring is the truth.</p>
+<pre><code class="language-c">void vpci_reap_locked(struct vio_pci *v)
+{
+    uint16_t idx = v-&gt;used_hdr[1];
+    atomic_thread_fence(memory_order_acquire);
+    bool any = false;
+    while (v-&gt;last_used != idx) {
+        volatile struct vpci_used_elem *e = &amp;vq-&gt;used_ring[v-&gt;last_used % vq-&gt;qsize];
+        uint32_t id = e-&gt;id, len = e-&gt;len;
+        v-&gt;last_used++;
+        /* mark the slot done, wake the waiter */
+        any = true;
+    }
+    if (any)
+        pthread_cond_broadcast(&amp;v-&gt;cond);
+}</code></pre>
+<p>The acquire fence is before the read of <code>used-&gt;idx</code>, so the device's writes are visible.</p>
+<h2 id="63-msi-x-and-the-fallback-that-is-not-optional">6.3 MSI-X, and the fallback that is not optional</h2>
+<p>The two mechanisms:</p>
+<ul>
+<li>**INTx** is the classic interrupt line: one line per device function, shared with other devices, level-triggered. It is what the firmware assigns, and it is what the driver gets for free from `pci_device_read_irq()`.</li>
+<li>**MSI-X** gives the device its own message-signalled interrupts, one per queue. No sharing, no line to re-arm, and much lower latency. It is the right mechanism, and on QNX it is the one that needs work.</li>
+</ul>
+<h3 id="the-qnx-situation">The QNX situation</h3>
+<p>With the PCI server configured not to do bus configuration (<code>DO_BUS_CONFIG=no</code>, which is common on QNX x86 images because SeaBIOS has already enumerated the bus), the PCI server allocates &lt;strong&gt;no MSI vectors&lt;/strong&gt;. The usual QNX calls — <code>pci_device_cfg_cap_enable()</code>, <code>cap_msix_set_nirq()</code>, <code>cap_msix_set_irq_entry()</code> — fail with <code>PCI_ERR_NO_MODULE</code> or a similar error.</p>
+<p>The workaround is to program the capability by hand. This is the method the public <code>eclipse-score/qnx_unit_tests</code> virtio-9p driver uses, and it is described in detail in <code>upstream/eclipse-score/findings.md</code> in this repository; the steps are:</p>
+<ol>
+<li>find the MSI-X capability in configuration space (capability id `0x11`) and read its Message Control (the table size) and its Table BIR and Table Offset;</li>
+<li>map that BAR if it is not mapped yet — one page is enough when the PCI server reports a size of 0;</li>
+<li>claim one IRQ from the kernel's MSI range with `rsrcdbmgr_attach()`, using `RSRCDBMGR_IRQ | RSRCDBMGR_FLAG_RANGE`;</li>
+<li>write table entry 0 through the BAR: message address `0xFEE00000` (physical, destination 0), message data = the APIC vector, then the control word (mask, program, unmask);</li>
+<li>enable MSI-X in Message Control: write `0xC000` (enable + function mask), then `0x8000` (enable, mask cleared);</li>
+<li>set the INTx-disable bit in the PCI command register, so the device does not raise both;</li>
+<li>tell the virtio device which vector to use: `queue_msix_vector = 0` for queue 0, and `config_msix_vector = 0xFFFF` (no vector).</li>
+</ol>
+<p>Two of those numbers come from the kernel's boot log rather than from a header: the MSI IRQ range starts at <code>0x100</code>, and the first APIC vector used for it is 78. The boot log prints both (<code>MSI interrupt = 0x100</code>, <code>MSI vector no = 78</code>). &lt;strong&gt;They are machine-specific&lt;/strong&gt;, and a driver that hard-codes them without checking the log will fail on a machine that numbers them differently — silently, since MSI-X then delivers to nobody.</p>
+<h3 id="the-fallback-ladder">The fallback ladder</h3>
+<p>This is the part to take away. Every step may fail, and each failure must degrade to something that works:</p>
+<pre><code>  MSI-X available?
+    ├─ capability present?      no  -&gt; INTx
+    ├─ table BAR mapped?        no  -&gt; INTx
+    ├─ vector allocated?        no  -&gt; INTx
+    ├─ device accepted it?      no  -&gt; INTx
+    └─ the interrupt arrived?   no  -&gt; INTx (after one timeout)
+  INTx available?
+    ├─ a line assigned?         no  -&gt; polling
+    └─ InterruptAttachThread() ok? no -&gt; polling
+  polling: always possible, it just burns CPU</code></pre>
+<p>The exercise implements exactly this ladder, with the facts as inputs:</p>
+<pre><code class="language-c">clab_irq_mode clab_irq_choose(const clab_irq_facts *facts)
+{
+    if (clab_irq_why(facts, CLAB_IRQ_MSIX) == CLAB_IRQ_OK)
+        return CLAB_IRQ_MSIX;
+    if (clab_irq_why(facts, CLAB_IRQ_INTX) == CLAB_IRQ_OK)
+        return CLAB_IRQ_INTX;
+    return CLAB_IRQ_POLL;
+}</code></pre>
+<p>And the last rung of the ladder deserves emphasis: &lt;strong&gt;"the interrupt did not arrive" is a failure mode you must handle at run time, not only at setup time.&lt;/strong&gt; The MSI-X path can be set up perfectly and still deliver nothing, because the vector numbers were wrong. The robust driver notices that the first request completed (the used ring advanced) but no interrupt arrived, and re-arms the device as INTx.</p>
+<h2 id="64-the-exercise">6.4 The exercise</h2>
+<pre><code class="language-sh">/tmp/codelab-build/ex05_irq</code></pre>
+<pre><code>chapter 6 - interrupts
+  everything works                           -&gt; MSI-X    (MSI-X refused: ok)
+  no MSI vector (DO_BUS_CONFIG=no)           -&gt; INTx     (MSI-X refused: no MSI vector available)
+  MSI-X table BAR not mapped                 -&gt; INTx     (MSI-X refused: MSI-X table BAR not mapped)
+  device rejected the vector                 -&gt; INTx     (MSI-X refused: device rejected the vector)
+  device has no MSI-X capability             -&gt; INTx     (MSI-X refused: no MSI-X capability)
+  no vector, no line                         -&gt; polling  (MSI-X refused: no MSI-X capability)
+  INTx line, attach failed                   -&gt; polling  (MSI-X refused: no MSI-X capability)
+interrupt thread order:
+  ATTACH -&gt; WAIT -&gt; ACK -&gt; REAP -&gt; WAIT ... -&gt; DONE</code></pre>
+<h2 id="65-what-to-observe">6.5 What to observe</h2>
+<ul>
+<li>Each way the MSI-X path can fail leads to INTx, and every way the INTx path can fail leads to polling.</li>
+<li>The thread's order is ATTACH → WAIT → ACK → REAP → WAIT, and the two variants that are bugs are checked as such.</li>
+</ul>
+<h2 id="66-traps">6.6 Traps</h2>
+<ul>
+<li>**Using `InterruptAttach()`.** It does not exist in QNX 8.0; the compiler will tell you.</li>
+<li>**Passing a timeout to `InterruptWait()`.** The second argument must be NULL.</li>
+<li>**Forgetting `_NTO_INTR_WAIT_FLAGS_UNMASK`.** The thread wakes once and never again.</li>
+<li>**Acknowledging after the work instead of before.** On a level-triggered line, the line is still asserted when the thread goes back to sleep, and the next interrupt is lost or the line storms.</li>
+<li>**Deciding completion from the wakeup.** Spurious wakeups are normal.</li>
+<li>**Attaching the interrupt in the thread that submits requests.** With a resource manager, requests come from a pool of threads; the interrupt thread must be its own.</li>
+<li>**Hard-coding the MSI numbers without reading the boot log.**</li>
+<li>**Not detaching the interrupt at exit.** Requirement VIO-09 of this project's specification: on unmount, no interrupt may remain attached.</li>
+<li>**Not needing the `interrupt` ability.** `InterruptAttachThread()` fails with `EPERM` without it, and that is a configuration error, not a bug.</li>
+</ul>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Run `ex05_irq` and produce the ladder for a machine with: an MSI-X capability, a mapped table, but no MSI vector available. What does the driver use, and what is the *observable difference* for the user?</li>
+<li>Add a case to `clab_irq_facts`: `attach_errno` set while `line_assigned` is true. Which mode is chosen, and what does the driver lose?</li>
+<li>Write the interrupt thread skeleton of section 6.2 in a file of your own, with the `vpci_ack_interrupt()` and `vpci_reap_locked()` calls left as empty stubs. Compile it for the guest (`qcc -Vgcc_ntox86_64`) and read the compiler's complaints: `InterruptWait` wants two arguments, and `InterruptAttachThread` wants an `unsigned` flags.</li>
+<li>In the guest, run `pidin intr` before and after your driver attaches the interrupt. The IRQ number that appears is the one the driver chose.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>Exercise 1: INTx. The user-visible difference is a slightly higher latency per completion and a shared line, which on a busy machine can mean the interrupt is delivered later or not at all — and a driver that does not handle a shared line will eventually lose a completion.</p>
+<p>Exercise 2: polling. The driver loses the ability to sleep: it must check the used ring in a loop, which burns a core and adds latency, but it keeps working.</p>
+<p>Exercise 3: the two complaints are the point of writing the skeleton early. <code>InterruptWait(_NTO_INTR_WAIT_FLAGS_UNMASK, NULL)</code> is the correct call; the flags must be the unmask flag, and the timeout argument must be NULL.</p>
+<p>Exercise 4: <code>pidin intr</code> lists the IRQ with its handler. The number is the one from <code>rsrcdbmgr_attach()</code> (MSI-X) or from <code>pci_device_read_irq()</code> (INTx). If the driver was supposed to use INTx and the MSI IRQ number appears there, the fallback did not trigger.</p>
+<h2 id="where-we-are">Where we are</h2>
+<p>The transport works end to end. Chapter 7 puts the 9P protocol on top of it and reads the first byte of a file.</p>
+    <nav class="pager">
+      <a class="prev" href="codelab-05-the-split-virtqueue.html">Previous</a>
+      <a class="next" href="codelab-07-the-first-9p-exchange.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

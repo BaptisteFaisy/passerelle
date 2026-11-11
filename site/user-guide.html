@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User guide - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Use</p>
+    <h1 id="passerelle-user-guide">Passerelle — User Guide</h1>
+<blockquote><p>&lt;strong&gt;Status note (11 November 2026).&lt;/strong&gt; The host tools (<code>qshare</code>, <code>qrun</code>) and the QNX driver binaries described here are the target user experience defined by the specification (DX-01 to DX-04). They land during weeks 2 to 4 of the hackathon schedule. Items not yet usable are marked &lt;strong&gt;[planned]&lt;/strong&gt;. Everything marked &lt;strong&gt;[exists]&lt;/strong&gt; works today. The portable libraries can already be built and unit tested on a Linux PC — see <a href="building.html">building.md</a>.</p></blockquote>
+<hr>
+<h2 id="1-prerequisites">1. Prerequisites</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Requirement</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Host OS</td>
+<td>Linux (kernel ≥ 5.x, <code>memfd</code> support)</td>
+<td>macOS hosts work for 9P with QEMU ≥ 7.0, untested at foundation level; Windows hosts are not supported by QEMU 9P</td>
+</tr>
+<tr>
+<td>QEMU</td>
+<td>≥ 8.2</td>
+<td><code>qemu-system-x86_64</code> or <code>qemu-system-aarch64</code></td>
+</tr>
+<tr>
+<td>Guest</td>
+<td>QNX SDP 8.0 (QNX Everywhere)</td>
+<td>Image built with <code>mkqnximage</code>, x86_64le or aarch64le</td>
+</tr>
+<tr>
+<td>virtiofs only</td>
+<td><code>virtiofsd</code> (Rust daemon) on the host</td>
+<td>Linux hosts only; feasibility test E5</td>
+</tr>
+<tr>
+<td>Build tools</td>
+<td>CMake ≥ 3.16, C11 compiler</td>
+<td><code>qcc</code> from the SDP for guest builds; any gcc/clang for PC builds</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-installation">2. Installation</h2>
+<h3 id="21-host-side-planned-week-2">2.1 Host side &lt;strong&gt;[planned — week 2]&lt;/strong&gt;</h3>
+<pre><code class="language-bash">git clone https://github.com/BaptisteFaisy/passerelle.git
+cd passerelle
+# qshare/qrun are Python 3 tools installed on PATH:
+pip install --user host/qshare host/bench   # or copy host/qshare/qshare to ~/bin</code></pre>
+<h3 id="22-guest-side">2.2 Guest side</h3>
+<p>The driver binary (<code>qnx-fs-9p</code> or <code>qnx-virtiofs</code>) is cross-compiled with the SDP (see <a href="building.html">building.md</a>) and embedded into the boot image with an <code>mkqnximage</code> snippet that <code>qshare</code> generates:</p>
+<pre><code># local/snippets/system_files.custom  (generated by qshare --image-snippet)
+/sbin/qnx-fs-9p</code></pre>
+<h2 id="3-quick-start-qshare-planned-dx-01">3. Quick Start: <code>qshare</code> &lt;strong&gt;[planned — DX-01]&lt;/strong&gt;</h2>
+<pre><code class="language-bash">$ qshare ~/project</code></pre>
+<p><code>qshare</code> inspects the target architecture and prints (or, with <code>--launch</code>, directly runs) the QEMU command line:</p>
+<ul>
+<li>**x86_64 guest (PCI transport)**: ``` -virtfs local,path=/home/you/project,mount_tag=hostshare,\ security_model=mapped-xattr,multidevs=remap ```</li>
+<li>**aarch64 guest (MMIO transport, machine `virt`)**: ``` -fsdev local,id=fs0,path=/home/you/project,security_model=mapped-xattr \ -device virtio-9p-device,fsdev=fs0,mount_tag=hostshare ```</li>
+<li>**virtiofs guest (X tier)**: launches `virtiofsd --socket-path=...`, adds `-chardev socket`, `-device vhost-user-fs-pci`, and the shared-memory backend (`memory-backend-memfd`, `share=on`).</li>
+</ul>
+<p>It also emits the <code>mkqnximage</code> snippet that embeds the driver and mounts the share at boot, so the guest comes up with the folder already mounted at <code>/host</code>.</p>
+<h2 id="4-mounting-and-unmounting-inside-the-guest">4. Mounting and Unmounting Inside the Guest</h2>
+<h3 id="41-mount">4.1 Mount</h3>
+<pre><code class="language-sh"># Foreground, for debugging:
+/sbin/qnx-fs-9p -t hostshare /host
+
+# Or through the standard mount interface (QNX-07) [planned]:
+mount -t pgw9p hostshare /host</code></pre>
+<p>Mount completes in under 50 ms (PERF-06).</p>
+<h3 id="42-unmount">4.2 Unmount</h3>
+<pre><code class="language-sh">umount /host          # or: slay qnx-fs-9p</code></pre>
+<p>On unmount the virtio device is reset and all interrupt handlers are detached (VIO-09); unmount under load terminates cleanly (ROB-03).</p>
+<h2 id="5-mount-options">5. Mount Options</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Meaning</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ro</code></td>
+<td>off (read-write)</td>
+<td>Read-only share; every write attempt fails with <code>EROFS</code></td>
+<td>FS-09</td>
+</tr>
+<tr>
+<td><code>noexec</code></td>
+<td>off</td>
+<td>Execution of binaries from the share is refused (<code>EACCES</code>)</td>
+<td>FS-09</td>
+</tr>
+<tr>
+<td><code>nosuid</code></td>
+<td>&lt;strong&gt;on&lt;/strong&gt;</td>
+<td>Set-user-ID bits on shared files are ignored; no privilege elevation</td>
+<td>SEC-01</td>
+</tr>
+<tr>
+<td><code>attr_ttl=&lt;ns&gt;</code></td>
+<td><code>0</code> (no cache)</td>
+<td>Bounded attribute-cache lifetime; hard ceiling 10 s (<code>PGW_ATTR_CACHE_NS_MAX</code>)</td>
+<td>FS-13, D4</td>
+</tr>
+<tr>
+<td><code>msize=&lt;bytes&gt;</code></td>
+<td>131072</td>
+<td>9P maximum message size, 4096 … 4 MiB</td>
+<td>P9-01</td>
+</tr>
+<tr>
+<td><code>timeout=&lt;ms&gt;</code></td>
+<td>10000</td>
+<td>Abandon a request unanswered after this delay</td>
+<td>ROB-05</td>
+</tr>
+<tr>
+<td><code>inflight=&lt;n&gt;</code></td>
+<td>32</td>
+<td>Maximum requests in flight at once (1 … 256)</td>
+<td>P9-05</td>
+</tr>
+</tbody>
+</table>
+<p>Defaults are defined once in <code>common/include/pgw/limits.h</code> &lt;strong&gt;[exists]&lt;/strong&gt; and applied by <code>pgw_fs_opts_default()</code>. &lt;strong&gt;There is no data cache&lt;/strong&gt;: a file modified on the PC is seen modified in the guest on the next read (FS-12, decision D4).</p>
+<h2 id="6-qrun-execute-from-the-host-planned-dx-03">6. <code>qrun</code> — Execute From the Host &lt;strong&gt;[planned — DX-03]&lt;/strong&gt;</h2>
+<pre><code class="language-bash">$ qrun -- /host/build/my_program --flag     # runs inside the guest
+$ echo $?                                    # exit code is propagated</code></pre>
+<p><code>qrun</code> connects to the running VM, executes a program located on the share, and streams stdout/stderr and the exit status back to the host shell.</p>
+<h2 id="7-project-examples-dx-04-planned-week-3">7. Project Examples (DX-04) &lt;strong&gt;[planned — week 3+]&lt;/strong&gt;</h2>
+<h3 id="71-cmake-project">7.1 CMake project</h3>
+<pre><code class="language-bash"># Host: cross-compile for QNX, test binaries land in the share
+cmake -B build-qnx -DCMAKE_TOOLCHAIN_FILE=$QNX_HOST/usr/cmake/QNXToolchain.cmake \
+      -DCMAKE_SYSTEM_PROCESSOR=x86_64
+cmake --build build-qnx -j8
+
+# Run the guest test suite straight from the share — no copying:
+qrun -- /host/build-qnx/ctest --output-on-failure</code></pre>
+<h3 id="72-rust-project">7.2 Rust project</h3>
+<pre><code class="language-bash">cargo build --target x86_64-pc-nto-qnx8.0.0
+qrun -- /host/target/x86_64-pc-nto-qnx8.0.0/debug/my_tests</code></pre>
+<p>Both patterns rely on execution and shared-library loading from the share (FS-06, feasibility test E3).</p>
+<h2 id="8-troubleshooting">8. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mount</code> hangs at boot</td>
+<td>Driver started before <code>pci-server</code></td>
+<td>Order the IFS startup script so <code>pci-server</code> runs first (QNX-02)</td>
+</tr>
+<tr>
+<td>Device not found (x86_64)</td>
+<td>Wrong QEMU device</td>
+<td>Use <code>-virtfs ...</code> (produces <code>virtio-9p-pci</code>, ID 0x1049/0x1009)</td>
+</tr>
+<tr>
+<td>Device not found (ARM64)</td>
+<td>MMIO base mismatch</td>
+<td>Machine <code>virt</code> places virtio-mmio at fixed windows; pass the base reported by QEMU (<code>-device virtio-mmio,...</code> debug output)</td>
+</tr>
+<tr>
+<td>No interrupts delivered</td>
+<td>MSI-X unavailable in this PCI configuration</td>
+<td>The driver retries with legacy INTx; check <code>pci-server</code> options (feasibility E1)</td>
+</tr>
+<tr>
+<td>Slow throughput</td>
+<td>Tiny <code>msize</code></td>
+<td>Mount with <code>msize=131072</code> or larger; check host disk speed</td>
+</tr>
+<tr>
+<td><code>Permission denied</code> on files created by another user</td>
+<td><code>mapped-xattr</code> stores ownership in host xattrs</td>
+<td>Run QEMU with the recommended security model; see SEC-03 in <a href="architecture.html">architecture.md</a> §3.7</td>
+</tr>
+<tr>
+<td>Stale attributes after editing on the host</td>
+<td><code>attr_ttl</code> cache enabled</td>
+<td>Mount with <code>attr_ttl=0</code> (the default)</td>
+</tr>
+<tr>
+<td>Two files with the same inode number</td>
+<td>Share spans multiple host filesystems</td>
+<td>Add <code>multidevs=remap</code> to the QEMU <code>-virtfs</code> option</td>
+</tr>
+<tr>
+<td>Case-insensitive lookups</td>
+<td>macOS host with case-insensitive APFS</td>
+<td>Documented host behavior; use a case-sensitive volume if needed</td>
+</tr>
+<tr>
+<td>virtiofs daemon fails to start</td>
+<td>Missing <code>memfd</code>/shared memory config</td>
+<td>Ensure <code>-object memory-backend-memfd,id=mem,size=...,share=on -numa node,memdev=mem</code> (E5)</td>
+</tr>
+</tbody>
+</table>
+<p>Diagnostics: the driver writes to the system log (<code>slog2info</code>) and exposes per-operation counters (QNX-08); kernel tracing shows per-request events (QNX-09) — use <code>tracelogger</code>/<code>traceprinter</code> to inspect them.</p>
+<h2 id="9-where-to-go-next">9. Where to Go Next</h2>
+<ul>
+<li>How it works inside: [architecture.md](architecture.md)</li>
+<li>Build from source, run the test levels: [building.md](building.md)</li>
+<li>What is verified vs pending: [verification-status.md](verification-status.md)</li>
+<li>Full requirements: [spec-en.md](spec-en.md)</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="overview.html">Previous</a>
+      <a class="next" href="architecture.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

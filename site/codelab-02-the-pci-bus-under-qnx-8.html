@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 02 - the PCI bus - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-2-the-pci-bus-under-qnx-80">Chapter 2 — The PCI bus under QNX 8.0</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Find a device by vendor and device id, attach to it, and read its configuration space — with the QNX 8.0 API, and with the two limitations that shape every driver written against it.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 30 minutes.</p>
+<h2 id="21-the-api-in-four-calls">2.1 The API, in four calls</h2>
+<p>QNX 8.0 reaches the PCI bus through <code>libpci</code>, a client library that talks to the PCI server (<code>pci-server</code>, started by the proc manager). The calls a driver needs are these four.</p>
+<pre><code class="language-c">#include &lt;pci/pci.h&gt;
+
+/* 1. Find a device by identity. Returns a BDF, or PCI_BDF_NONE. */
+pci_bdf_t bdf = pci_device_find(0, 0x1AF4, 0x1049, PCI_CCODE_ANY);
+
+/* 2. Attach to it: get a handle that lets us read its configuration space. */
+pci_err_t err = PCI_ERR_OK;
+pci_devhdl_t hdl = pci_device_attach(bdf, pci_attachFlags_e_OWNER, &amp;err);
+
+/* 3. Read configuration space. */
+uint32_t word = 0;
+pci_device_cfg_rd32(hdl, 0x00, &amp;word);
+
+/* 4. Give it back. */
+pci_device_detach(hdl);</code></pre>
+<p>Four things about this API are worth stating plainly, because they decide the shape of everything that follows.</p>
+<p>&lt;strong&gt;The BDF is a number, not a pointer.&lt;/strong&gt; <code>pci_bdf_t</code> encodes bus:device.function. You pass it around; you never dereference it. The macros <code>PCI_BUS()</code>, <code>PCI_DEV()</code> and <code>PCI_FUNC()</code> take it apart.</p>
+<p>&lt;strong&gt;The handle is what gives access.&lt;/strong&gt; <code>pci_device_find()</code> only looks at the device list the PCI server has; configuration space is readable once you hold a <code>pci_devhdl_t</code>. <code>pci_device_attach()</code> with <code>pci_attachFlags_e_OWNER</code> takes ownership of the device, so a second driver cannot attach it at the same time. That is worth having: two drivers driving one virtio device is a debugging session you do not want to have.</p>
+<p>&lt;strong&gt;<code>pci_device_find()</code>'s first argument is a device index, not a bus.&lt;/strong&gt; A value of <code>0</code> means "the first match"; a non-zero value means "the &lt;em&gt;n&lt;/em&gt;-th device with this identity", which is how you reach the second of two identical devices. The identity arguments are the vendor id, the device id and the class code (<code>PCI_CCODE_ANY</code> to not care).</p>
+<p>&lt;strong&gt;Reading configuration space has a floor of <code>0x40</code>.&lt;/strong&gt; This is the limitation that surprises people, and it is not in the API documentation in so many words: on QNX, <code>pci_device_cfg_rd*()</code> works from offset <code>0x40</code> upwards. Below that, the client library either fails or returns something unreliable — in particular, <code>pci_device_cfg_rd8()</code> has been observed returning 0 silently at unaligned offsets.</p>
+<p>Offset <code>0x34</code> is where the &lt;em&gt;first capability&lt;/em&gt; is, so the textbook way of walking the capability list is off the table. Chapter 3 deals with that.</p>
+<h2 id="22-the-configuration-space-a-driver-actually-reads">2.2 The configuration space a driver actually reads</h2>
+<p>The first 64 bytes are the standard PCI header, and they are laid out the same way everywhere:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>What it tells a virtio driver</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x00</code></td>
+<td>2</td>
+<td>vendor id</td>
+<td><code>0x1AF4</code> for virtio</td>
+</tr>
+<tr>
+<td><code>0x02</code></td>
+<td>2</td>
+<td>device id</td>
+<td><code>0x1009</code> or <code>0x1049</code> for 9P</td>
+</tr>
+<tr>
+<td><code>0x06</code></td>
+<td>2</td>
+<td>status</td>
+<td>bit 4: "there is a capability list"</td>
+</tr>
+<tr>
+<td><code>0x08</code></td>
+<td>1</td>
+<td>revision</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x09</code></td>
+<td>1</td>
+<td>class code</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x10</code></td>
+<td>4</td>
+<td>BAR0..BAR3</td>
+<td>the base addresses of the memory regions</td>
+</tr>
+<tr>
+<td><code>0x2C</code></td>
+<td>4</td>
+<td>subsystem vendor</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>0x34</code></td>
+<td>1</td>
+<td>capability pointer</td>
+<td>the first capability — &lt;strong&gt;not readable on QNX&lt;/strong&gt;</td>
+</tr>
+</tbody>
+</table>
+<p>From <code>0x40</code> upwards is the &lt;em&gt;capability&lt;/em&gt; area, where the virtio-specific structures live. Chapter 3 is entirely about that area.</p>
+<h2 id="23-what-a-virtio-pci-device-looks-like">2.3 What a virtio-pci device looks like</h2>
+<p>A modern virtio PCI device does not put its registers at fixed addresses. It publishes a set of &lt;em&gt;vendor-specific capabilities&lt;/em&gt; (capability id <code>0x09</code>), each of which says "here is a structure, in BAR &lt;em&gt;n&lt;/em&gt;, at offset &lt;em&gt;o&lt;/em&gt;, &lt;em&gt;l&lt;/em&gt; bytes long". The structures are:</p>
+<table>
+<thead>
+<tr>
+<th><code>cfg_type</code></th>
+<th>Structure</th>
+<th>What is in it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>COMMON</td>
+<td>features, device status, per-queue setup</td>
+</tr>
+<tr>
+<td>2</td>
+<td>NOTIFY</td>
+<td>where to write a queue index, and the multiplier</td>
+</tr>
+<tr>
+<td>3</td>
+<td>ISR</td>
+<td>one byte: which interrupts are pending</td>
+</tr>
+<tr>
+<td>4</td>
+<td>DEVICE</td>
+<td>device-specific configuration (the mount tag, for 9P)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>PCI</td>
+<td>an alternate window into configuration space</td>
+</tr>
+</tbody>
+</table>
+<p>Each capability's own layout is:</p>
+<pre><code>  byte 0   cap_vndr  = 0x09      vendor-specific
+  byte 1   cap_next              the next capability, or 0
+  byte 2   cap_len               the length of this capability, in bytes
+  byte 3   cfg_type              1..5, as in the table above
+  byte 4   bar                   which BAR the structure is in
+  bytes 5-7 padding
+  dword    offset                the byte offset inside that BAR
+  dword    length                how many bytes are available there
+  dword    notify_off_multiplier (NOTIFY only, when cap_len &gt;= 20)</code></pre>
+<p>The multiplier deserves a note: the notification area of a device with several queues has one word per queue, but the &lt;em&gt;stride&lt;/em&gt; between them is the device's choice. The NOTIFY capability's multiplier says what it is. A multiplier of zero means every queue shares the first word, which is the layout of the older devices.</p>
+<h2 id="24-the-bars-and-why-they-must-be-mapped">2.4 The BARs, and why they must be mapped</h2>
+<p>The capabilities do not contain addresses, only positions inside a BAR. A BAR (Base Address Register) is a window of device memory that the PCI bus decodes to a physical address. To reach a virtio structure, the driver must:</p>
+<ol>
+<li>read the BAR's base address and size;</li>
+<li>map that physical range;</li>
+<li>add the capability's offset.</li>
+</ol>
+<p>On QNX, step 2 is <code>mmap_device_memory()</code>:</p>
+<pre><code class="language-c">void *bar = mmap_device_memory(NULL, size, PROT_READ | PROT_WRITE | PROT_NOCACHE,
+                               0, (uint64_t)bar_base);</code></pre>
+<p><code>PROT_NOCACHE</code> matters: these are device registers, not memory, and going through the cache is a way to read a stale value and lose an afternoon.</p>
+<p>Two QNX-specific facts:</p>
+<ul>
+<li>**Mapping device memory needs the `mem_phys` ability.** Without it, `mmap_device_memory()` fails with `EPERM`.</li>
+<li>**On a machine without ECAM** (which is most QNX x86 images), libpci reads configuration space through the `0xCF8`/`0xCFC` I/O ports *inside the client process*, so the driver also needs the `io` ability — and without it, the process can crash inside `pci_device_attach()` rather than fail cleanly.</li>
+</ul>
+<p>The BARs of a virtio-pci device are memory BARs, not I/O BARs. A device whose BAR is an I/O BAR belongs to the legacy interface, which this tutorial does not cover.</p>
+<h2 id="25-a-first-program-find-the-device-and-read-its-ids">2.5 A first program: find the device and read its ids</h2>
+<pre><code class="language-c">/* SPDX-License-Identifier: Apache-2.0 */
+#include &lt;pci/pci.h&gt;
+#include &lt;stdio.h&gt;
+
+int main(void)
+{
+    pci_bdf_t bdf = pci_device_find(0, 0x1AF4, 0x1049, PCI_CCODE_ANY);
+    if (bdf == PCI_BDF_NONE) {
+        bdf = pci_device_find(0, 0x1AF4, 0x1009, PCI_CCODE_ANY);
+        if (bdf == PCI_BDF_NONE) {
+            printf("no virtio-9p device\n");
+            return 1;
+        }
+    }
+    printf("found at %02x:%02x.%x\n", PCI_BUS(bdf), PCI_DEV(bdf), PCI_FUNC(bdf));
+
+    pci_err_t err = PCI_ERR_OK;
+    pci_devhdl_t hdl = pci_device_attach(bdf, pci_attachFlags_e_OWNER, &amp;err);
+    if (err != PCI_ERR_OK) {
+        printf("attach failed: %s\n", pci_strerror(err));
+        return 1;
+    }
+
+    uint32_t vendor = 0, device = 0, class_code = 0;
+    (void)pci_device_cfg_rd16(hdl, 0x00, (uint16_t *)&amp;vendor);
+    (void)pci_device_cfg_rd16(hdl, 0x02, (uint16_t *)&amp;device);
+    (void)pci_device_cfg_rd32(hdl, 0x08, &amp;class_code);
+    printf("vendor %04x device %04x class %08x\n", vendor, device, class_code);
+
+    pci_device_detach(hdl);
+    return 0;
+}</code></pre>
+<p>Note the two <code>pci_device_find()</code> calls: the modern-only id first, then the transitional one. A driver that only looks for one of them finds nothing on half the machines.</p>
+<p>(The <code>pci_device_cfg_rd16()</code> above takes a <code>uint16_t *</code>; the cast through a pointer to a <code>uint32_t</code> is only to keep the listing short. In real code, use a <code>uint16_t</code> variable.)</p>
+<h2 id="26-what-to-observe">2.6 What to observe</h2>
+<ul>
+<li>The program prints a BDF, then the vendor and device ids.</li>
+<li>The ids match what `pidin pci` said in chapter 1.</li>
+<li>`pci_device_attach()` succeeds without root, if the process has the `pci` ability.</li>
+</ul>
+<h2 id="27-traps">2.7 Traps</h2>
+<ul>
+<li>**Forgetting the transitional id.** QEMU's `-virtfs` creates a transitional device (`0x1009`). A driver that looks only for `0x1049` finds nothing and reports "no device", which reads like a QEMU problem.</li>
+<li>**Using `pci_device_cfg_rd8()` below `0x40`.** It returns 0 without an error on some systems. The capability pointer at `0x34` is exactly the byte you want, and exactly the byte you cannot read. Chapter 3's fallback exists because of this.</li>
+<li>**Reading a BAR that was never sized.** With a PCI server configured not to do bus configuration (`DO_BUS_CONFIG=no`), the MSI-X table BAR in particular can be reported with a size of 0. Mapping one page is enough.</li>
+<li>**Not enabling bus mastering.** `pci_device_attach()` does *not* set the command register's memory-space and bus-master bits. Without bus mastering the device cannot write into your ring, and the symptom is a request that times out with no diagnostic at all. Set the bits yourself:</li>
+</ul>
+<pre><code class="language-c">  pci_cmd_t cmd = 0;
+  if (pci_device_read_cmd(bdf, &amp;cmd) == PCI_ERR_OK) {
+      const pci_cmd_t needed = 0x06;   /* memory space + bus master */
+      if ((cmd &amp; needed) != needed)
+          (void)pci_device_write_cmd(hdl, (pci_cmd_t)(cmd | needed), NULL);
+  }</code></pre>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Write the program above, cross-compile it for the guest, and run it in the guest. Print the BDF and the ids.</li>
+<li>Add the capability-pointer read at `0x34` and print it. On QNX it will be 0 or garbage; on a host with a different libpci it will be a plausible value such as `0x40`. Write down what you got: it tells you which scan chapter 3 will have to use.</li>
+<li>Print the six BARs with `pci_device_read_ba()`. The virtio device's BARs are memory BARs; the one that holds the common configuration structure is the one the capability table will point at.</li>
+<li>Detach and re-attach twice in a row. The second attach must succeed: the first detached cleanly.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>The listing above is the solution, with the printing of the BARs left to the reader. The "solution" for step 2 is that there isn't one: the read is unreliable on QNX, which is why the next chapter does not use it.</p>
+<p><code>pci_device_read_ba()</code> fills an array of <code>pci_ba_t</code>:</p>
+<pre><code class="language-c">pci_ba_t bars[6];
+int_t nba = 6;
+if (pci_device_read_ba(hdl, &amp;nba, bars, pci_reqType_e_UNSPECIFIED) == PCI_ERR_OK) {
+    for (int_t i = 0; i &lt; nba; i++)
+        printf("BAR%u addr %llx size %llx type %u\n", bars[i].bar_num,
+               (unsigned long long)bars[i].addr, (unsigned long long)bars[i].size,
+               bars[i].type);
+}</code></pre>
+<p>A virtio-9p-pci device under QEMU typically shows one or two memory BARs, the first of which holds everything the capabilities point at.</p>
+<h2 id="where-we-are">Where we are</h2>
+<p>We can find the device and read its ids, but we do not yet know where its registers are. Chapter 3 reads the capability table and finds out.</p>
+    <nav class="pager">
+      <a class="prev" href="codelab-01-environment-and-first-image.html">Previous</a>
+      <a class="next" href="codelab-03-finding-a-modern-virtio-device.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

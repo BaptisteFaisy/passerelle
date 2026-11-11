@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Specification (EN) - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Reference</p>
+    <blockquote><p>&lt;strong&gt;Provenance&lt;/strong&gt;: Complete and faithful English translation of the source specification <code>docs/spec-fr.md</code> ("Partage d'un dossier du PC avec QNX sous QEMU (9P et virtiofs)"), version 0.1, 11 November 2026. The French original remains authoritative for initial requirements text.</p></blockquote>
+<h1 id="sharing-a-host-directory-with-qnx-under-qemu-9p-and-virtiofs-specification">Sharing a Host Directory with QNX under QEMU (9P and virtiofs) — Specification</h1>
+<p>&lt;strong&gt;Working title: "Passerelle".&lt;/strong&gt; Version 0.1 — 11 November 2026 — candidate project for the QNX Global Hackathon. Submission deadline: Tuesday 15 December 2026 at 20:00 Paris time (UTC+1).</p>
+<hr>
+<h2 id="0-quick-read">0. Quick Read</h2>
+<p>&lt;strong&gt;The need.&lt;/strong&gt; Today, testing on QNX a program just cross-compiled on the host requires copying it into the virtual machine or rebuilding the disk image. A shared directory eliminates that step: the binary compiled on the host is visible and runnable in QNX instantaneously.</p>
+<p>&lt;strong&gt;What must be known first.&lt;/strong&gt; The opening assumption—"nobody wrote a 9P client for QNX"—is false. Two public projects exist, and one is quite mature:</p>
+<ul>
+<li>`gvergine/qnx-fs-9p` (October 2026): complete 9P client designed for day-to-day development, but **restricted to ARM64 guests**. It does not drive the PCI device of x86 machines.</li>
+<li>`eclipse-score/qnx_unit_tests`: 9P client for x86_64 and ARM64, but **reduced to test infrastructure needs**: no symlinks, no chmod/chown, no timestamp updates.</li>
+</ul>
+<p>&lt;strong&gt;What genuinely remains to be done, and carries real value:&lt;/strong&gt;</p>
+<ol>
+<li>**A complete share on x86_64**, the default architecture of QNX Everywhere QEMU images. Neither existing project provides this.</li>
+<li>**virtiofs for a QNX guest.** The successor to 9P, substantially faster. No public implementation was found.</li>
+<li>**A conformance and benchmark testbed** that objectively compares existing clients with the new one.</li>
+<li>**Real-time behavior**: a high-priority read must not wait behind a massive low-priority copy.</li>
+</ol>
+<p>&lt;strong&gt;Recommended strategy.&lt;/strong&gt; Build on prior art for 9P, innovate on virtiofs: achieve a usable 9P share on x86_64 quickly, then invest the bulk of effort on virtiofs and the benchmark harness. See Section 3 for details.</p>
+<p>&lt;strong&gt;Three ambition tiers.&lt;/strong&gt; &lt;strong&gt;S&lt;/strong&gt; foundation (socle), &lt;strong&gt;C&lt;/strong&gt; complete, &lt;strong&gt;X&lt;/strong&gt; extreme. Each requirement also notes whether an existing project already claims it.</p>
+<p>&lt;strong&gt;Two decisions to take immediately&lt;/strong&gt; (Section 3): the submission category (the QNX Driver Development Kit defining "Low-Level Software" does not cover filesystem/virtio drivers); and whether to write a new 9P client or contribute to an existing one.</p>
+<hr>
+<h2 id="1-context">1. Context</h2>
+<h3 id="11-the-problem-seen-from-a-development-workstation">1.1 The problem seen from a development workstation</h3>
+<p>The current development loop under QEMU looks like: compile on the host, copy the binary to the guest (via <code>scp</code> or rebuilding the image), execute, repeat. Several hackathon projects automate this loop without eliminating it: according to their descriptions, they rebuild the disk image or push files to the guest on every cycle.</p>
+<p>With a shared directory, the loop becomes: compile, execute. Libraries, test data, and build artifacts live directly in a host directory.</p>
+<h3 id="12-two-sharing-technologies">1.2 Two sharing technologies</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>9P</th>
+<th>virtiofs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Origin</td>
+<td>Plan 9 protocol; 9P2000.L Linux variant</td>
+<td>FUSE protocol transported over virtio</td>
+</tr>
+<tr>
+<td>Host side</td>
+<td>Built into QEMU, nothing extra to launch</td>
+<td>Dedicated daemon <code>virtiofsd</code> + shared guest RAM</td>
+</tr>
+<tr>
+<td>Supported hosts</td>
+<td>Linux; macOS since QEMU 7.0; Windows not integrated</td>
+<td>Linux</td>
+</tr>
+<tr>
+<td>QEMU device</td>
+<td><code>virtio-9p-pci</code> (x86) or <code>virtio-9p-device</code> (ARM)</td>
+<td><code>vhost-user-fs-pci</code></td>
+</tr>
+<tr>
+<td>Existing QNX client</td>
+<td>Two (see Section 2)</td>
+<td>None found</td>
+</tr>
+<tr>
+<td>Reputation</td>
+<td>Simple, slow on metadata operations</td>
+<td>Faster, current standard for Linux VMs</td>
+</tr>
+</tbody>
+</table>
+<p>Both share the exact same transport: virtio split virtqueues shared between guest and QEMU. Writing this transport once serves both.</p>
+<h3 id="13-hackathon-framework">1.3 Hackathon framework</h3>
+<ul>
+<li>**Eligible categories**: Low-Level Software, Developer Tools, or Open Source Contributions &amp; Ports. The choice is non-trivial; see Decision D1.</li>
+<li>**Judging criteria** (equal weight): Technical Execution, Complete Product, Impact, Innovation.</li>
+<li>**Deliverables**: new public repository under open source license, build instructions specifying QNX version, target and toolchain, video under 3 minutes, all in English.</li>
+<li>**Stackable bonuses** ($3,500 total): Best Use of QNX Technologies; Best Tutorial.</li>
+</ul>
+<hr>
+<h2 id="2-state-of-the-art">2. State of the Art</h2>
+<p>Repositories inspected on 10 and 11 November 2026 based on their documentation. Nothing had been executed yet at that date.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A — <code>gvergine/qnx-fs-9p</code></th>
+<th>B — <code>eclipse-score/qnx_unit_tests</code> (<code>virtio9p</code> folder)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Date</td>
+<td>Created 3 October 2026, single commit, 0 stars</td>
+<td>Created March 2026, active</td>
+</tr>
+<tr>
+<td>License</td>
+<td>Apache-2.0</td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>Stated goal</td>
+<td>Everyday development: minimal image, binaries and libraries run straight from the share</td>
+<td>Sharing test binaries and data, "test infrastructure only"</td>
+</tr>
+<tr>
+<td>Architectures</td>
+<td>&lt;strong&gt;ARM64 only.&lt;/strong&gt; x86_64 "unsupported and never tested"</td>
+<td>x86_64 and ARM64</td>
+</tr>
+<tr>
+<td>Transport</td>
+<td>virtio-mmio</td>
+<td>PCI (auto-discovery, MSI-X with fallback) and MMIO, v1 and v2</td>
+</tr>
+<tr>
+<td>Operations</td>
+<td>Read, write, create, truncate, permissions, owner, timestamps, <code>fsync</code>, directories, rename, symlinks &amp; hard links, <code>df</code>, execution from share</td>
+<td>Read, write, create, directories, remove, rename</td>
+</tr>
+<tr>
+<td>Unsupported</td>
+<td>Deviations listed in its guide</td>
+<td>Permissions, owner, timestamps, symlinks, device nodes, file locks</td>
+</tr>
+<tr>
+<td>Internals</td>
+<td>Multiple in-flight requests, signal interruption, clean unmount, timeout recovery, optional metadata cache</td>
+<td>Unspecified</td>
+</tr>
+<tr>
+<td>Privileges</td>
+<td>Non-root with three abilities</td>
+<td>Unspecified</td>
+</tr>
+<tr>
+<td>Testing</td>
+<td>Comparison against QEMU 9P server trace events</td>
+<td>Unspecified</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;Other useful projects:&lt;/strong&gt;</p>
+<ul>
+<li>`kodebooth/qnx-virtio` (April 2026, MIT license): virtio transport library for QNX 8 (core, queues, PCI, MMIO) with a sample GPIO driver. No filesystem.</li>
+<li>**QNX Hypervisor** documents a virtio-fs device, but QNX acts as the **host** sharing its directories with Linux/Android guests. No mention found of a driver for a QNX guest.</li>
+<li>GitHub searches yielding zero results for name and description: "qnx virtiofs", "qnx virtio-fs", "qnx virtfs", "qnx 9pfs", "qnx shared folder".</li>
+</ul>
+<p>&lt;strong&gt;What nobody offers today:&lt;/strong&gt;</p>
+<table>
+<thead>
+<tr>
+<th>Gap</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Complete share (symlinks, permissions, execution) on x86_64 guest</td>
+<td>Default architecture of <code>mkqnximage</code> virtual machines</td>
+</tr>
+<tr>
+<td>virtiofs on QNX guest side</td>
+<td>Faster technology; first of its kind</td>
+</tr>
+<tr>
+<td>Comparative benchmarks and conformance harness</td>
+<td>No public numbers exist to make informed choices</td>
+</tr>
+<tr>
+<td>Priority-ordered request scheduling</td>
+<td>Expected behavior of any driver on a real-time OS</td>
+</tr>
+<tr>
+<td>One-command setup on an <code>mkqnximage</code> image</td>
+<td>Without it, the tool remains restricted to insiders</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="3-strategy-and-decisions">3. Strategy and Decisions</h2>
+<h3 id="31-three-approaches">3.1 Three approaches</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 — Rewrite everything</td>
+<td>New complete 9P client, then virtiofs</td>
+<td>Full control, cohesive architecture</td>
+<td>9P repeats what A already does; 2 weeks spent without novelty</td>
+</tr>
+<tr>
+<td>2 — Contribute</td>
+<td>Add PCI transport and x86_64 target to project A, offer patch upstream</td>
+<td>Fast, honest, immediately useful</td>
+<td>Depends on an unknown maintainer; modest glory</td>
+</tr>
+<tr>
+<td>3 — virtiofs first</td>
+<td>New virtiofs guest driver; existing 9P clients serve as reference</td>
+<td>Genuine novelty, measurable</td>
+<td>Higher risk; host side Linux-only</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;Recommendation: combine 2 and 3.&lt;/strong&gt; PCI transport is needed in all cases. We write it once, use it to deliver complete 9P on x86_64, then build virtiofs on top. The conformance and benchmark harness applies to all clients and becomes an independent deliverable.</p>
+<p>If maintainer of A does not respond, the 9P foundation on x86_64 is built in the new repository, reusing its protocol library with attribution (Apache-2.0 permits this) or writing our own.</p>
+<h3 id="32-key-decisions">3.2 Key decisions</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Decision</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td>&lt;strong&gt;Category.&lt;/strong&gt; The QNX Driver Development Kit (DDK) defining "Low-Level Software" covers serial, I2C, SPI, HID, touch, network, and CAN. A virtio filesystem driver uses none of these.</td>
+<td>Ask organizers on Discord. Absent a favorable response, submit under "Developer Tools" where definition fits, despite heavy competition.</td>
+</tr>
+<tr>
+<td>D2</td>
+<td>&lt;strong&gt;New 9P client vs upstream contribution.&lt;/strong&gt;</td>
+<td>Contribution first (Option 2), with fallback to new repository.</td>
+</tr>
+<tr>
+<td>D3</td>
+<td>&lt;strong&gt;Transport: reuse <code>kodebooth/qnx-virtio</code> or write our own.&lt;/strong&gt;</td>
+<td>Evaluate during Week 1. Write our own if adapting takes more than one day.</td>
+</tr>
+<tr>
+<td>D4</td>
+<td>&lt;strong&gt;Caching.&lt;/strong&gt; A cache speeds up I/O, but can hide modifications made on the host.</td>
+<td>No data cache by default. QEMU docs warn that Linux guest caches do not revalidate host-side changes: this is the exact pitfall to avoid for development.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-submission-rule">3.3 Submission rule</h3>
+<p>The submission MUST cite both existing projects and state precisely what it adds. One of the judges leads QNX open source engineering; ignoring prior art would be fatal.</p>
+<hr>
+<h2 id="4-scope">4. Scope</h2>
+<h3 id="41-objectives">4.1 Objectives</h3>
+<ul>
+<li>Mount a host PC directory inside a QNX 8.0 guest under QEMU, read-write, on x86_64 and ARM64.</li>
+<li>Run binaries and load shared libraries directly from the share.</li>
+<li>Behave as a standard POSIX filesystem, with documented deviations.</li>
+<li>Prove conformance and benchmark performance against existing clients.</li>
+<li>Provide a one-command setup.</li>
+</ul>
+<h3 id="42-out-of-scope">4.2 Out of scope</h3>
+<ul>
+<li>Other hypervisors (VMware, VirtualBox, QNX Hypervisor as host).</li>
+<li>Network sharing between physical boards: QNX already has NFS and CIFS clients.</li>
+<li>Extended attributes: QNX lacks an interface for them.</li>
+<li>Shared writable memory mapping (`mmap(MAP_SHARED)`) of files from the share.</li>
+<li>virtiofs Direct Access (DAX) to host memory.</li>
+</ul>
+<h3 id="43-assumptions">4.3 Assumptions</h3>
+<ul>
+<li>QNX SDP 8.0 through QNX Everywhere, images built via `mkqnximage`.</li>
+<li>Host running Linux. 9P should also work with a macOS host (untested at foundation level).</li>
+<li>QEMU 8.2 or newer.</li>
+</ul>
+<hr>
+<h2 id="5-proposed-design">5. Proposed Design</h2>
+<p>This section describes a solution. Only sections 6 and 7 are binding.</p>
+<h3 id="51-three-layers">5.1 Three layers</h3>
+<pre><code>  QNX programs:     open  read  write  stat  readdir  exec ...
+        │   QNX messages handled at caller priority
+ ┌──────▼─────────────────────────────────────────────────────┐
+ │ Layer 3 — Filesystem Resource Manager (rmfs)               │
+ │   paths, descriptors, directories, symlinks, permissions   │
+ ├──────────────────────────────┬─────────────────────────────┤
+ │ Layer 2 — 9P2000.L protocol  │ Layer 2 — FUSE protocol     │
+ │                              │ (virtiofs)                  │
+ ├──────────────────────────────┴─────────────────────────────┤
+ │ Layer 1 — virtio transport                                 │
+ │   shared split virtqueues, PCI or MMIO, interrupts         │
+ └──────┬─────────────────────────────────────────────────────┘
+        │
+   QEMU: built-in 9P server      or     virtiofsd on host PC
+        │
+   Host PC directory</code></pre>
+<ul>
+<li>**Layer 1** is shared between both protocols and reusable for other virtio drivers.</li>
+<li>**Layer 2** is portable C. It compiles on the PC where it is tested and fuzzed.</li>
+<li>**Layer 3** is common: both protocols expose the same internal interface (lookup, open, read, write, readdir, create, rename, unlink).</li>
+</ul>
+<h3 id="52-request-path">5.2 Request path</h3>
+<ol>
+<li>An application calls `read()`. The C library sends a QNX message to the driver.</li>
+<li>A driver worker thread receives it at caller priority.</li>
+<li>It builds the protocol request buffer, submits it to the virtio queue, and kicks QEMU.</li>
+<li>It yields without replying: the client remains blocked, the driver thread is free for another request.</li>
+<li>QEMU executes the operation against the host directory and writes the response into the used ring.</li>
+<li>An interrupt wakes a dedicated handler/thread, which matches the response tag/unique ID and unblocks the client.</li>
+</ol>
+<h3 id="53-tricky-points">5.3 Tricky points</h3>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>Difficulty</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux numeric values</td>
+<td>9P2000.L encodes open flags and errno codes as Linux numbers, differing from QNX</td>
+<td>Bidirectional translation tables, tested value by value</td>
+</tr>
+<tr>
+<td>Symbolic links</td>
+<td>On QNX, path resolution is resumed by the client: driver must return a redirection response (<code>_RESMGR_REDIRECT</code>), not follow the link itself</td>
+<td>Validate against connect message docs; dedicated test</td>
+</tr>
+<tr>
+<td>Execution from share</td>
+<td>Program loader reads and maps the binary through the resource manager</td>
+<td>Feasibility test E3</td>
+</tr>
+<tr>
+<td>Interrupts</td>
+<td>QNX 8.0 removed <code>InterruptAttach()</code>; driver must attach a thread</td>
+<td><code>InterruptAttachThread()</code> or <code>InterruptAttachEvent()</code></td>
+</tr>
+<tr>
+<td>PCI interrupt</td>
+<td>Project B programs MSI-X directly and depends on PCI server configuration</td>
+<td>Feasibility test E1</td>
+</tr>
+<tr>
+<td>Message size</td>
+<td>Too small collapses throughput. Linux client used 8 KiB default, now 128 KiB</td>
+<td>Default chosen by benchmark, user-configurable</td>
+</tr>
+<tr>
+<td>Identities</td>
+<td>QEMU offers several security models; recommended one maps permissions/ownership in xattrs</td>
+<td>Recommended model by default, permissions checked in guest</td>
+</tr>
+<tr>
+<td>Inode numbers</td>
+<td>Files on different host partitions may share the same inode number</td>
+<td>Recommend QEMU's renumbering option (<code>multidevs=remap</code>)</td>
+</tr>
+<tr>
+<td>Case sensitivity</td>
+<td>On macOS hosts, the host filesystem is often case-insensitive</td>
+<td>Documented, not fixed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="54-target-user-experience">5.4 Target user experience</h3>
+<pre><code>Host    $ qshare ~/project             # prints or injects QEMU options, prepares image
+Guest   # ls /host                     # host directory visible
+Host    $ make                         # compile on host
+Guest   # /host/build/my_program       # executes immediately, zero copy</code></pre>
+<hr>
+<h2 id="6-requirements">6. Requirements</h2>
+<p>Tier: &lt;strong&gt;S&lt;/strong&gt; foundation, &lt;strong&gt;C&lt;/strong&gt; complete, &lt;strong&gt;X&lt;/strong&gt; extreme. Verification: &lt;strong&gt;T&lt;/strong&gt; automated test, &lt;strong&gt;M&lt;/strong&gt; benchmark/measurement, &lt;strong&gt;I&lt;/strong&gt; code inspection, &lt;strong&gt;D&lt;/strong&gt; live demonstration. Prior Art: &lt;strong&gt;A&lt;/strong&gt; claimed by <code>gvergine/qnx-fs-9p</code> (ARM64 only), &lt;strong&gt;B&lt;/strong&gt; claimed by <code>eclipse-score</code>, &lt;strong&gt;—&lt;/strong&gt; claimed by neither, &lt;strong&gt;?&lt;/strong&gt; unspecified.</p>
+<h3 id="61-virtio-transport">6.1 Virtio transport</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VIO-01</td>
+<td>Driver discovers 9P device on PCI bus (vendor 0x1AF4, device 0x1009, or 0x1049 modern-only).</td>
+<td>S</td>
+<td>T</td>
+<td>B</td>
+</tr>
+<tr>
+<td>VIO-02</td>
+<td>Driver uses modern PCI interface defined by device capabilities.</td>
+<td>S</td>
+<td>T</td>
+<td>B</td>
+</tr>
+<tr>
+<td>VIO-03</td>
+<td>Driver supports virtio-mmio, versions 1 and 2 (ARM64 <code>virt</code>, x86 <code>microvm</code>).</td>
+<td>C</td>
+<td>T</td>
+<td>A, B</td>
+</tr>
+<tr>
+<td>VIO-04</td>
+<td>Driver receives interrupts via QNX 8.0 APIs, using MSI-X with legacy INTx fallback.</td>
+<td>S</td>
+<td>T</td>
+<td>B</td>
+</tr>
+<tr>
+<td>VIO-05</td>
+<td>Driver reads mount tag from device config and selects device by tag.</td>
+<td>S</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>VIO-06</td>
+<td>Multiple shares can be mounted simultaneously, one per device.</td>
+<td>C</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>VIO-07</td>
+<td>Request buffers are passed to QEMU zero-copy within the transport layer.</td>
+<td>C</td>
+<td>I</td>
+<td>?</td>
+</tr>
+<tr>
+<td>VIO-08</td>
+<td>Indirect descriptors and notification suppression (<code>EVENT_IDX</code>) are negotiated when offered by QEMU.</td>
+<td>C</td>
+<td>T, M</td>
+<td>?</td>
+</tr>
+<tr>
+<td>VIO-09</td>
+<td>On unmount, device is cleanly reset and no interrupt handlers remain attached.</td>
+<td>S</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>VIO-10</td>
+<td>Transport layer is a documented, standalone library reusable by other virtio drivers.</td>
+<td>C</td>
+<td>I, D</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-9p2000l-protocol">6.2 9P2000.L Protocol</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P9-01</td>
+<td>Negotiation of 9P2000.L version and configurable maximum message size (<code>msize</code>).</td>
+<td>S</td>
+<td>T</td>
+<td>A, B</td>
+</tr>
+<tr>
+<td>P9-02</td>
+<td>Core messages: attach, walk, open, create, read, write, clunk, getattr, readdir, mkdir, unlink/remove, rename, fsync, statfs.</td>
+<td>S</td>
+<td>T</td>
+<td>A, B</td>
+</tr>
+<tr>
+<td>P9-03</td>
+<td>Extended messages: setattr, symlink, readlink, link.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>P9-04</td>
+<td>Open flags translated to Linux values; Linux errno codes translated to QNX errno.</td>
+<td>S</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>P9-05</td>
+<td>Multiple in-flight requests supported concurrently.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>P9-06</td>
+<td>Interrupted calls (signals, timeouts) cancel their request on the server via <code>Tflush</code>.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>P9-07</td>
+<td>Every allocated fid on the server is clunked. Zero leak after 1,000,000 opens/closes.</td>
+<td>S</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>P9-08</td>
+<td>Reads, writes, and directory listings larger than <code>msize</code> are chunked and resumed.</td>
+<td>S</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>P9-09</td>
+<td>Every response is strictly validated: size, type, tag, internal length consistency.</td>
+<td>S</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>P9-10</td>
+<td>Protocol library builds and passes tests on host PC without QNX toolchain.</td>
+<td>S</td>
+<td>T</td>
+<td>?</td>
+</tr>
+</tbody>
+</table>
+<h3 id="63-filesystem-behavior">6.3 Filesystem Behavior</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FS-01</td>
+<td>Open, read, write, seek, close; support for files larger than 4 GiB.</td>
+<td>S</td>
+<td>T</td>
+<td>A, B</td>
+</tr>
+<tr>
+<td>FS-02</td>
+<td><code>stat</code> returns size, type, permissions, owner, nanosecond timestamps, link count, and stable inode.</td>
+<td>S</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>FS-03</td>
+<td>Directory reads are consistent: no missing or duplicated entries, offset resumption, entry type populated.</td>
+<td>S</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>FS-04</td>
+<td>Exclusive creation (<code>O_EXCL</code>), truncation on open (<code>O_TRUNC</code>), append mode (<code>O_APPEND</code>).</td>
+<td>S</td>
+<td>T</td>
+<td>A, B</td>
+</tr>
+<tr>
+<td>FS-05</td>
+<td>Create and remove directories, unlink files, atomic rename across directories.</td>
+<td>S</td>
+<td>T</td>
+<td>A, B</td>
+</tr>
+<tr>
+<td>FS-06</td>
+<td>Binaries execute from the share and load shared libraries located on the share.</td>
+<td>S</td>
+<td>T, D</td>
+<td>A</td>
+</tr>
+<tr>
+<td>FS-07</td>
+<td>Modify permissions (<code>chmod</code>), ownership (<code>chown</code>), timestamps (<code>utimensat</code>), size (<code>truncate</code>).</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>FS-08</td>
+<td>Symlinks: creation, reading, resolution, loop detection. Hard links.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>FS-09</td>
+<td>Guest-side permission enforcement based on caller identity. Mount options: <code>ro</code>, <code>noexec</code>, <code>nosuid</code>.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>FS-10</td>
+<td><code>fsync</code> propagates to host; <code>df</code> (<code>statvfs</code>) reflects host directory free space.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>FS-11</td>
+<td>Unlinked file remains readable while open descriptors exist.</td>
+<td>C</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>FS-12</td>
+<td>File modified on host PC is seen modified in guest on next read without remounting.</td>
+<td>S</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>FS-13</td>
+<td>Optional metadata attribute cache with bounded, user-configurable TTL.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>FS-14</td>
+<td>Advisory byte-range file locks work between guest processes; documented that they are not forwarded to host.</td>
+<td>C</td>
+<td>T</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FS-15</td>
+<td>UTF-8 filenames up to 255 bytes supported, including special characters.</td>
+<td>C</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>FS-16</td>
+<td>Byte-range locks are relayed to 9P server.</td>
+<td>X</td>
+<td>T</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="64-qnx-integration">6.4 QNX Integration</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QNX-01</td>
+<td>Driver is a standard QNX resource manager managing the entire subtree below its mount point.</td>
+<td>S</td>
+<td>I</td>
+<td>A, B</td>
+</tr>
+<tr>
+<td>QNX-02</td>
+<td>Starts from initial boot image (IFS), depending only on <code>procnto</code>, libc, and PCI server.</td>
+<td>S</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>QNX-03</td>
+<td>Request handling executes at the calling thread's priority, verifiable via kernel trace.</td>
+<td>S</td>
+<td>D</td>
+<td>?</td>
+</tr>
+<tr>
+<td>QNX-04</td>
+<td>When transport queue is saturated, pending requests are submitted in priority order.</td>
+<td>C</td>
+<td>M</td>
+<td>—</td>
+</tr>
+<tr>
+<td>QNX-05</td>
+<td>A blocked client does not lock up a driver worker thread.</td>
+<td>C</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>QNX-06</td>
+<td>Driver runs unprivileged (non-root) with minimum required capabilities; security policy provided.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>QNX-07</td>
+<td>Integrates with standard <code>mount</code> and <code>umount</code> commands.</td>
+<td>C</td>
+<td>D</td>
+<td>B</td>
+</tr>
+<tr>
+<td>QNX-08</td>
+<td>Logs to system logger (<code>slog2</code>) and exposes per-operation performance counters.</td>
+<td>C</td>
+<td>D</td>
+<td>?</td>
+</tr>
+<tr>
+<td>QNX-09</td>
+<td>Emits kernel trace events (<code>TraceEvent</code>) on request send and receive.</td>
+<td>C</td>
+<td>M</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="65-performance">6.5 Performance</h3>
+<p>Under QEMU, wall-clock timings depend heavily on host hardware. Requirements are therefore formulated comparatively and in server round-trips.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PERF-01</td>
+<td>Server round-trip counts measured and published for common POSIX calls via QEMU traces.</td>
+<td>S</td>
+<td>M</td>
+<td>?</td>
+</tr>
+<tr>
+<td>PERF-02</td>
+<td>Round-trip count on each POSIX call does not exceed the best existing client.</td>
+<td>C</td>
+<td>M</td>
+<td>—</td>
+</tr>
+<tr>
+<td>PERF-03</td>
+<td>Sequential read/write of 1 GiB file: at least matching best existing client; &gt;= 50% of Linux guest on same hardware.</td>
+<td>C</td>
+<td>M</td>
+<td>—</td>
+</tr>
+<tr>
+<td>PERF-04</td>
+<td>Metadata operations: create, stat, and unlink 10,000 files; traverse 50,000-entry directory tree. Same thresholds.</td>
+<td>C</td>
+<td>M</td>
+<td>—</td>
+</tr>
+<tr>
+<td>PERF-05</td>
+<td>A 4 KiB high-priority read launched during a bulk low-priority copy takes &lt;= 2x its idle duration.</td>
+<td>C</td>
+<td>M</td>
+<td>—</td>
+</tr>
+<tr>
+<td>PERF-06</td>
+<td>Mount operation completes in under 50 ms.</td>
+<td>C</td>
+<td>M</td>
+<td>?</td>
+</tr>
+<tr>
+<td>PERF-07</td>
+<td>Comparative benchmark report published: this driver, Project A, Project B, <code>scp</code>, and virtiofs (extreme tier).</td>
+<td>C</td>
+<td>D</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="66-robustness">6.6 Robustness</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ROB-01</td>
+<td>Any server error returns an appropriate errno code to the caller, never a hang.</td>
+<td>S</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>ROB-02</td>
+<td>Abnormal death of client process during in-flight request leaves no server leak or memory leak.</td>
+<td>C</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>ROB-03</td>
+<td>Unmount under active I/O load completes cleanly without crash.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>ROB-04</td>
+<td>File unlinked or replaced on host during guest use produces clean error codes.</td>
+<td>C</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>ROB-05</td>
+<td>Request without response is timed out after a configurable deadline.</td>
+<td>C</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>ROB-06</td>
+<td>Protocol decoder does not crash on arbitrary corrupted input; verified by fuzzer with memory sanitizers.</td>
+<td>C</td>
+<td>T</td>
+<td>?</td>
+</tr>
+<tr>
+<td>ROB-07</td>
+<td>Resilient against a maliciously buggy server (truncated responses, invalid tags, extreme delays).</td>
+<td>X</td>
+<td>T</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="67-security">6.7 Security</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEC-01</td>
+<td>Default mount is <code>nosuid</code> (no privilege elevation from shared files).</td>
+<td>S</td>
+<td>T</td>
+<td>A</td>
+</tr>
+<tr>
+<td>SEC-02</td>
+<td>Driver accesses only its assigned virtio device resources.</td>
+<td>C</td>
+<td>I</td>
+<td>?</td>
+</tr>
+<tr>
+<td>SEC-03</td>
+<td>Documentation explains QEMU security models and recommends unprivileged host execution.</td>
+<td>S</td>
+<td>I</td>
+<td>?</td>
+</tr>
+</tbody>
+</table>
+<h3 id="68-developer-experience">6.8 Developer Experience</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DX-01</td>
+<td>Host CLI tool <code>qshare</code> outputs QEMU args and generates <code>mkqnximage</code> snippet to auto-mount at boot.</td>
+<td>S</td>
+<td>D</td>
+<td>—</td>
+</tr>
+<tr>
+<td>DX-02</td>
+<td>Complete end-to-end demonstration replayable with a single command.</td>
+<td>S</td>
+<td>D</td>
+<td>—</td>
+</tr>
+<tr>
+<td>DX-03</td>
+<td>Host CLI tool <code>qrun</code> executes a binary located on the share inside the guest, returning stdout and exit code.</td>
+<td>C</td>
+<td>D</td>
+<td>—</td>
+</tr>
+<tr>
+<td>DX-04</td>
+<td>Practical examples show executing tests of a CMake project and a Rust project inside the guest.</td>
+<td>C</td>
+<td>D</td>
+<td>—</td>
+</tr>
+<tr>
+<td>DX-05</td>
+<td>User guide, architectural design guide, and tutorial: "Writing a virtio driver for QNX 8.0".</td>
+<td>C</td>
+<td>I</td>
+<td>A partial</td>
+</tr>
+<tr>
+<td>DX-06</td>
+<td>Full root filesystem hosted on share: guest boot image contains only kernel and driver.</td>
+<td>X</td>
+<td>D</td>
+<td>A partial</td>
+</tr>
+</tbody>
+</table>
+<h3 id="69-virtiofs">6.9 virtiofs</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VFS-01</td>
+<td>Driver discovers virtiofs device (virtio ID 26), reading mount tag and request queue count.</td>
+<td>X</td>
+<td>T</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-02</td>
+<td>Uses hiprio queue for <code>FORGET</code> and <code>INTERRUPT</code> messages, and standard queues for all file I/O.</td>
+<td>X</td>
+<td>T</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-03</td>
+<td>Negotiates FUSE version (7.x) and supports lookup, getattr, setattr, open, read, write, release, readdir, mkdir, unlink, rename, symlink, readlink, link, fsync, statfs.</td>
+<td>X</td>
+<td>T</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-04</td>
+<td>Tracks node reference counts (<code>lookup_count</code>) and returns them cleanly via <code>FORGET</code>.</td>
+<td>X</td>
+<td>T</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-05</td>
+<td>Reuses Layer 3 (<code>rmfs</code>) and passes identical conformance suite as 9P client.</td>
+<td>X</td>
+<td>T</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-06</td>
+<td><code>qshare</code> launches <code>virtiofsd</code> and configures shared memory in QEMU.</td>
+<td>X</td>
+<td>D</td>
+<td>—</td>
+</tr>
+<tr>
+<td>VFS-07</td>
+<td>Benchmark report includes virtiofs pitted against 9P clients.</td>
+<td>X</td>
+<td>M</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="610-reverse-sharing">6.10 Reverse Sharing</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Tier</th>
+<th>Verif.</th>
+<th>Prior Art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SRV-01</td>
+<td>In-guest 9P server exports a QNX directory tree, mounted on host via standard Linux 9P client.</td>
+<td>X</td>
+<td>D</td>
+<td>—</td>
+</tr>
+<tr>
+<td>SRV-02</td>
+<td>Export can expose <code>/proc</code> and <code>/dev</code>, allowing host inspection of QNX guest internals.</td>
+<td>X</td>
+<td>D</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="7-validation-plan">7. Validation Plan</h2>
+<h3 id="71-five-testing-levels">7.1 Five testing levels</h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Environment</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 — Unit</td>
+<td>Host PC</td>
+<td>Wire codec, translation tables, ID pools, path manipulation</td>
+</tr>
+<tr>
+<td>1 — Fuzzing</td>
+<td>Host PC</td>
+<td>Wire decoders subjected to randomized malformed inputs under AddressSanitizer/UBSan</td>
+</tr>
+<tr>
+<td>2 — Conformance</td>
+<td>QEMU</td>
+<td>Differential testing against host filesystem, content exerciser, targeted edge cases</td>
+</tr>
+<tr>
+<td>3 — Performance</td>
+<td>QEMU</td>
+<td>Round-trip counts per call, throughput, metadata scalability, priority inversion test</td>
+</tr>
+<tr>
+<td>4 — Robustness</td>
+<td>QEMU</td>
+<td>Forced kill, unmount under heavy load, host-side file mutations, faulty mock server</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-differential-testing">7.2 Differential testing</h3>
+<p>The host PC directory serves as ground truth. The harness runs randomized sequences of POSIX filesystem operations inside the guest, then cross-checks the resulting tree on both sides: entry names, types, sizes, permissions, timestamps, symlink targets, and SHA-256 file contents.</p>
+<ul>
+<li>Every sequence is deterministic and reproducible via its PRNG seed.</li>
+<li>Any discrepancy is automatically minimized to the shortest reproducing sequence.</li>
+<li>The exact same harness applies to Project A, Project B, and virtiofs, ensuring unbiased comparison.</li>
+</ul>
+<h3 id="73-content-exerciser">7.3 Content exerciser</h3>
+<p>A concurrent exerciser writes, reads, truncates, and extends files using pseudorandom patterns, validating byte-exact content on every read. Runs first with a single process, then with 16 concurrent processes on distinct files and a shared file.</p>
+<h3 id="74-targeted-edge-cases">7.4 Targeted edge cases</h3>
+<p>Covers corner cases rarely reached by random exploration: overwrite existing target on rename, unlink while descriptor is held open, concurrent exclusive creation, permission bit matrix, symlink loops, 255-byte filenames, 5 GiB files, 100,000-entry directory, max path length.</p>
+<h3 id="75-benchmarks">7.5 Benchmarks</h3>
+<table>
+<thead>
+<tr>
+<th>Workload</th>
+<th>Metric measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sequential read &amp; write of 1 GiB file</td>
+<td>Throughput vs message size</td>
+</tr>
+<tr>
+<td>10,000 small files created, stat'd, unlinked</td>
+<td>Metadata transaction latency</td>
+</tr>
+<tr>
+<td>Traversal of 50,000-entry directory tree</td>
+<td>Directory listing overhead</td>
+</tr>
+<tr>
+<td>Extraction of large source archive + grep</td>
+<td>Realistic mixed development workload</td>
+</tr>
+<tr>
+<td>Launching 1,000 programs from share</td>
+<td>Binary loader execution path</td>
+</tr>
+<tr>
+<td>4 KiB high-prio read during bulk low-prio copy</td>
+<td>Real-time priority inheritance &amp; scheduling</td>
+</tr>
+</tbody>
+</table>
+<h3 id="76-acceptance-thresholds">7.6 Acceptance thresholds</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Foundation (S)</th>
+<th>Complete (C)</th>
+<th>Extreme (X)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Differential test operations without divergence</td>
+<td>100,000</td>
+<td>1,000,000 (x86_64 &amp; ARM64)</td>
+<td>Same on virtiofs</td>
+</tr>
+<tr>
+<td>Content exerciser operations</td>
+<td>1,000,000</td>
+<td>10,000,000 (16 processes)</td>
+<td>Same on virtiofs</td>
+</tr>
+<tr>
+<td>Targeted edge cases passed</td>
+<td>Foundation subset</td>
+<td>All</td>
+<td>All on virtiofs</td>
+</tr>
+<tr>
+<td>Fuzzing on response decoders</td>
+<td>—</td>
+<td>1 hour without defect</td>
+<td>24 hours</td>
+</tr>
+<tr>
+<td>Leaked descriptors after 1,000,000 opens</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Comparative report</td>
+<td>Round-trip counts</td>
+<td>Complete vs A and B</td>
+<td>Including virtiofs</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="8-demonstration-video-under-3-minutes">8. Demonstration (Video under 3 minutes)</h2>
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>On Screen</th>
+<th>Key Message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0:00 – 0:20</td>
+<td>Current pain: compile on host, scp/rebuild image, execute in QNX</td>
+<td>Every test cycle pays a copy tax</td>
+</tr>
+<tr>
+<td>0:20 – 0:55</td>
+<td><code>qshare ~/project</code>, compile with <code>make</code> on host, instant execution in QNX; host file edit visible immediately</td>
+<td>Zero copy, instant iteration</td>
+</tr>
+<tr>
+<td>0:55 – 1:25</td>
+<td>Differential conformance test running, 1,000,000 operations, zero divergence</td>
+<td>Industrial robustness, not a toy</td>
+</tr>
+<tr>
+<td>1:25 – 2:00</td>
+<td>Benchmark chart: existing 9P clients vs Passerelle 9P vs virtiofs</td>
+<td>Quantified performance justification</td>
+</tr>
+<tr>
+<td>2:00 – 2:30</td>
+<td>High-priority read during bulk low-priority copy; kernel trace shows inherited priority</td>
+<td>Built for a hard real-time OS</td>
+</tr>
+<tr>
+<td>2:30 – 2:45</td>
+<td>Driver running unprivileged without root rights</td>
+<td>Least privilege security</td>
+</tr>
+<tr>
+<td>2:45 – 3:00</td>
+<td>Repository, tutorial, explicit attribution of prior art and novel additions</td>
+<td>Honesty and open-source ethics</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="9-deliverables-and-repository-layout">9. Deliverables and Repository Layout</h2>
+<pre><code>passerelle/
+├── README.md            English: overview, prior art, additions, one-command demo
+├── LICENSE              Apache-2.0
+├── NOTICE               Attribution of reused and referenced projects
+├── virtio/              Transport: core, queues, PCI, MMIO, mock transport for PC tests
+├── proto9p/             Portable 9P2000.L protocol library
+├── protofuse/           Portable FUSE protocol library (virtiofs)
+├── rmfs/                Common filesystem resource manager layer
+├── drivers/             Driver binaries (qnx-fs-9p-pci, qnx-virtiofs)
+├── host/
+│   ├── qshare/          Host CLI tooling and QEMU setup
+│   ├── fsproof/         Differential test harness and edge-case exerciser
+│   └── bench/           Benchmark suite and report generator
+├── image/               mkqnximage snippets and security policy
+├── upstream/            Patches offered to existing upstream projects
+├── docs/                Guides, architectural specifications, verification status
+└── codelab/             Step-by-step tutorial</code></pre>
+<ul>
+<li>**Languages**: C11 for drivers and core libraries; Python 3 for host tooling.</li>
+<li>**Key QNX technology highlights**: resource manager framework, message-based priority inheritance, QNX 8.0 `InterruptAttachThread`, capabilities and security policies, PCI server integration, kernel event tracing (`TraceEvent`).</li>
+<li>**Tutorial bonus target**: "Writing a virtio driver for QNX 8.0: from PCI discovery to first byte read".</li>
+</ul>
+<hr>
+<h2 id="10-schedule">10. Schedule</h2>
+<p>Five weeks remain until the hackathon deadline.</p>
+<table>
+<thead>
+<tr>
+<th>Week</th>
+<th>Dates</th>
+<th>Content</th>
+<th>Milestone</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>11 – 17 Nov</td>
+<td>Feasibility tests E1 to E5. Benchmark clients A and B. PCI transport: 9P version negotiation completes on x86_64. Questions asked on Discord and to author of A.</td>
+<td>Decisions D1 to D3 settled</td>
+</tr>
+<tr>
+<td>2</td>
+<td>18 – 24 Nov</td>
+<td>9P read, write, execution on x86_64 (via patch to A or new repo). <code>qshare</code>. Differential test v1.</td>
+<td>&lt;strong&gt;Foundation achieved&lt;/strong&gt;: compile on host, run in QNX</td>
+</tr>
+<tr>
+<td>3</td>
+<td>25 Nov – 1 Dec</td>
+<td>Portable FUSE protocol + read-only virtiofs driver. Content exerciser, edge cases.</td>
+<td>virtiofs reads a file</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2 – 8 Dec</td>
+<td>virtiofs write support. Priority scheduling. Comparative benchmarks. ARM64 support. Least privilege.</td>
+<td>Full comparative report</td>
+</tr>
+<tr>
+<td>5</td>
+<td>9 – 14 Dec</td>
+<td>README polish, tutorial, video recording. Submit on 14 Dec evening.</td>
+<td>Submitted with 1 day margin</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;Feasibility tests (first 4 days):&lt;/strong&gt;</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Question</th>
+<th>Fallback if negative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E1</td>
+<td>Under QEMU x86_64, does a QNX driver successfully receive the virtio PCI interrupt and exchange a 9P message?</td>
+<td>Adopt Project B's MSI-X setup; fall back to polling temporarily</td>
+</tr>
+<tr>
+<td>E2</td>
+<td>Do clients A and B run as claimed, and what are their actual performance numbers?</td>
+<td>Discovered gaps become compelling value propositions</td>
+</tr>
+<tr>
+<td>E3</td>
+<td>Does QNX execute a binary served by an out-of-tree resource manager, including shared libraries?</td>
+<td>Study Project A's ARM64 solution; fall back to data sharing only</td>
+</tr>
+<tr>
+<td>E4</td>
+<td>Does <code>mkqnximage</code> allow injecting arbitrary extra QEMU arguments?</td>
+<td><code>qshare</code> invokes QEMU directly on the generated image</td>
+</tr>
+<tr>
+<td>E5</td>
+<td>On the host PC, do <code>virtiofsd</code> and shared memory work with a standard Linux guest?</td>
+<td>Drop virtiofs; redirect effort to 9P depth and benchmarks</td>
+</tr>
+</tbody>
+</table>
+<p>&lt;strong&gt;First items to de-scope if schedule slips&lt;/strong&gt;: reverse sharing, rootfs on share, faulty server testing, ARM64 for virtiofs. The foundation tier and conformance harness are never dropped.</p>
+<hr>
+<h2 id="11-risks-and-mitigations">11. Risks and Mitigations</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Severity</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Project perceived as duplicate of existing clients</td>
+<td>High</td>
+<td>Clear positioning (Section 3); virtiofs and benchmarks as core novelty; explicit attribution</td>
+</tr>
+<tr>
+<td>"Low-Level Software" category rejected due to DDK scope</td>
+<td>High</td>
+<td>Question submitted Week 1; fallback to "Developer Tools"</td>
+</tr>
+<tr>
+<td>Unannounced QNX virtiofs driver already exists</td>
+<td>Medium</td>
+<td>Inquiry on hackathon Discord during Week 1</td>
+</tr>
+<tr>
+<td>PCI interrupt difficult under QEMU</td>
+<td>Medium</td>
+<td>Feasibility test E1; Project B's proven MSI-X approach documented</td>
+</tr>
+<tr>
+<td>Execution from share fails on x86_64</td>
+<td>Medium</td>
+<td>Feasibility test E3; Project A achieved it on ARM64</td>
+</tr>
+<tr>
+<td>virtiofs exceeds available time</td>
+<td>High</td>
+<td>Week 3 milestone "reads a file"; Foundation 9P is independently deliverable</td>
+</tr>
+<tr>
+<td>Maintainer of Project A does not reply</td>
+<td>Low</td>
+<td>Fallback plan defined in Section 3.1</td>
+</tr>
+<tr>
+<td>QEMU wall-clock timings disputed</td>
+<td>Medium</td>
+<td>Publish round-trip counts; relative comparisons on identical hardware</td>
+</tr>
+<tr>
+<td>Data cache hides host modifications</td>
+<td>Medium</td>
+<td>No data cache by default; requirement FS-12 validated</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="12-pushing-the-idea-further">12. Pushing the Idea Further</h2>
+<p>Beyond the Complete tier, ordered by impact:</p>
+<ol>
+<li>**virtiofs** (6.9): the primary innovation.</li>
+<li>**Root filesystem on share**: image contains only kernel and driver; entire OS lives on host PC. Modifying a system daemon requires no image rebuild.</li>
+<li>**Reverse sharing** (6.10): inspect guest `/proc` and `/dev` from host via Linux 9P mount.</li>
+<li>**Fault-injection server**: scripted 9P server simulating broken responses.</li>
+<li>**Network transport** for 9P client, enabling physical boards (Raspberry Pi 5).</li>
+<li>**File change notifications**: notify guest applications when host files are modified.</li>
+<li>**POSIX conformance test suite port** (e.g. pjdfstest), complementing custom harness.</li>
+<li>**Formal protocol model**: state machine of file descriptors verified via model checking.</li>
+<li>**VS Code QNX extension integration**: launch and debug from share with one click.</li>
+<li>**QNX ecosystem package recipe** submitted to official ports repository.</li>
+</ol>
+<hr>
+<h2 id="13-acceptance-criteria">13. Acceptance Criteria</h2>
+<p>&lt;strong&gt;Foundation (S) — Minimum viable submission.&lt;/strong&gt;</p>
+<ul>
+<li>[ ] On an `mkqnximage` x86_64 image, one command mounts a host PC directory.</li>
+<li>[ ] A binary compiled on host executes in QNX without copying.</li>
+<li>[ ] A file modified on host is seen modified in guest.</li>
+<li>[ ] 100,000 differential test operations pass without divergence.</li>
+<li>[ ] Round-trip counts per POSIX call published.</li>
+<li>[ ] Public repo, license, English README citing prior art, video under 3 min.</li>
+</ul>
+<p>&lt;strong&gt;Complete (C) — Target hackathon version.&lt;/strong&gt;</p>
+<ul>
+<li>[ ] All Tier C requirements verified on x86_64 and ARM64.</li>
+<li>[ ] 1,000,000 differential operations; 16-process content exerciser.</li>
+<li>[ ] Comparative benchmark report vs Project A and Project B.</li>
+<li>[ ] High-priority read benchmarked during bulk low-priority copy.</li>
+<li>[ ] Unprivileged non-root driver; published tutorial.</li>
+</ul>
+<p>&lt;strong&gt;Extreme (X).&lt;/strong&gt;</p>
+<ul>
+<li>[ ] virtiofs passes the exact same conformance harness and is benchmarked.</li>
+<li>[ ] At least one additional item from Section 12.</li>
+</ul>
+<hr>
+<h2 id="14-verification-status-of-claims">14. Verification Status of Claims</h2>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Existence and advertised features of clients A and B</td>
+<td>Read in their documentation. &lt;strong&gt;Not yet executed.&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>Content of <code>kodebooth/qnx-virtio</code></td>
+<td>File listing inspected; code not yet analyzed</td>
+</tr>
+<tr>
+<td>QNX DDK does not cover virtio or filesystems</td>
+<td>Verified on official DDK documentation page</td>
+</tr>
+<tr>
+<td>QEMU 9P options, security models, message size and cache warnings</td>
+<td>Verified on official QEMU documentation</td>
+</tr>
+<tr>
+<td>macOS host supported since QEMU 7.0; Windows not integrated</td>
+<td>Verified on official QEMU documentation</td>
+</tr>
+<tr>
+<td>9P2000.L message formats; Linux open flag and errno values</td>
+<td>Verified against diod protocol documentation</td>
+</tr>
+<tr>
+<td>9P device configuration (mount tag preceded by length)</td>
+<td>Verified against Linux virtio_9p header</td>
+</tr>
+<tr>
+<td>Modern virtio PCI IDs (0x1049, 0x105A)</td>
+<td>Inferred from virtio 1.2 specification rule, not yet cross-checked in QEMU source</td>
+</tr>
+<tr>
+<td>virtiofs: device ID 26, 36-byte tag, hiprio queue + request queues</td>
+<td>From secondary sources; virtio specification section to re-read</td>
+</tr>
+<tr>
+<td>virtiofs host setup instructions</td>
+<td>Verified on virtiofs project documentation</td>
+</tr>
+<tr>
+<td><code>InterruptAttach()</code> removed in QNX 8.0</td>
+<td>Verified in QNX 8.0 migration guide</td>
+</tr>
+<tr>
+<td>No public QNX guest virtiofs driver exists</td>
+<td>GitHub searches yielded zero hits. &lt;strong&gt;Absence unproven&lt;/strong&gt;: ask on Discord</td>
+</tr>
+<tr>
+<td>Symlink resolution by redirect; binary execution from resource manager</td>
+<td>&lt;strong&gt;Hypotheses&lt;/strong&gt;, subject to dedicated tests</td>
+</tr>
+<tr>
+<td>Arbitrary QEMU options via <code>mkqnximage</code></td>
+<td>Not found in documentation; subject to test E4</td>
+</tr>
+<tr>
+<td>Message size ceiling imposed by QEMU virtqueue</td>
+<td>Recalled from memory; to be empirically measured</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="15-glossary">15. Glossary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9P, 9P2000.L</td>
+<td>Remote filesystem protocol originally from Plan 9; Linux-adapted variant</td>
+</tr>
+<tr>
+<td>virtiofs</td>
+<td>Virtual machine shared filesystem transporting FUSE protocol over virtio</td>
+</tr>
+<tr>
+<td>FUSE</td>
+<td>Linux kernel-to-userspace filesystem protocol</td>
+</tr>
+<tr>
+<td>virtio</td>
+<td>Standard for virtual devices using shared-memory descriptor rings (virtqueues)</td>
+</tr>
+<tr>
+<td>PCI, MMIO</td>
+<td>Bus attachment methods: PCI bus (x86) or fixed memory addresses (ARM)</td>
+</tr>
+<tr>
+<td>MSI-X</td>
+<td>Message Signaled Interrupts extended mechanism for PCI devices</td>
+</tr>
+<tr>
+<td>Mount tag</td>
+<td>Identifier string configured on QEMU command line and matched by guest mount</td>
+</tr>
+<tr>
+<td>Message size (<code>msize</code>)</td>
+<td>Maximum byte length of a 9P transaction, bounding single-round-trip transfer</td>
+</tr>
+<tr>
+<td>Round-trip</td>
+<td>A single protocol request sent to the server and its corresponding response</td>
+</tr>
+<tr>
+<td>Resource manager</td>
+<td>QNX userspace process implementing POSIX namespace operations via messages</td>
+</tr>
+<tr>
+<td>Abilities / Capabilities</td>
+<td>Fine-grained privileges retained by a QNX process after dropping root</td>
+</tr>
+<tr>
+<td>Differential testing</td>
+<td>Conformance testing comparing guest filesystem behavior against host reference</td>
+</tr>
+<tr>
+<td><code>mkqnximage</code></td>
+<td>QNX utility that builds and launches virtual machine disk images</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="16-references">16. References</h2>
+<p>&lt;strong&gt;Existing projects&lt;/strong&gt;</p>
+<ul>
+<li>https://github.com/gvergine/qnx-fs-9p</li>
+<li>https://github.com/eclipse-score/qnx_unit_tests (folder `src/common/virtio9p`)</li>
+<li>https://github.com/kodebooth/qnx-virtio</li>
+<li>QNX Hypervisor, host-side virtio-fs device: https://qnx.com/developers/docs/7.1/com.qnx.doc.qavf.overview/topic/virtfs_arch.html</li>
+</ul>
+<p>&lt;strong&gt;9P and QEMU&lt;/strong&gt;</p>
+<ul>
+<li>QEMU 9P setup: https://wiki.qemu.org/Documentation/9psetup</li>
+<li>QEMU 9P developer documentation: https://wiki.qemu.org/Documentation/9p</li>
+<li>9P2000.L protocol description (diod project): https://github.com/chaos/diod/blob/master/protocol.md</li>
+</ul>
+<p>&lt;strong&gt;virtiofs&lt;/strong&gt;</p>
+<ul>
+<li>virtio-fs QEMU how-to: https://virtio-fs.gitlab.io/howto-qemu.html</li>
+</ul>
+<p>&lt;strong&gt;QNX&lt;/strong&gt;</p>
+<ul>
+<li>Driver Development Kit (DDK): https://www.qnx.com/developers/docs/qnxeverywhere/com.qnx.doc.ddk/topic/about.html</li>
+<li>Filesystem resource managers: https://qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.resmgr/topic/fsystems.html</li>
+<li>Returning directory entries: https://qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.resmgr/topic/fsystems_ReturnEntries.html</li>
+<li>QNX 8.0 migration guide, kernel &amp; interrupts: https://qnx.com/developers/docs/8.0/com.qnx.doc.qnxsdp.migration/topic/kernel.html</li>
+<li>`InterruptAttachThread()`: https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.lib_ref/topic/i/interruptattachthread.html</li>
+<li>`mkqnximage`: https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.utilities/topic/m/mkqnximage.html</li>
+</ul>
+<p>&lt;strong&gt;Hackathon&lt;/strong&gt;</p>
+<ul>
+<li>Home page and rules: https://qnx.devpost.com/ and https://qnx.devpost.com/rules</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="upstream.html">Previous</a>
+      <a class="next" href="spec-fr.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

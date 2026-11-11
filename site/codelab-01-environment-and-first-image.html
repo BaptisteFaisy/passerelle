@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codelab 01 - environment - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Learn</p>
+    <h1 id="chapter-1-the-environment-and-your-first-image">Chapter 1 — The environment and your first image</h1>
+<p>&lt;strong&gt;Goal.&lt;/strong&gt; Get a QNX 8.0 guest booting under QEMU with a virtio-9p device attached, and check the handful of facts the rest of this tutorial depends on.</p>
+<p>&lt;strong&gt;Time.&lt;/strong&gt; 30 minutes.</p>
+<h2 id="11-what-the-pieces-are">1.1 What the pieces are</h2>
+<p>Three programs are involved, and it is worth being precise about which is which, because most of the confusion in this area comes from mixing them up.</p>
+<pre><code>  your PC                        the hypervisor                the guest
+  ───────                        ──────────────                ────────
+  a directory          ──┐
+                       ├──►  qemu-system-x86_64  ────  a disk image  ──►  QNX 8.0
+  the 9P server (QEMU) ─┘        (the device)         (the kernel)      (your driver)</code></pre>
+<ul>
+<li>**QEMU** is the hypervisor, and it is also the 9P *server*: the directory you point it at is served to the guest over a virtio device. There is no separate daemon to install on the PC, unlike virtiofs.</li>
+<li>**The disk image** holds the guest: a kernel, a small filesystem, and the drivers that are started at boot. `mkqnximage` builds it.</li>
+<li>**Your driver** runs inside the guest, as a program or as a resource manager. It is the thing you write.</li>
+</ul>
+<p>The device QEMU presents is called &lt;em&gt;virtio-9p&lt;/em&gt;. It appears on the PCI bus in two flavours, and which one you get depends on how you ask for it:</p>
+<table>
+<thead>
+<tr>
+<th>How you ask QEMU</th>
+<th>What it creates</th>
+<th>Where it appears</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-device virtio-9p-device,...</code></td>
+<td>a virtio-mmio device</td>
+<td>a fixed MMIO window (ARM64 <code>virt</code> machines)</td>
+</tr>
+<tr>
+<td><code>-device virtio-9p-pci,...</code></td>
+<td>a virtio-pci device</td>
+<td>the PCI bus</td>
+</tr>
+<tr>
+<td><code>-virtfs local,...</code></td>
+<td>shorthand for the second</td>
+<td>the PCI bus</td>
+</tr>
+</tbody>
+</table>
+<p>For x86_64, which is what this tutorial uses, it is the PCI bus. Chapter 2 is about that bus.</p>
+<h2 id="12-the-identities-you-will-be-looking-for">1.2 The identities you will be looking for</h2>
+<p>The driver does not find "the 9P device" by name; it looks for a vendor and a device id on the PCI bus.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Value</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PCI vendor</td>
+<td><code>0x1AF4</code></td>
+<td>the virtio vendor id, assigned by the PCI-SIG</td>
+</tr>
+<tr>
+<td>Device id, transitional</td>
+<td><code>0x1009</code></td>
+<td><code>0x1000 + 9</code>: 9 is the virtio device type for 9P</td>
+</tr>
+<tr>
+<td>Device id, modern only</td>
+<td><code>0x1049</code></td>
+<td><code>0x1040 + 9</code></td>
+</tr>
+<tr>
+<td>virtio device type 9P</td>
+<td><code>9</code></td>
+<td>virtio 1.2, §5.3</td>
+</tr>
+<tr>
+<td>virtio device type virtiofs</td>
+<td><code>26</code></td>
+<td>virtio 1.2, §5.4</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>0x1000 + type</code> and <code>0x1040 + type</code> formulas are worth remembering: the "modern only" interface numbers the device from <code>0x1040</code> upwards, and QEMU emulates the transitional interface (<code>0x1000</code> upwards) for guests that predate virtio 1.0. A driver that only knows <code>0x1049</code> will not find a transitional device, and vice versa. Most drivers accept both.</p>
+<p>The exercise checks these numbers and the byte order, on the machine you are about to use:</p>
+<pre><code class="language-sh">cmake -B /tmp/codelab-build -S codelab/code
+cmake --build /tmp/codelab-build
+/tmp/codelab-build/ex01_env</code></pre>
+<pre><code>chapter 1 - environment check
+virtio 9P:  vendor 0x1AF4  pci id 0x1009 (transitional) 0x1049 (modern)
+virtio-fs:  vendor 0x1AF4  pci id 0x105A (modern)
+types: u8=1 u16=2 u32=4 u64=8 ptr=8
+byte order: little-endian</code></pre>
+<p>If the byte order line says &lt;em&gt;big-endian&lt;/em&gt;, stop: this tutorial, and the virtio specification's wire format, assume little-endian. Neither QNX 8.0 target is big-endian, so this should never happen — but a driver that finds out the hard way spends a day.</p>
+<h2 id="13-building-the-first-image">1.3 Building the first image</h2>
+<p><code>mkqnximage</code> is the tool that turns a description of a guest into a disk image. The simplest useful invocation asks for a 64-bit x86 guest with network and serial console:</p>
+<pre><code class="language-sh">mkqnximage --type=vm --arch=x86_64 --memory=1024 \
+           --shuffle=no --no-build \
+           --kernelfile=$SDP/../target/qnx/qnx-kernel.so \
+           --boot-image=$SDP/../target/qnx/boot/qnx-ifs.ifs \
+           --script=/dev/null --filesystem=/dev/null \
+           --image=myimage.qnx --elf=myimage.elf</code></pre>
+<p>The exact arguments vary between SDP versions and are documented in the <code>mkqnximage</code> page of the QNX 8.0 documentation; the ones that matter for this tutorial are:</p>
+<ul>
+<li>`--arch=x86_64` — the architecture of the guest, and therefore of the driver you will cross-compile.</li>
+<li>`--boot-image` — the filesystem image the guest boots from.</li>
+<li>`--image` — the disk image QEMU will boot.</li>
+</ul>
+<p>The two things you will add to the image as the tutorial progresses are the &lt;strong&gt;driver binary&lt;/strong&gt; and a &lt;strong&gt;startup script&lt;/strong&gt; that runs it. The mechanism is a build file: a text file listing the binaries to add, one per line, with <code>[+script]</code> sections for the startup commands.</p>
+<pre><code>[+script]
+procmgr_symlink::/dev/ser1:/dev/con1 &amp;
+[+raw]mytest</code></pre>
+<p>A more convenient approach, and the one this tutorial recommends for the first four chapters, is to avoid touching the image at all: build the driver for the guest, run it from the serial console by hand, and only bake it into the image once it works. You can copy a binary into a running guest over the serial line, or simply rebuild the image; the loop is fast either way, and much faster than it sounds while the driver does not yet work.</p>
+<h3 id="cross-compiling">Cross-compiling</h3>
+<p>The driver is a normal C program with two extras: it is built for the guest's architecture, and it links against the QNX libraries.</p>
+<pre><code class="language-sh">source ~/qnx800/qnxsdp-env.sh
+qcc -Vgcc_ntox86_64 -o mytest mytest.c</code></pre>
+<p><code>qnxsdp-env.sh</code> sets <code>QNX_HOST</code> and <code>QNX_TARGET</code>, which the compiler wrapper needs. <code>-Vgcc_ntox86_64</code> selects the target; <code>gcc_ntoaarch64le</code> is the ARM64 one. Everything else — warnings, optimisation — is the compiler's usual business.</p>
+<p>The QNX-specific headers your driver will need are:</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>What it gives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;sys/neutrino.h&gt;</code></td>
+<td><code>InterruptAttachThread()</code>, <code>InterruptWait()</code>, <code>InterruptDetach()</code></td>
+</tr>
+<tr>
+<td><code>&lt;sys/mman.h&gt;</code></td>
+<td><code>mmap_device_memory()</code>, <code>mmap()</code> with <code>MAP_PHYS</code>, <code>mem_offset64()</code></td>
+</tr>
+<tr>
+<td><code>&lt;sys/dispatch.h&gt;</code></td>
+<td><code>name_attach()</code>, the "who owns this device" trick</td>
+</tr>
+<tr>
+<td><code>&lt;sys/rsrcdbmgr.h&gt;</code></td>
+<td><code>rsrcdbmgr_attach()</code>, used to claim an MSI IRQ</td>
+</tr>
+<tr>
+<td><code>&lt;sys/iofunc.h&gt;</code>, <code>&lt;sys/resmgr.h&gt;</code></td>
+<td>the resource manager, chapter 8</td>
+</tr>
+</tbody>
+</table>
+<h2 id="14-running-it">1.4 Running it</h2>
+<pre><code class="language-sh">qemu-system-x86_64 -M pc -m 1024 -smp 2 \
+    -kernel myimage.elf -initrd myimage.qnx \
+    -serial mon:stdio \
+    -fsdev local,id=fs0,path=$HOME/share,security_model=mapped-xattr \
+    -device virtio-9p-pci,fsdev=fs0,mount_tag=hostshare</code></pre>
+<p>Three options deserve a comment:</p>
+<ul>
+<li>**`-serial mon:stdio`** puts the guest's serial console on your terminal, with the QEMU monitor behind `Ctrl-a c`. This is where the driver's output goes.</li>
+<li>**`-fsdev local,...`** defines the share: a directory on the PC, and how ownership is recorded. `mapped-xattr` stores guest ownership in extended attributes on the host files, which is the model to use unless you have a reason not to.</li>
+<li>**`mount_tag=hostshare`** is the name the guest uses to ask for this particular share. If QEMU has two shares, they have two different tags, and the guest mounts them one at a time.</li>
+</ul>
+<p>The guest should now boot to a prompt. Log in (the image's default account is usually <code>root</code>, with no password on a development image) and check that the device is visible at all — QNX's own PCI tools will tell you:</p>
+<pre><code>pidin pci</code></pre>
+<p>Look for <code>1af4</code> as the vendor and <code>1009</code> or <code>1049</code> as the device id. If it is not there, the problem is on the QEMU command line, not in your driver: check that the <code>-device</code> option is on the same command line as the <code>-fsdev</code> it refers to, and that the machine type supports PCI devices (<code>-M pc</code> does).</p>
+<h2 id="15-what-to-observe">1.5 What to observe</h2>
+<ul>
+<li>`ex01_env` prints the identities above, on the PC.</li>
+<li>`pidin pci` in the guest lists the virtio-9p device.</li>
+<li>The guest boots to a prompt and `pidin` works.</li>
+</ul>
+<h2 id="16-traps">1.6 Traps</h2>
+<ul>
+<li>**Wrong architecture.** A driver built for aarch64le on an x86_64 guest fails in a way that looks like a bug in the driver: it cannot even print anything. Check `file mytest` and the `-V` flag you compiled with.</li>
+<li>**`MAP_PHYS` needs a physical address.** `mmap()` with `MAP_PHYS|MAP_ANON` and `mem_offset64()` is the way to get one; chapter 5 comes back to this.</li>
+<li>**The tag is not optional.** Without `mount_tag=`, QEMU refuses to start the device. The guest cannot find a share it cannot name.</li>
+<li>**`security_model=none` is tempting and wrong.** It makes every file in the guest belong to the user running QEMU, and `chown` fails. Use `mapped-xattr`.</li>
+</ul>
+<h2 id="exercise">Exercise</h2>
+<ol>
+<li>Build and run `ex01_env` on the PC. Write down the vendor and device ids it prints.</li>
+<li>Start QEMU with the command line above, boot the guest, and run `pidin pci`. Find the virtio device and note its BDF (bus:device.function), its vendor and its device id.</li>
+<li>Change `security_model` to `none`, restart QEMU, and run `pidin pci` again. The device is still there; note that the *host* behaviour of the share changes, not the guest's view of the bus.</li>
+<li>Add a second share with a different `mount_tag`, and find both devices in `pidin pci`. They have the same vendor and device id, and only the tag tells them apart. That is the whole reason requirement VIO-05 of this project's specification asks for the tag to be read.</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<p>The exercise program is <code>code/src/ex01_env.c</code>; its checks are in <code>code/tests/test_clab.c</code>.</p>
+<p>For steps 2 to 4, the expected output is a <code>pidin pci</code> table with one row per device. Two shares means two rows with the same vendor and device id, at different BDFs. Nothing in the PCI configuration space distinguishes them — the tag lives in the device-specific configuration space, which is what chapter 3 is about.</p>
+<h2 id="where-we-are">Where we are</h2>
+<p>We have a guest that boots and a device on its PCI bus. Chapter 2 is about how a QNX program talks to that bus.</p>
+    <nav class="pager">
+      <a class="prev" href="codelab.html">Previous</a>
+      <a class="next" href="codelab-02-the-pci-bus-under-qnx-8.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>

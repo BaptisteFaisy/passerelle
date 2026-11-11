@@ -1,0 +1,2484 @@
+[
+ {
+  "title": "Home",
+  "url": "index.html",
+  "section": "Start",
+  "source": "docs/home.md",
+  "headings": [
+   {
+    "text": "Passerelle",
+    "anchor": "passerelle",
+    "level": 1
+   },
+   {
+    "text": "What is provable today, and what is not",
+    "anchor": "what-is-provable-today-and-what-is-not",
+    "level": 2
+   },
+   {
+    "text": "Why it exists",
+    "anchor": "why-it-exists",
+    "level": 2
+   },
+   {
+    "text": "Numbers that are real",
+    "anchor": "numbers-that-are-real",
+    "level": 2
+   },
+   {
+    "text": "Build it",
+    "anchor": "build-it",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Overview",
+  "url": "overview.html",
+  "section": "Start",
+  "source": "README.md",
+  "headings": [
+   {
+    "text": "Passerelle",
+    "anchor": "passerelle",
+    "level": 1
+   },
+   {
+    "text": "Why Passerelle?",
+    "anchor": "why-passerelle",
+    "level": 2
+   },
+   {
+    "text": "Prior Art & What Passerelle Adds",
+    "anchor": "prior-art-what-passerelle-adds",
+    "level": 2
+   },
+   {
+    "text": "What Passerelle Adds",
+    "anchor": "what-passerelle-adds",
+    "level": 3
+   },
+   {
+    "text": "Architecture",
+    "anchor": "architecture",
+    "level": 2
+   },
+   {
+    "text": "One-Command Demo",
+    "anchor": "one-command-demo",
+    "level": 2
+   },
+   {
+    "text": "Building",
+    "anchor": "building",
+    "level": 2
+   },
+   {
+    "text": "1. Build on Host PC (Portable Layers & Unit Tests, No SDP Needed)",
+    "anchor": "1-build-on-host-pc-portable-layers-unit-tests-no-sdp-needed",
+    "level": 3
+   },
+   {
+    "text": "2. Cross-Compile for QNX 8.0",
+    "anchor": "2-cross-compile-for-qnx-80",
+    "level": 3
+   },
+   {
+    "text": "Honest Verification Status",
+    "anchor": "honest-verification-status",
+    "level": 2
+   },
+   {
+    "text": "Documentation Index",
+    "anchor": "documentation-index",
+    "level": 2
+   },
+   {
+    "text": "Repository CI",
+    "anchor": "repository-ci",
+    "level": 2
+   },
+   {
+    "text": "License & Attribution",
+    "anchor": "license-attribution",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "User guide",
+  "url": "user-guide.html",
+  "section": "Use",
+  "source": "docs/user-guide.md",
+  "headings": [
+   {
+    "text": "Passerelle — User Guide",
+    "anchor": "passerelle-user-guide",
+    "level": 1
+   },
+   {
+    "text": "1. Prerequisites",
+    "anchor": "1-prerequisites",
+    "level": 2
+   },
+   {
+    "text": "2. Installation",
+    "anchor": "2-installation",
+    "level": 2
+   },
+   {
+    "text": "2.1 Host side **[planned — week 2]**",
+    "anchor": "21-host-side-planned-week-2",
+    "level": 3
+   },
+   {
+    "text": "2.2 Guest side",
+    "anchor": "22-guest-side",
+    "level": 3
+   },
+   {
+    "text": "3. Quick Start: `qshare` **[planned — DX-01]**",
+    "anchor": "3-quick-start-qshare-planned-dx-01",
+    "level": 2
+   },
+   {
+    "text": "4. Mounting and Unmounting Inside the Guest",
+    "anchor": "4-mounting-and-unmounting-inside-the-guest",
+    "level": 2
+   },
+   {
+    "text": "4.1 Mount",
+    "anchor": "41-mount",
+    "level": 3
+   },
+   {
+    "text": "4.2 Unmount",
+    "anchor": "42-unmount",
+    "level": 3
+   },
+   {
+    "text": "5. Mount Options",
+    "anchor": "5-mount-options",
+    "level": 2
+   },
+   {
+    "text": "6. `qrun` — Execute From the Host **[planned — DX-03]**",
+    "anchor": "6-qrun-execute-from-the-host-planned-dx-03",
+    "level": 2
+   },
+   {
+    "text": "7. Project Examples (DX-04) **[planned — week 3+]**",
+    "anchor": "7-project-examples-dx-04-planned-week-3",
+    "level": 2
+   },
+   {
+    "text": "7.1 CMake project",
+    "anchor": "71-cmake-project",
+    "level": 3
+   },
+   {
+    "text": "7.2 Rust project",
+    "anchor": "72-rust-project",
+    "level": 3
+   },
+   {
+    "text": "8. Troubleshooting",
+    "anchor": "8-troubleshooting",
+    "level": 2
+   },
+   {
+    "text": "9. Where to Go Next",
+    "anchor": "9-where-to-go-next",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Architecture",
+  "url": "architecture.html",
+  "section": "Use",
+  "source": "docs/architecture.md",
+  "headings": [
+   {
+    "text": "Passerelle — Detailed Architecture & Technical Design",
+    "anchor": "passerelle-detailed-architecture-technical-design",
+    "level": 1
+   },
+   {
+    "text": "1. Architectural Overview: Three Layers",
+    "anchor": "1-architectural-overview-three-layers",
+    "level": 2
+   },
+   {
+    "text": "Layer 1: Virtio Transport (`virtio/`)",
+    "anchor": "layer-1-virtio-transport-virtio",
+    "level": 3
+   },
+   {
+    "text": "Layer 2: Wire Protocols (`proto9p/` & `protofuse/`)",
+    "anchor": "layer-2-wire-protocols-proto9p-protofuse",
+    "level": 3
+   },
+   {
+    "text": "Layer 3: Filesystem Resource Manager (`rmfs/`)",
+    "anchor": "layer-3-filesystem-resource-manager-rmfs",
+    "level": 3
+   },
+   {
+    "text": "2. Request Lifecycle (Section 5.2 Walkthrough)",
+    "anchor": "2-request-lifecycle-section-52-walkthrough",
+    "level": 2
+   },
+   {
+    "text": "3. Tricky Technical Challenges & Mitigations (Section 5.3)",
+    "anchor": "3-tricky-technical-challenges-mitigations-section-53",
+    "level": 2
+   },
+   {
+    "text": "3.1 Linux Numeric Translation (P9-04)",
+    "anchor": "31-linux-numeric-translation-p9-04",
+    "level": 3
+   },
+   {
+    "text": "3.2 Symbolic Links by Redirection",
+    "anchor": "32-symbolic-links-by-redirection",
+    "level": 3
+   },
+   {
+    "text": "3.3 Binary Execution from Share (FS-06)",
+    "anchor": "33-binary-execution-from-share-fs-06",
+    "level": 3
+   },
+   {
+    "text": "3.4 QNX 8.0 Interrupt Architecture (`InterruptAttachThread`)",
+    "anchor": "34-qnx-80-interrupt-architecture-interruptattachthread",
+    "level": 3
+   },
+   {
+    "text": "3.5 PCI Modern Discovery & MSI-X (VIO-01..VIO-04)",
+    "anchor": "35-pci-modern-discovery-msi-x-vio-01vio-04",
+    "level": 3
+   },
+   {
+    "text": "3.6 Tunable Message Size (`msize`) & Throughput",
+    "anchor": "36-tunable-message-size-msize-throughput",
+    "level": 3
+   },
+   {
+    "text": "3.7 Host Security Models & Least Privilege (SEC-01..SEC-03)",
+    "anchor": "37-host-security-models-least-privilege-sec-01sec-03",
+    "level": 3
+   },
+   {
+    "text": "3.8 Inode Number Stability & Collisions",
+    "anchor": "38-inode-number-stability-collisions",
+    "level": 3
+   },
+   {
+    "text": "3.9 Case-Sensitivity on macOS Hosts",
+    "anchor": "39-case-sensitivity-on-macos-hosts",
+    "level": 3
+   },
+   {
+    "text": "4. Source Tree & Component Mapping",
+    "anchor": "4-source-tree-component-mapping",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Building",
+  "url": "building.html",
+  "section": "Use",
+  "source": "docs/building.md",
+  "headings": [
+   {
+    "text": "Building Passerelle",
+    "anchor": "building-passerelle",
+    "level": 1
+   },
+   {
+    "text": "1. Target Environment (what the submission targets)",
+    "anchor": "1-target-environment-what-the-submission-targets",
+    "level": 2
+   },
+   {
+    "text": "Source layout relevant to the build",
+    "anchor": "source-layout-relevant-to-the-build",
+    "level": 3
+   },
+   {
+    "text": "CMake options",
+    "anchor": "cmake-options",
+    "level": 3
+   },
+   {
+    "text": "2. Build on a Host PC (no QNX SDP needed)",
+    "anchor": "2-build-on-a-host-pc-no-qnx-sdp-needed",
+    "level": 2
+   },
+   {
+    "text": "3. Cross-Compilation for QNX 8.0",
+    "anchor": "3-cross-compilation-for-qnx-80",
+    "level": 2
+   },
+   {
+    "text": "Installing into a QNX image",
+    "anchor": "installing-into-a-qnx-image",
+    "level": 3
+   },
+   {
+    "text": "4. Running Each Test Level",
+    "anchor": "4-running-each-test-level",
+    "level": 2
+   },
+   {
+    "text": "Level 0 — Unit tests (PC)",
+    "anchor": "level-0-unit-tests-pc",
+    "level": 3
+   },
+   {
+    "text": "Level 1 — Random inputs / fuzzing (PC, sanitizers required)",
+    "anchor": "level-1-random-inputs-fuzzing-pc-sanitizers-required",
+    "level": 3
+   },
+   {
+    "text": "Level 2 — Conformance (QEMU guest)",
+    "anchor": "level-2-conformance-qemu-guest",
+    "level": 3
+   },
+   {
+    "text": "Level 3 — Performance (QEMU guest)",
+    "anchor": "level-3-performance-qemu-guest",
+    "level": 3
+   },
+   {
+    "text": "Level 4 — Robustness (QEMU guest)",
+    "anchor": "level-4-robustness-qemu-guest",
+    "level": 3
+   },
+   {
+    "text": "5. Continuous Integration",
+    "anchor": "5-continuous-integration",
+    "level": 2
+   },
+   {
+    "text": "6. Troubleshooting the Build",
+    "anchor": "6-troubleshooting-the-build",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "CI and merge process",
+  "url": "ci.html",
+  "section": "Use",
+  "source": "docs/ci.md",
+  "headings": [
+   {
+    "text": "CI — self-hosted pipeline and the 5-minute budget",
+    "anchor": "ci-self-hosted-pipeline-and-the-5-minute-budget",
+    "level": 1
+   },
+   {
+    "text": "1. Where the jobs run",
+    "anchor": "1-where-the-jobs-run",
+    "level": 2
+   },
+   {
+    "text": "2. What runs on a pull request",
+    "anchor": "2-what-runs-on-a-pull-request",
+    "level": 2
+   },
+   {
+    "text": "Explicit skips, never silent greens",
+    "anchor": "explicit-skips-never-silent-greens",
+    "level": 3
+   },
+   {
+    "text": "The build directories are kept",
+    "anchor": "the-build-directories-are-kept",
+    "level": 3
+   },
+   {
+    "text": "3. What runs outside a pull request",
+    "anchor": "3-what-runs-outside-a-pull-request",
+    "level": 2
+   },
+   {
+    "text": "Two jobs, two runners, and why",
+    "anchor": "two-jobs-two-runners-and-why",
+    "level": 3
+   },
+   {
+    "text": "4. Why five minutes",
+    "anchor": "4-why-five-minutes",
+    "level": 2
+   },
+   {
+    "text": "5. How to read a failure",
+    "anchor": "5-how-to-read-a-failure",
+    "level": 2
+   },
+   {
+    "text": "6. Replaying the long job by hand",
+    "anchor": "6-replaying-the-long-job-by-hand",
+    "level": 2
+   },
+   {
+    "text": "7. Mergify and hermes-lite",
+    "anchor": "7-mergify-and-hermes-lite",
+    "level": 2
+   },
+   {
+    "text": "Branch protection must NOT require up-to-date branches",
+    "anchor": "branch-protection-must-not-require-up-to-date-branches",
+    "level": 3
+   },
+   {
+    "text": "What the queue needs to actually run",
+    "anchor": "what-the-queue-needs-to-actually-run",
+    "level": 3
+   },
+   {
+    "text": "8. Adding a job",
+    "anchor": "8-adding-a-job",
+    "level": 2
+   },
+   {
+    "text": "9. Maintenance notes",
+    "anchor": "9-maintenance-notes",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "State of the art",
+  "url": "state-of-the-art.html",
+  "section": "Project",
+  "source": "docs/state-of-the-art.md",
+  "headings": [
+   {
+    "text": "State of the Art",
+    "anchor": "state-of-the-art",
+    "level": 1
+   },
+   {
+    "text": "1. Comparative Table",
+    "anchor": "1-comparative-table",
+    "level": 2
+   },
+   {
+    "text": "2. What We Read in the Code vs Only in the Documentation",
+    "anchor": "2-what-we-read-in-the-code-vs-only-in-the-documentation",
+    "level": 2
+   },
+   {
+    "text": "Read in the code (paths are inside the vendored copies)",
+    "anchor": "read-in-the-code-paths-are-inside-the-vendored-copies",
+    "level": 3
+   },
+   {
+    "text": "Read only in documentation (not verified by execution)",
+    "anchor": "read-only-in-documentation-not-verified-by-execution",
+    "level": 3
+   },
+   {
+    "text": "3. Gaps Passerelle Fills",
+    "anchor": "3-gaps-passerelle-fills",
+    "level": 2
+   },
+   {
+    "text": "4. Other Observations",
+    "anchor": "4-other-observations",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Decisions",
+  "url": "decisions.html",
+  "section": "Project",
+  "source": "docs/decisions.md",
+  "headings": [
+   {
+    "text": "Architecture & Strategy Decisions Log",
+    "anchor": "architecture-strategy-decisions-log",
+    "level": 1
+   },
+   {
+    "text": "Summary of Decisions",
+    "anchor": "summary-of-decisions",
+    "level": 2
+   },
+   {
+    "text": "Detailed Decisions",
+    "anchor": "detailed-decisions",
+    "level": 2
+   },
+   {
+    "text": "Decision D1: Hackathon Submission Category",
+    "anchor": "decision-d1-hackathon-submission-category",
+    "level": 3
+   },
+   {
+    "text": "Decision D2: 9P Client — Rewrite vs Upstream Contribution",
+    "anchor": "decision-d2-9p-client-rewrite-vs-upstream-contribution",
+    "level": 3
+   },
+   {
+    "text": "Decision D3: Transport Layer — Detailed Code Evaluation of `kodebooth/qnx-virtio`",
+    "anchor": "decision-d3-transport-layer-detailed-code-evaluation-of-kodeboothqnx-virtio",
+    "level": 3
+   },
+   {
+    "text": "Decision D4: Caching Strategy",
+    "anchor": "decision-d4-caching-strategy",
+    "level": 3
+   }
+  ]
+ },
+ {
+  "title": "Verification status",
+  "url": "verification-status.html",
+  "section": "Project",
+  "source": "docs/verification-status.md",
+  "headings": [
+   {
+    "text": "Verification Status",
+    "anchor": "verification-status",
+    "level": 1
+   },
+   {
+    "text": "Status vocabulary",
+    "anchor": "status-vocabulary",
+    "level": 2
+   },
+   {
+    "text": "1. Baseline Infrastructure (module `common/`)",
+    "anchor": "1-baseline-infrastructure-module-common",
+    "level": 2
+   },
+   {
+    "text": "1.1 Conformance and randomized-input benches (`tests/`)",
+    "anchor": "11-conformance-and-randomized-input-benches-tests",
+    "level": 2
+   },
+   {
+    "text": "2. Requirement Matrix",
+    "anchor": "2-requirement-matrix",
+    "level": 2
+   },
+   {
+    "text": "2.1 Virtio transport (`virtio/`)",
+    "anchor": "21-virtio-transport-virtio",
+    "level": 3
+   },
+   {
+    "text": "2.2 9P2000.L protocol (`proto9p/`)",
+    "anchor": "22-9p2000l-protocol-proto9p",
+    "level": 3
+   },
+   {
+    "text": "2.3 Filesystem behaviour (`rmfs/`)",
+    "anchor": "23-filesystem-behaviour-rmfs",
+    "level": 3
+   },
+   {
+    "text": "2.4 QNX integration (`drivers/`)",
+    "anchor": "24-qnx-integration-drivers",
+    "level": 3
+   },
+   {
+    "text": "2.5 Performance",
+    "anchor": "25-performance",
+    "level": 3
+   },
+   {
+    "text": "2.6 Robustness",
+    "anchor": "26-robustness",
+    "level": 3
+   },
+   {
+    "text": "2.7 Security",
+    "anchor": "27-security",
+    "level": 3
+   },
+   {
+    "text": "2.8 Developer experience",
+    "anchor": "28-developer-experience",
+    "level": 3
+   },
+   {
+    "text": "2.9 virtiofs (`protofuse/`) — implemented, tested on PC",
+    "anchor": "29-virtiofs-protofuse-implemented-tested-on-pc",
+    "level": 3
+   },
+   {
+    "text": "2.10 Reverse sharing (X tier)",
+    "anchor": "210-reverse-sharing-x-tier",
+    "level": 3
+   },
+   {
+    "text": "3. Feasibility Tests E1–E5",
+    "anchor": "3-feasibility-tests-e1e5",
+    "level": 2
+   },
+   {
+    "text": "3.1 E5, measured",
+    "anchor": "31-e5-measured",
+    "level": 2
+   },
+   {
+    "text": "3.2 A real QNX 7.1 guest on this PC",
+    "anchor": "32-a-real-qnx-71-guest-on-this-pc",
+    "level": 3
+   },
+   {
+    "text": "4. Known Issues at Snapshot Time",
+    "anchor": "4-known-issues-at-snapshot-time",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Measurements",
+  "url": "measurements.html",
+  "section": "Project",
+  "source": "docs/measurements/README.md",
+  "headings": [
+   {
+    "text": "Measurements",
+    "anchor": "measurements",
+    "level": 1
+   },
+   {
+    "text": "Reproducing the Linux baseline",
+    "anchor": "reproducing-the-linux-baseline",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Linux 9P baseline",
+  "url": "measurements-linux-baseline-9p.html",
+  "section": "Project",
+  "source": "docs/measurements/linux-baseline-9p.md",
+  "headings": [
+   {
+    "text": "Roundtrips per POSIX operation — Linux guest baseline (PERF-01)",
+    "anchor": "roundtrips-per-posix-operation-linux-guest-baseline-perf-01",
+    "level": 1
+   }
+  ]
+ },
+ {
+  "title": "Gap analysis",
+  "url": "gap-analysis.html",
+  "section": "Project",
+  "source": "docs/gap-analysis.md",
+  "headings": [
+   {
+    "text": "Gap analysis — what is still missing",
+    "anchor": "gap-analysis-what-is-still-missing",
+    "level": 1
+   },
+   {
+    "text": "A. The 29 requirement gaps",
+    "anchor": "a-the-29-requirement-gaps",
+    "level": 2
+   },
+   {
+    "text": "B. The 71 gaps that are not requirement lines",
+    "anchor": "b-the-71-gaps-that-are-not-requirement-lines",
+    "level": 2
+   },
+   {
+    "text": "B1. Publishing and packaging (13)",
+    "anchor": "b1-publishing-and-packaging-13",
+    "level": 3
+   },
+   {
+    "text": "B2. Quality gates and CI (14)",
+    "anchor": "b2-quality-gates-and-ci-14",
+    "level": 3
+   },
+   {
+    "text": "B3. Verification depth (13)",
+    "anchor": "b3-verification-depth-13",
+    "level": 3
+   },
+   {
+    "text": "B4. The QNX 7.1 guest we now have (10)",
+    "anchor": "b4-the-qnx-71-guest-we-now-have-10",
+    "level": 3
+   },
+   {
+    "text": "B5. The submission itself (12)",
+    "anchor": "b5-the-submission-itself-12",
+    "level": 3
+   },
+   {
+    "text": "B6. Everyday use of the tools (9)",
+    "anchor": "b6-everyday-use-of-the-tools-9",
+    "level": 3
+   },
+   {
+    "text": "The ten I would do next, in order",
+    "anchor": "the-ten-i-would-do-next-in-order",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Video script",
+  "url": "video-script.html",
+  "section": "Project",
+  "source": "docs/video-script.md",
+  "headings": [
+   {
+    "text": "Video Script — Under Three Minutes",
+    "anchor": "video-script-under-three-minutes",
+    "level": 1
+   },
+   {
+    "text": "Timeline",
+    "anchor": "timeline",
+    "level": 2
+   },
+   {
+    "text": "0:00 – 0:20 — The problem (20 s)",
+    "anchor": "000-020-the-problem-20-s",
+    "level": 3
+   },
+   {
+    "text": "0:20 – 0:55 — Passerelle: zero copy (35 s)",
+    "anchor": "020-055-passerelle-zero-copy-35-s",
+    "level": 3
+   },
+   {
+    "text": "0:55 – 1:25 — It is not a toy (30 s)",
+    "anchor": "055-125-it-is-not-a-toy-30-s",
+    "level": 3
+   },
+   {
+    "text": "1:25 – 2:00 — The numbers (35 s)",
+    "anchor": "125-200-the-numbers-35-s",
+    "level": 3
+   },
+   {
+    "text": "2:00 – 2:30 — Real-time behaviour (30 s)",
+    "anchor": "200-230-real-time-behaviour-30-s",
+    "level": 3
+   },
+   {
+    "text": "2:30 – 2:45 — Least privilege (15 s)",
+    "anchor": "230-245-least-privilege-15-s",
+    "level": 3
+   },
+   {
+    "text": "2:45 – 3:00 — Honesty and credit (15 s)",
+    "anchor": "245-300-honesty-and-credit-15-s",
+    "level": 3
+   },
+   {
+    "text": "Shot Checklist (for the editing pass)",
+    "anchor": "shot-checklist-for-the-editing-pass",
+    "level": 2
+   },
+   {
+    "text": "Text Overlays (English, short)",
+    "anchor": "text-overlays-english-short",
+    "level": 2
+   },
+   {
+    "text": "Things That Would Invalidate the Video",
+    "anchor": "things-that-would-invalidate-the-video",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab",
+  "url": "codelab.html",
+  "section": "Learn",
+  "source": "codelab/README.md",
+  "headings": [
+   {
+    "text": "Writing a virtio driver for QNX 8.0, from PCI discovery to the first byte read",
+    "anchor": "writing-a-virtio-driver-for-qnx-80-from-pci-discovery-to-the-first-byte-read",
+    "level": 1
+   },
+   {
+    "text": "Contents",
+    "anchor": "contents",
+    "level": 2
+   },
+   {
+    "text": "How to use the exercises",
+    "anchor": "how-to-use-the-exercises",
+    "level": 2
+   },
+   {
+    "text": "A word on what is verified",
+    "anchor": "a-word-on-what-is-verified",
+    "level": 2
+   },
+   {
+    "text": "Further reading",
+    "anchor": "further-reading",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 01 - environment",
+  "url": "codelab-01-environment-and-first-image.html",
+  "section": "Learn",
+  "source": "codelab/01-environment-and-first-image.md",
+  "headings": [
+   {
+    "text": "Chapter 1 — The environment and your first image",
+    "anchor": "chapter-1-the-environment-and-your-first-image",
+    "level": 1
+   },
+   {
+    "text": "1.1 What the pieces are",
+    "anchor": "11-what-the-pieces-are",
+    "level": 2
+   },
+   {
+    "text": "1.2 The identities you will be looking for",
+    "anchor": "12-the-identities-you-will-be-looking-for",
+    "level": 2
+   },
+   {
+    "text": "1.3 Building the first image",
+    "anchor": "13-building-the-first-image",
+    "level": 2
+   },
+   {
+    "text": "Cross-compiling",
+    "anchor": "cross-compiling",
+    "level": 3
+   },
+   {
+    "text": "1.4 Running it",
+    "anchor": "14-running-it",
+    "level": 2
+   },
+   {
+    "text": "1.5 What to observe",
+    "anchor": "15-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "1.6 Traps",
+    "anchor": "16-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 02 - the PCI bus",
+  "url": "codelab-02-the-pci-bus-under-qnx-8.html",
+  "section": "Learn",
+  "source": "codelab/02-the-pci-bus-under-qnx-8.md",
+  "headings": [
+   {
+    "text": "Chapter 2 — The PCI bus under QNX 8.0",
+    "anchor": "chapter-2-the-pci-bus-under-qnx-80",
+    "level": 1
+   },
+   {
+    "text": "2.1 The API, in four calls",
+    "anchor": "21-the-api-in-four-calls",
+    "level": 2
+   },
+   {
+    "text": "2.2 The configuration space a driver actually reads",
+    "anchor": "22-the-configuration-space-a-driver-actually-reads",
+    "level": 2
+   },
+   {
+    "text": "2.3 What a virtio-pci device looks like",
+    "anchor": "23-what-a-virtio-pci-device-looks-like",
+    "level": 2
+   },
+   {
+    "text": "2.4 The BARs, and why they must be mapped",
+    "anchor": "24-the-bars-and-why-they-must-be-mapped",
+    "level": 2
+   },
+   {
+    "text": "2.5 A first program: find the device and read its ids",
+    "anchor": "25-a-first-program-find-the-device-and-read-its-ids",
+    "level": 2
+   },
+   {
+    "text": "2.6 What to observe",
+    "anchor": "26-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "2.7 Traps",
+    "anchor": "27-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 03 - finding a device",
+  "url": "codelab-03-finding-a-modern-virtio-device.html",
+  "section": "Learn",
+  "source": "codelab/03-finding-a-modern-virtio-device.md",
+  "headings": [
+   {
+    "text": "Chapter 3 — Finding a modern virtio device by its capabilities",
+    "anchor": "chapter-3-finding-a-modern-virtio-device-by-its-capabilities",
+    "level": 1
+   },
+   {
+    "text": "3.1 Why capabilities, and why that is a problem worth solving",
+    "anchor": "31-why-capabilities-and-why-that-is-a-problem-worth-solving",
+    "level": 2
+   },
+   {
+    "text": "3.2 The scan that works everywhere: a linear sweep",
+    "anchor": "32-the-scan-that-works-everywhere-a-linear-sweep",
+    "level": 2
+   },
+   {
+    "text": "3.3 The decoder",
+    "anchor": "33-the-decoder",
+    "level": 2
+   },
+   {
+    "text": "3.4 Two more scans, for two more situations",
+    "anchor": "34-two-more-scans-for-two-more-situations",
+    "level": 2
+   },
+   {
+    "text": "3.5 Mapping the BARs, and the addresses that come out of it",
+    "anchor": "35-mapping-the-bars-and-the-addresses-that-come-out-of-it",
+    "level": 2
+   },
+   {
+    "text": "3.6 The common configuration structure",
+    "anchor": "36-the-common-configuration-structure",
+    "level": 2
+   },
+   {
+    "text": "3.7 The device configuration and the mount tag",
+    "anchor": "37-the-device-configuration-and-the-mount-tag",
+    "level": 2
+   },
+   {
+    "text": "3.8 The exercise",
+    "anchor": "38-the-exercise",
+    "level": 2
+   },
+   {
+    "text": "3.9 What to observe",
+    "anchor": "39-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "3.10 Traps",
+    "anchor": "310-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 04 - features and status",
+  "url": "codelab-04-features-and-the-status-sequence.html",
+  "section": "Learn",
+  "source": "codelab/04-features-and-the-status-sequence.md",
+  "headings": [
+   {
+    "text": "Chapter 4 — Features and the status sequence",
+    "anchor": "chapter-4-features-and-the-status-sequence",
+    "level": 1
+   },
+   {
+    "text": "4.1 The status byte",
+    "anchor": "41-the-status-byte",
+    "level": 2
+   },
+   {
+    "text": "4.2 The sequence",
+    "anchor": "42-the-sequence",
+    "level": 2
+   },
+   {
+    "text": "4.3 The features a 9P driver needs",
+    "anchor": "43-the-features-a-9p-driver-needs",
+    "level": 2
+   },
+   {
+    "text": "4.4 The state machine, testable",
+    "anchor": "44-the-state-machine-testable",
+    "level": 2
+   },
+   {
+    "text": "4.5 The real thing",
+    "anchor": "45-the-real-thing",
+    "level": 2
+   },
+   {
+    "text": "4.6 What to observe",
+    "anchor": "46-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "4.7 Traps",
+    "anchor": "47-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 05 - the virtqueue",
+  "url": "codelab-05-the-split-virtqueue.html",
+  "section": "Learn",
+  "source": "codelab/05-the-split-virtqueue.md",
+  "headings": [
+   {
+    "text": "Chapter 5 — The split virtqueue",
+    "anchor": "chapter-5-the-split-virtqueue",
+    "level": 1
+   },
+   {
+    "text": "5.1 The three rings",
+    "anchor": "51-the-three-rings",
+    "level": 2
+   },
+   {
+    "text": "The descriptor table",
+    "anchor": "the-descriptor-table",
+    "level": 3
+   },
+   {
+    "text": "The available ring",
+    "anchor": "the-available-ring",
+    "level": 3
+   },
+   {
+    "text": "The used ring",
+    "anchor": "the-used-ring",
+    "level": 3
+   },
+   {
+    "text": "5.2 One request, step by step",
+    "anchor": "52-one-request-step-by-step",
+    "level": 2
+   },
+   {
+    "text": "5.3 Why \"the chain is the unit\"",
+    "anchor": "53-why-the-chain-is-the-unit",
+    "level": 2
+   },
+   {
+    "text": "5.4 The exercise",
+    "anchor": "54-the-exercise",
+    "level": 2
+   },
+   {
+    "text": "5.5 The queue size, and how to set it up",
+    "anchor": "55-the-queue-size-and-how-to-set-it-up",
+    "level": 2
+   },
+   {
+    "text": "5.6 The memory the ring lives in",
+    "anchor": "56-the-memory-the-ring-lives-in",
+    "level": 2
+   },
+   {
+    "text": "5.7 What to observe",
+    "anchor": "57-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "5.8 Traps",
+    "anchor": "58-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 06 - interrupts",
+  "url": "codelab-06-interrupts.html",
+  "section": "Learn",
+  "source": "codelab/06-interrupts.md",
+  "headings": [
+   {
+    "text": "Chapter 6 — Interrupts",
+    "anchor": "chapter-6-interrupts",
+    "level": 1
+   },
+   {
+    "text": "6.1 What changed in QNX 8.0",
+    "anchor": "61-what-changed-in-qnx-80",
+    "level": 2
+   },
+   {
+    "text": "6.2 The interrupt thread",
+    "anchor": "62-the-interrupt-thread",
+    "level": 2
+   },
+   {
+    "text": "6.3 MSI-X, and the fallback that is not optional",
+    "anchor": "63-msi-x-and-the-fallback-that-is-not-optional",
+    "level": 2
+   },
+   {
+    "text": "The QNX situation",
+    "anchor": "the-qnx-situation",
+    "level": 3
+   },
+   {
+    "text": "The fallback ladder",
+    "anchor": "the-fallback-ladder",
+    "level": 3
+   },
+   {
+    "text": "6.4 The exercise",
+    "anchor": "64-the-exercise",
+    "level": 2
+   },
+   {
+    "text": "6.5 What to observe",
+    "anchor": "65-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "6.6 Traps",
+    "anchor": "66-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 07 - first 9P exchange",
+  "url": "codelab-07-the-first-9p-exchange.html",
+  "section": "Learn",
+  "source": "codelab/07-the-first-9p-exchange.md",
+  "headings": [
+   {
+    "text": "Chapter 7 — The first 9P exchange, and the first byte read",
+    "anchor": "chapter-7-the-first-9p-exchange-and-the-first-byte-read",
+    "level": 1
+   },
+   {
+    "text": "7.1 The 9P2000.L wire format",
+    "anchor": "71-the-9p2000l-wire-format",
+    "level": 2
+   },
+   {
+    "text": "7.2 The session, in five steps",
+    "anchor": "72-the-session-in-five-steps",
+    "level": 2
+   },
+   {
+    "text": "7.3 The encoder",
+    "anchor": "73-the-encoder",
+    "level": 2
+   },
+   {
+    "text": "7.4 The decoder, and why it is the important half",
+    "anchor": "74-the-decoder-and-why-it-is-the-important-half",
+    "level": 2
+   },
+   {
+    "text": "7.5 The exercise",
+    "anchor": "75-the-exercise",
+    "level": 2
+   },
+   {
+    "text": "7.6 Putting it on the wire",
+    "anchor": "76-putting-it-on-the-wire",
+    "level": 2
+   },
+   {
+    "text": "7.7 What to observe",
+    "anchor": "77-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "7.8 Traps",
+    "anchor": "78-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Codelab 08 - to a resource manager",
+  "url": "codelab-08-from-prototype-to-resource-manager.html",
+  "section": "Learn",
+  "source": "codelab/08-from-prototype-to-resource-manager.md",
+  "headings": [
+   {
+    "text": "Chapter 8 — From prototype to resource manager",
+    "anchor": "chapter-8-from-prototype-to-resource-manager",
+    "level": 1
+   },
+   {
+    "text": "8.1 What a prototype is missing",
+    "anchor": "81-what-a-prototype-is-missing",
+    "level": 2
+   },
+   {
+    "text": "8.2 What a resource manager is",
+    "anchor": "82-what-a-resource-manager-is",
+    "level": 2
+   },
+   {
+    "text": "8.3 The connection between the layers",
+    "anchor": "83-the-connection-between-the-layers",
+    "level": 2
+   },
+   {
+    "text": "8.4 Handling a read",
+    "anchor": "84-handling-a-read",
+    "level": 2
+   },
+   {
+    "text": "8.5 Priority, and the queue behind it",
+    "anchor": "85-priority-and-the-queue-behind-it",
+    "level": 2
+   },
+   {
+    "text": "8.6 The OCB and the node",
+    "anchor": "86-the-ocb-and-the-node",
+    "level": 2
+   },
+   {
+    "text": "8.7 Mounting it",
+    "anchor": "87-mounting-it",
+    "level": 2
+   },
+   {
+    "text": "8.8 What to observe",
+    "anchor": "88-what-to-observe",
+    "level": 2
+   },
+   {
+    "text": "8.9 Traps",
+    "anchor": "89-traps",
+    "level": 2
+   },
+   {
+    "text": "Exercise",
+    "anchor": "exercise",
+    "level": 2
+   },
+   {
+    "text": "Solution",
+    "anchor": "solution",
+    "level": 2
+   },
+   {
+    "text": "Where we are",
+    "anchor": "where-we-are",
+    "level": 2
+   },
+   {
+    "text": "Where to go next",
+    "anchor": "where-to-go-next",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Upstream contributions",
+  "url": "upstream.html",
+  "section": "Project",
+  "source": "upstream/README.md",
+  "headings": [
+   {
+    "text": "Upstream contributions",
+    "anchor": "upstream-contributions",
+    "level": 1
+   },
+   {
+    "text": "What is proposed, to whom, and where it stands",
+    "anchor": "what-is-proposed-to-whom-and-where-it-stands",
+    "level": 2
+   },
+   {
+    "text": "Ground rules",
+    "anchor": "ground-rules",
+    "level": 2
+   },
+   {
+    "text": "Layout",
+    "anchor": "layout",
+    "level": 2
+   },
+   {
+    "text": "Reproducing the checks",
+    "anchor": "reproducing-the-checks",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Specification (EN)",
+  "url": "spec-en.html",
+  "section": "Reference",
+  "source": "docs/spec-en.md",
+  "headings": [
+   {
+    "text": "Sharing a Host Directory with QNX under QEMU (9P and virtiofs) — Specification",
+    "anchor": "sharing-a-host-directory-with-qnx-under-qemu-9p-and-virtiofs-specification",
+    "level": 1
+   },
+   {
+    "text": "0. Quick Read",
+    "anchor": "0-quick-read",
+    "level": 2
+   },
+   {
+    "text": "1. Context",
+    "anchor": "1-context",
+    "level": 2
+   },
+   {
+    "text": "1.1 The problem seen from a development workstation",
+    "anchor": "11-the-problem-seen-from-a-development-workstation",
+    "level": 3
+   },
+   {
+    "text": "1.2 Two sharing technologies",
+    "anchor": "12-two-sharing-technologies",
+    "level": 3
+   },
+   {
+    "text": "1.3 Hackathon framework",
+    "anchor": "13-hackathon-framework",
+    "level": 3
+   },
+   {
+    "text": "2. State of the Art",
+    "anchor": "2-state-of-the-art",
+    "level": 2
+   },
+   {
+    "text": "3. Strategy and Decisions",
+    "anchor": "3-strategy-and-decisions",
+    "level": 2
+   },
+   {
+    "text": "3.1 Three approaches",
+    "anchor": "31-three-approaches",
+    "level": 3
+   },
+   {
+    "text": "3.2 Key decisions",
+    "anchor": "32-key-decisions",
+    "level": 3
+   },
+   {
+    "text": "3.3 Submission rule",
+    "anchor": "33-submission-rule",
+    "level": 3
+   },
+   {
+    "text": "4. Scope",
+    "anchor": "4-scope",
+    "level": 2
+   },
+   {
+    "text": "4.1 Objectives",
+    "anchor": "41-objectives",
+    "level": 3
+   },
+   {
+    "text": "4.2 Out of scope",
+    "anchor": "42-out-of-scope",
+    "level": 3
+   },
+   {
+    "text": "4.3 Assumptions",
+    "anchor": "43-assumptions",
+    "level": 3
+   },
+   {
+    "text": "5. Proposed Design",
+    "anchor": "5-proposed-design",
+    "level": 2
+   },
+   {
+    "text": "5.1 Three layers",
+    "anchor": "51-three-layers",
+    "level": 3
+   },
+   {
+    "text": "5.2 Request path",
+    "anchor": "52-request-path",
+    "level": 3
+   },
+   {
+    "text": "5.3 Tricky points",
+    "anchor": "53-tricky-points",
+    "level": 3
+   },
+   {
+    "text": "5.4 Target user experience",
+    "anchor": "54-target-user-experience",
+    "level": 3
+   },
+   {
+    "text": "6. Requirements",
+    "anchor": "6-requirements",
+    "level": 2
+   },
+   {
+    "text": "6.1 Virtio transport",
+    "anchor": "61-virtio-transport",
+    "level": 3
+   },
+   {
+    "text": "6.2 9P2000.L Protocol",
+    "anchor": "62-9p2000l-protocol",
+    "level": 3
+   },
+   {
+    "text": "6.3 Filesystem Behavior",
+    "anchor": "63-filesystem-behavior",
+    "level": 3
+   },
+   {
+    "text": "6.4 QNX Integration",
+    "anchor": "64-qnx-integration",
+    "level": 3
+   },
+   {
+    "text": "6.5 Performance",
+    "anchor": "65-performance",
+    "level": 3
+   },
+   {
+    "text": "6.6 Robustness",
+    "anchor": "66-robustness",
+    "level": 3
+   },
+   {
+    "text": "6.7 Security",
+    "anchor": "67-security",
+    "level": 3
+   },
+   {
+    "text": "6.8 Developer Experience",
+    "anchor": "68-developer-experience",
+    "level": 3
+   },
+   {
+    "text": "6.9 virtiofs",
+    "anchor": "69-virtiofs",
+    "level": 3
+   },
+   {
+    "text": "6.10 Reverse Sharing",
+    "anchor": "610-reverse-sharing",
+    "level": 3
+   },
+   {
+    "text": "7. Validation Plan",
+    "anchor": "7-validation-plan",
+    "level": 2
+   },
+   {
+    "text": "7.1 Five testing levels",
+    "anchor": "71-five-testing-levels",
+    "level": 3
+   },
+   {
+    "text": "7.2 Differential testing",
+    "anchor": "72-differential-testing",
+    "level": 3
+   },
+   {
+    "text": "7.3 Content exerciser",
+    "anchor": "73-content-exerciser",
+    "level": 3
+   },
+   {
+    "text": "7.4 Targeted edge cases",
+    "anchor": "74-targeted-edge-cases",
+    "level": 3
+   },
+   {
+    "text": "7.5 Benchmarks",
+    "anchor": "75-benchmarks",
+    "level": 3
+   },
+   {
+    "text": "7.6 Acceptance thresholds",
+    "anchor": "76-acceptance-thresholds",
+    "level": 3
+   },
+   {
+    "text": "8. Demonstration (Video under 3 minutes)",
+    "anchor": "8-demonstration-video-under-3-minutes",
+    "level": 2
+   },
+   {
+    "text": "9. Deliverables and Repository Layout",
+    "anchor": "9-deliverables-and-repository-layout",
+    "level": 2
+   },
+   {
+    "text": "10. Schedule",
+    "anchor": "10-schedule",
+    "level": 2
+   },
+   {
+    "text": "11. Risks and Mitigations",
+    "anchor": "11-risks-and-mitigations",
+    "level": 2
+   },
+   {
+    "text": "12. Pushing the Idea Further",
+    "anchor": "12-pushing-the-idea-further",
+    "level": 2
+   },
+   {
+    "text": "13. Acceptance Criteria",
+    "anchor": "13-acceptance-criteria",
+    "level": 2
+   },
+   {
+    "text": "14. Verification Status of Claims",
+    "anchor": "14-verification-status-of-claims",
+    "level": 2
+   },
+   {
+    "text": "15. Glossary",
+    "anchor": "15-glossary",
+    "level": 2
+   },
+   {
+    "text": "16. References",
+    "anchor": "16-references",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Specification (FR)",
+  "url": "spec-fr.html",
+  "section": "Reference",
+  "source": "docs/spec-fr.md",
+  "headings": [
+   {
+    "text": "Partage d'un dossier du PC avec QNX sous QEMU (9P et virtiofs) — cahier des charges",
+    "anchor": "partage-dun-dossier-du-pc-avec-qnx-sous-qemu-9p-et-virtiofs-cahier-des-charges",
+    "level": 1
+   },
+   {
+    "text": "0. Lecture rapide",
+    "anchor": "0-lecture-rapide",
+    "level": 2
+   },
+   {
+    "text": "1. Contexte",
+    "anchor": "1-contexte",
+    "level": 2
+   },
+   {
+    "text": "1.1 Le problème, vu d'un poste de développement",
+    "anchor": "11-le-problème-vu-dun-poste-de-développement",
+    "level": 3
+   },
+   {
+    "text": "1.2 Deux techniques de partage",
+    "anchor": "12-deux-techniques-de-partage",
+    "level": 3
+   },
+   {
+    "text": "1.3 Cadre du hackathon",
+    "anchor": "13-cadre-du-hackathon",
+    "level": 3
+   },
+   {
+    "text": "2. État de l'art",
+    "anchor": "2-état-de-lart",
+    "level": 2
+   },
+   {
+    "text": "3. Stratégie et décisions",
+    "anchor": "3-stratégie-et-décisions",
+    "level": 2
+   },
+   {
+    "text": "3.1 Trois façons d'aborder le projet",
+    "anchor": "31-trois-façons-daborder-le-projet",
+    "level": 3
+   },
+   {
+    "text": "3.2 Décisions à prendre",
+    "anchor": "32-décisions-à-prendre",
+    "level": 3
+   },
+   {
+    "text": "3.3 Règle de présentation",
+    "anchor": "33-règle-de-présentation",
+    "level": 3
+   },
+   {
+    "text": "4. Périmètre",
+    "anchor": "4-périmètre",
+    "level": 2
+   },
+   {
+    "text": "4.1 Objectifs",
+    "anchor": "41-objectifs",
+    "level": 3
+   },
+   {
+    "text": "4.2 Hors périmètre",
+    "anchor": "42-hors-périmètre",
+    "level": 3
+   },
+   {
+    "text": "4.3 Hypothèses",
+    "anchor": "43-hypothèses",
+    "level": 3
+   },
+   {
+    "text": "5. Conception proposée",
+    "anchor": "5-conception-proposée",
+    "level": 2
+   },
+   {
+    "text": "5.1 Trois couches",
+    "anchor": "51-trois-couches",
+    "level": 3
+   },
+   {
+    "text": "5.2 Trajet d'une requête",
+    "anchor": "52-trajet-dune-requête",
+    "level": 3
+   },
+   {
+    "text": "5.3 Points délicats",
+    "anchor": "53-points-délicats",
+    "level": 3
+   },
+   {
+    "text": "5.4 Mise en route visée",
+    "anchor": "54-mise-en-route-visée",
+    "level": 3
+   },
+   {
+    "text": "6. Exigences",
+    "anchor": "6-exigences",
+    "level": 2
+   },
+   {
+    "text": "6.1 Transport virtio",
+    "anchor": "61-transport-virtio",
+    "level": 3
+   },
+   {
+    "text": "6.2 Protocole 9P2000.L",
+    "anchor": "62-protocole-9p2000l",
+    "level": 3
+   },
+   {
+    "text": "6.3 Comportement de système de fichiers",
+    "anchor": "63-comportement-de-système-de-fichiers",
+    "level": 3
+   },
+   {
+    "text": "6.4 Intégration à QNX",
+    "anchor": "64-intégration-à-qnx",
+    "level": 3
+   },
+   {
+    "text": "6.5 Performances",
+    "anchor": "65-performances",
+    "level": 3
+   },
+   {
+    "text": "6.6 Robustesse",
+    "anchor": "66-robustesse",
+    "level": 3
+   },
+   {
+    "text": "6.7 Sécurité",
+    "anchor": "67-sécurité",
+    "level": 3
+   },
+   {
+    "text": "6.8 Confort d'utilisation",
+    "anchor": "68-confort-dutilisation",
+    "level": 3
+   },
+   {
+    "text": "6.9 virtiofs",
+    "anchor": "69-virtiofs",
+    "level": 3
+   },
+   {
+    "text": "6.10 Sens inverse",
+    "anchor": "610-sens-inverse",
+    "level": 3
+   },
+   {
+    "text": "7. Plan de validation",
+    "anchor": "7-plan-de-validation",
+    "level": 2
+   },
+   {
+    "text": "7.1 Cinq niveaux d'essai",
+    "anchor": "71-cinq-niveaux-dessai",
+    "level": 3
+   },
+   {
+    "text": "7.2 Le test différentiel",
+    "anchor": "72-le-test-différentiel",
+    "level": 3
+   },
+   {
+    "text": "7.3 Vérification de contenu",
+    "anchor": "73-vérification-de-contenu",
+    "level": 3
+   },
+   {
+    "text": "7.4 Cas dirigés",
+    "anchor": "74-cas-dirigés",
+    "level": 3
+   },
+   {
+    "text": "7.5 Mesures",
+    "anchor": "75-mesures",
+    "level": 3
+   },
+   {
+    "text": "7.6 Seuils de réussite",
+    "anchor": "76-seuils-de-réussite",
+    "level": 3
+   },
+   {
+    "text": "8. Démonstration (vidéo de moins de trois minutes)",
+    "anchor": "8-démonstration-vidéo-de-moins-de-trois-minutes",
+    "level": 2
+   },
+   {
+    "text": "9. Livrables et dépôt",
+    "anchor": "9-livrables-et-dépôt",
+    "level": 2
+   },
+   {
+    "text": "10. Planning",
+    "anchor": "10-planning",
+    "level": 2
+   },
+   {
+    "text": "11. Risques",
+    "anchor": "11-risques",
+    "level": 2
+   },
+   {
+    "text": "12. Pousser l'idée au bout",
+    "anchor": "12-pousser-lidée-au-bout",
+    "level": 2
+   },
+   {
+    "text": "13. Critères d'acceptation",
+    "anchor": "13-critères-dacceptation",
+    "level": 2
+   },
+   {
+    "text": "14. Ce qui est vérifié et ce qui reste à valider",
+    "anchor": "14-ce-qui-est-vérifié-et-ce-qui-reste-à-valider",
+    "level": 2
+   },
+   {
+    "text": "15. Glossaire",
+    "anchor": "15-glossaire",
+    "level": 2
+   },
+   {
+    "text": "16. Sources",
+    "anchor": "16-sources",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Checklist",
+  "url": "submission-checklist.html",
+  "section": "Project",
+  "source": "docs/submission/checklist.md",
+  "headings": [
+   {
+    "text": "Submission checklist — QNX Global Hackathon 2026",
+    "anchor": "submission-checklist-qnx-global-hackathon-2026",
+    "level": 1
+   },
+   {
+    "text": "1. Repository and licence",
+    "anchor": "1-repository-and-licence",
+    "level": 2
+   },
+   {
+    "text": "2. Required content, in English",
+    "anchor": "2-required-content-in-english",
+    "level": 2
+   },
+   {
+    "text": "3. Prior art and disclosures (spec §3.3 — mandatory)",
+    "anchor": "3-prior-art-and-disclosures-spec-33-mandatory",
+    "level": 2
+   },
+   {
+    "text": "4. Video and visuals",
+    "anchor": "4-video-and-visuals",
+    "level": 2
+   },
+   {
+    "text": "5. Evidence that must stay reproducible",
+    "anchor": "5-evidence-that-must-stay-reproducible",
+    "level": 2
+   },
+   {
+    "text": "6. Category and outreach",
+    "anchor": "6-category-and-outreach",
+    "level": 2
+   },
+   {
+    "text": "7. Blocking item",
+    "anchor": "7-blocking-item",
+    "level": 2
+   },
+   {
+    "text": "8. On the day (14 December)",
+    "anchor": "8-on-the-day-14-december",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Devpost",
+  "url": "submission-devpost.html",
+  "section": "Project",
+  "source": "docs/submission/devpost.md",
+  "headings": [
+   {
+    "text": "Devpost submission text — Passerelle",
+    "anchor": "devpost-submission-text-passerelle",
+    "level": 1
+   },
+   {
+    "text": "Project title",
+    "anchor": "project-title",
+    "level": 2
+   },
+   {
+    "text": "One-sentence summary",
+    "anchor": "one-sentence-summary",
+    "level": 2
+   },
+   {
+    "text": "Category",
+    "anchor": "category",
+    "level": 2
+   },
+   {
+    "text": "Links",
+    "anchor": "links",
+    "level": 2
+   },
+   {
+    "text": "What it does",
+    "anchor": "what-it-does",
+    "level": 2
+   },
+   {
+    "text": "Why this is new (prior art, named — spec §3.3)",
+    "anchor": "why-this-is-new-prior-art-named-spec-33",
+    "level": 2
+   },
+   {
+    "text": "Architecture — three layers",
+    "anchor": "architecture-three-layers",
+    "level": 2
+   },
+   {
+    "text": "What is demonstrated, and how to reproduce it",
+    "anchor": "what-is-demonstrated-and-how-to-reproduce-it",
+    "level": 2
+   },
+   {
+    "text": "Limits we assume",
+    "anchor": "limits-we-assume",
+    "level": 2
+   },
+   {
+    "text": "Licence and attribution",
+    "anchor": "licence-and-attribution",
+    "level": 2
+   },
+   {
+    "text": "What is left to do",
+    "anchor": "what-is-left-to-do",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "One Pager",
+  "url": "submission-one-pager.html",
+  "section": "Project",
+  "source": "docs/submission/one-pager.md",
+  "headings": [
+   {
+    "text": "Passerelle — one page",
+    "anchor": "passerelle-one-page",
+    "level": 1
+   },
+   {
+    "text": "The problem, in one line",
+    "anchor": "the-problem-in-one-line",
+    "level": 2
+   },
+   {
+    "text": "The answer, in one line",
+    "anchor": "the-answer-in-one-line",
+    "level": 2
+   },
+   {
+    "text": "The numbers",
+    "anchor": "the-numbers",
+    "level": 2
+   },
+   {
+    "text": "Three layers, one transport",
+    "anchor": "three-layers-one-transport",
+    "level": 2
+   },
+   {
+    "text": "What is new",
+    "anchor": "what-is-new",
+    "level": 2
+   },
+   {
+    "text": "Reproduce it",
+    "anchor": "reproduce-it",
+    "level": 2
+   },
+   {
+    "text": "The honest blocker",
+    "anchor": "the-honest-blocker",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Readme Summary",
+  "url": "submission-readme-summary.html",
+  "section": "Project",
+  "source": "docs/submission/readme-summary.md",
+  "headings": [
+   {
+    "text": "README summary — the 60-second block for the top of the repository",
+    "anchor": "readme-summary-the-60-second-block-for-the-top-of-the-repository",
+    "level": 1
+   },
+   {
+    "text": "Passerelle in 60 seconds",
+    "anchor": "passerelle-in-60-seconds",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "What Did Not Work",
+  "url": "submission-what-did-not-work.html",
+  "section": "Project",
+  "source": "docs/submission/what-did-not-work.md",
+  "headings": [
+   {
+    "text": "What did not work",
+    "anchor": "what-did-not-work",
+    "level": 1
+   },
+   {
+    "text": "1. The QNX SDP could not be obtained without an account",
+    "anchor": "1-the-qnx-sdp-could-not-be-obtained-without-an-account",
+    "level": 2
+   },
+   {
+    "text": "2. The QNX 7.1 image we could get ships no compiler — and routes no interrupt",
+    "anchor": "2-the-qnx-71-image-we-could-get-ships-no-compiler-and-routes-no-interrupt",
+    "level": 2
+   },
+   {
+    "text": "3. The `lookup` / `getattr` symlink convention was inverted",
+    "anchor": "3-the-lookup-getattr-symlink-convention-was-inverted",
+    "level": 2
+   },
+   {
+    "text": "4. `strict: true` on branch protection is incompatible with the Mergify queue",
+    "anchor": "4-strict-true-on-branch-protection-is-incompatible-with-the-mergify-queue",
+    "level": 2
+   },
+   {
+    "text": "5. `-trace file=` writes a binary trace, not text",
+    "anchor": "5--trace-file-writes-a-binary-trace-not-text",
+    "level": 2
+   },
+   {
+    "text": "Smaller things that also did not work",
+    "anchor": "smaller-things-that-also-did-not-work",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Adr 001 Lookup Getattr Symlink Convention",
+  "url": "adr-ADR-001-lookup-getattr-symlink-convention.html",
+  "section": "Project",
+  "source": "docs/adr/ADR-001-lookup-getattr-symlink-convention.md",
+  "headings": [
+   {
+    "text": "ADR-001 — `lookup` never follows a symbolic link, `getattr` does",
+    "anchor": "adr-001-lookup-never-follows-a-symbolic-link-getattr-does",
+    "level": 1
+   },
+   {
+    "text": "Context",
+    "anchor": "context",
+    "level": 2
+   },
+   {
+    "text": "Decision",
+    "anchor": "decision",
+    "level": 2
+   },
+   {
+    "text": "Consequences",
+    "anchor": "consequences",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Adr 002 Qnx Priority Conversion",
+  "url": "adr-ADR-002-qnx-priority-conversion.html",
+  "section": "Project",
+  "source": "docs/adr/ADR-002-qnx-priority-conversion.md",
+  "headings": [
+   {
+    "text": "ADR-002 — one conversion point from QNX priority to scheduler urgency",
+    "anchor": "adr-002-one-conversion-point-from-qnx-priority-to-scheduler-urgency",
+    "level": 1
+   },
+   {
+    "text": "Context",
+    "anchor": "context",
+    "level": 2
+   },
+   {
+    "text": "Decision",
+    "anchor": "decision",
+    "level": 2
+   },
+   {
+    "text": "Consequences",
+    "anchor": "consequences",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Adr 003 Write Our Own Virtio Transport",
+  "url": "adr-ADR-003-write-our-own-virtio-transport.html",
+  "section": "Project",
+  "source": "docs/adr/ADR-003-write-our-own-virtio-transport.md",
+  "headings": [
+   {
+    "text": "ADR-003 — write our own layer 1 instead of vendoring `kodebooth/qnx-virtio`",
+    "anchor": "adr-003-write-our-own-layer-1-instead-of-vendoring-kodeboothqnx-virtio",
+    "level": 1
+   },
+   {
+    "text": "Context",
+    "anchor": "context",
+    "level": 2
+   },
+   {
+    "text": "Decision",
+    "anchor": "decision",
+    "level": 2
+   },
+   {
+    "text": "Consequences",
+    "anchor": "consequences",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Adr 004 Roundtrip Measured Baseline",
+  "url": "adr-ADR-004-roundtrip-measured-baseline.html",
+  "section": "Project",
+  "source": "docs/adr/ADR-004-roundtrip-measured-baseline.md",
+  "headings": [
+   {
+    "text": "ADR-004 — performance is measured in server round trips, starting with a published Linux baseline",
+    "anchor": "adr-004-performance-is-measured-in-server-round-trips-starting-with-a-published-linux-baseline",
+    "level": 1
+   },
+   {
+    "text": "Context",
+    "anchor": "context",
+    "level": 2
+   },
+   {
+    "text": "Decision",
+    "anchor": "decision",
+    "level": 2
+   },
+   {
+    "text": "Consequences",
+    "anchor": "consequences",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Adr 005 Mergify Queue Strict False",
+  "url": "adr-ADR-005-mergify-queue-strict-false.html",
+  "section": "Project",
+  "source": "docs/adr/ADR-005-mergify-queue-strict-false.md",
+  "headings": [
+   {
+    "text": "ADR-005 — `strict: false` on branch protection, because the Mergify queue refuses `strict: true`",
+    "anchor": "adr-005-strict-false-on-branch-protection-because-the-mergify-queue-refuses-strict-true",
+    "level": 1
+   },
+   {
+    "text": "Context",
+    "anchor": "context",
+    "level": 2
+   },
+   {
+    "text": "Decision",
+    "anchor": "decision",
+    "level": 2
+   },
+   {
+    "text": "Consequences",
+    "anchor": "consequences",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Qnx Abi",
+  "url": "qnx-abi.html",
+  "section": "Project",
+  "source": "docs/qnx-abi.md",
+  "headings": [
+   {
+    "text": "QNX 8.0 ABI values this project depends on",
+    "anchor": "qnx-80-abi-values-this-project-depends-on",
+    "level": 1
+   },
+   {
+    "text": "Sources",
+    "anchor": "sources",
+    "level": 2
+   },
+   {
+    "text": "errno",
+    "anchor": "errno",
+    "level": 2
+   },
+   {
+    "text": "Open flags",
+    "anchor": "open-flags",
+    "level": 2
+   },
+   {
+    "text": "File types",
+    "anchor": "file-types",
+    "level": 2
+   },
+   {
+    "text": "Message numbers and flags",
+    "anchor": "message-numbers-and-flags",
+    "level": 2
+   },
+   {
+    "text": "Interrupts",
+    "anchor": "interrupts",
+    "level": 2
+   },
+   {
+    "text": "Trace events",
+    "anchor": "trace-events",
+    "level": 2
+   },
+   {
+    "text": "Abilities",
+    "anchor": "abilities",
+    "level": 2
+   },
+   {
+    "text": "What is deliberately *not* pinned",
+    "anchor": "what-is-deliberately-not-pinned",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Qnx71 Guest",
+  "url": "qnx71-guest.html",
+  "section": "Project",
+  "source": "docs/qnx71-guest.md",
+  "headings": [
+   {
+    "text": "The QNX 7.1 guest in CI, and the interrupt fragment it needs",
+    "anchor": "the-qnx-71-guest-in-ci-and-the-interrupt-fragment-it-needs",
+    "level": 1
+   },
+   {
+    "text": "1. What the job is",
+    "anchor": "1-what-the-job-is",
+    "level": 2
+   },
+   {
+    "text": "2. What it proves, and what it does not",
+    "anchor": "2-what-it-proves-and-what-it-does-not",
+    "level": 2
+   },
+   {
+    "text": "3. Skip versus fail — never a false green",
+    "anchor": "3-skip-versus-fail-never-a-false-green",
+    "level": 2
+   },
+   {
+    "text": "4. Reproducing it by hand",
+    "anchor": "4-reproducing-it-by-hand",
+    "level": 2
+   },
+   {
+    "text": "5. `image/pci_hw.cfg` — the interrupt fragment",
+    "anchor": "5-imagepci-hwcfg-the-interrupt-fragment",
+    "level": 2
+   },
+   {
+    "text": "5.1 What the file is",
+    "anchor": "51-what-the-file-is",
+    "level": 3
+   },
+   {
+    "text": "5.2 Integrating it into a QNX image",
+    "anchor": "52-integrating-it-into-a-qnx-image",
+    "level": 3
+   },
+   {
+    "text": "5.3 What the fragment does not buy on this image (measured)",
+    "anchor": "53-what-the-fragment-does-not-buy-on-this-image-measured",
+    "level": 3
+   },
+   {
+    "text": "6. Files of this job",
+    "anchor": "6-files-of-this-job",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Release",
+  "url": "release.html",
+  "section": "Project",
+  "source": "docs/release.md",
+  "headings": [
+   {
+    "text": "Releasing Passerelle",
+    "anchor": "releasing-passerelle",
+    "level": 1
+   },
+   {
+    "text": "1. Versioning policy",
+    "anchor": "1-versioning-policy",
+    "level": 2
+   },
+   {
+    "text": "Why `host/pyproject.toml` repeats the version",
+    "anchor": "why-hostpyprojecttoml-repeats-the-version",
+    "level": 3
+   },
+   {
+    "text": "2. Prepare a release",
+    "anchor": "2-prepare-a-release",
+    "level": 2
+   },
+   {
+    "text": "3. Tag and publish",
+    "anchor": "3-tag-and-publish",
+    "level": 2
+   },
+   {
+    "text": "4. What the tarball contains",
+    "anchor": "4-what-the-tarball-contains",
+    "level": 2
+   },
+   {
+    "text": "5. Verifying a download",
+    "anchor": "5-verifying-a-download",
+    "level": 2
+   },
+   {
+    "text": "6. Recovering a failed release",
+    "anchor": "6-recovering-a-failed-release",
+    "level": 2
+   },
+   {
+    "text": "7. Checklist",
+    "anchor": "7-checklist",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Traceability",
+  "url": "traceability.html",
+  "section": "Project",
+  "source": "docs/traceability.md",
+  "headings": [
+   {
+    "text": "Requirement traceability",
+    "anchor": "requirement-traceability",
+    "level": 1
+   },
+   {
+    "text": "States",
+    "anchor": "states",
+    "level": 2
+   },
+   {
+    "text": "Matrix",
+    "anchor": "matrix",
+    "level": 2
+   },
+   {
+    "text": "Tally",
+    "anchor": "tally",
+    "level": 2
+   }
+  ]
+ }
+]

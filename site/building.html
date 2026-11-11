@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Use</p>
+    <h1 id="building-passerelle">Building Passerelle</h1>
+<p>This document gives the exact build instructions required by the QNX Global Hackathon 2026: &lt;strong&gt;QNX version, target architectures, toolchain&lt;/strong&gt;, plus how to build and run every test level.</p>
+<blockquote><p>&lt;strong&gt;Honest status.&lt;/strong&gt; The host PC used for development has &lt;strong&gt;no QNX SDP installed&lt;/strong&gt; (<code>qcc</code>, <code>mkqnximage</code> absent). Everything in §2 is verified and reproducible today; everything in §3 is the documented procedure, &lt;strong&gt;to be validated&lt;/strong&gt; as soon as an SDP is available. See <a href="verification-status.html">verification-status.md</a>.</p></blockquote>
+<hr>
+<h2 id="1-target-environment-what-the-submission-targets">1. Target Environment (what the submission targets)</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;QNX version&lt;/strong&gt;</td>
+<td>&lt;strong&gt;QNX SDP 8.0&lt;/strong&gt; (QNX Everywhere distribution)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Guest architectures&lt;/strong&gt;</td>
+<td><code>x86_64le</code> (primary: PCI modern + MSI-X) and <code>aarch64le</code> (virtio-mmio v1/v2, machine <code>virt</code>)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Guest image&lt;/strong&gt;</td>
+<td>produced by <code>mkqnximage</code>, booted under QEMU</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Hypervisor&lt;/strong&gt;</td>
+<td>QEMU &lt;strong&gt;8.2 or newer&lt;/strong&gt; (<code>virtio-9p-pci</code>, <code>virtio-9p-device</code>, <code>vhost-user-fs-pci</code>)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Compiler for guest&lt;/strong&gt;</td>
+<td><code>qcc</code> (QNX SDP 8.0), driven by CMake</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Compiler for host PC&lt;/strong&gt;</td>
+<td>any C11 compiler (<code>gcc</code> or <code>clang</code>), CMake ≥ 3.16</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;C standard&lt;/strong&gt;</td>
+<td>C11 strict, <code>CMAKE_C_EXTENSIONS OFF</code> (no GNU extensions except <code>__attribute__((format))</code> already used by <code>common/</code>)</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;Host languages for tools&lt;/strong&gt;</td>
+<td>Python 3.9+ (no third-party dependency)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="source-layout-relevant-to-the-build">Source layout relevant to the build</h3>
+<pre><code>common/     portable, always built (buf, err, flags, log, time, test harness)
+virtio/     Layer 1 — portable core + QNX-only bus backends
+proto9p/    Layer 2 — 9P2000.L, portable
+protofuse/  Layer 2 — FUSE/virtiofs, portable
+rmfs/       Layer 3 — resource manager core, portable; QNX glue in *_qnx.c
+drivers/    driver executables (QNX only)
+host/       Python tools: qshare, fsproof, bench (host PC only)</code></pre>
+<p>The root <code>CMakeLists.txt</code> adds a module &lt;strong&gt;only if its <code>CMakeLists.txt</code> exists&lt;/strong&gt;, so the tree configures at any stage of development. <code>-DPGW_MODULES="..."</code> restricts the build to a subset.</p>
+<h3 id="cmake-options">CMake options</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PGW_MODULES</code></td>
+<td>all modules</td>
+<td>Restrict the build to a subset</td>
+</tr>
+<tr>
+<td><code>PGW_SANITIZERS</code></td>
+<td><code>OFF</code></td>
+<td>Build with ASan + UBSan (ROB-06)</td>
+</tr>
+<tr>
+<td><code>PGW_WERROR</code></td>
+<td><code>ON</code></td>
+<td>Warnings are errors (<code>-Wconversion -Wsign-conversion</code> included)</td>
+</tr>
+<tr>
+<td><code>PGW_QNX_STUBS</code></td>
+<td><code>OFF</code></td>
+<td>Compile QNX-target files on the PC against <code>tests/qnx-stub/include</code></td>
+</tr>
+<tr>
+<td><code>PGW_FUZZ</code></td>
+<td><code>OFF</code></td>
+<td>Build the fuzz harnesses (level 1)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="2-build-on-a-host-pc-no-qnx-sdp-needed">2. Build on a Host PC (no QNX SDP needed)</h2>
+<p>All portable layers and their tests build and run on plain Linux:</p>
+<pre><code class="language-bash">cd passerelle
+
+# 1. Configure, build, test
+cmake -B build -DPGW_MODULES="common"
+cmake --build build -j8
+ctest --test-dir build --output-on-failure
+
+# 2. Same with sanitizers (ROB-06)
+cmake -B build-asan -DPGW_MODULES="common" -DPGW_SANITIZERS=ON
+cmake --build build-asan -j8
+ctest --test-dir build-asan --output-on-failure
+
+# 3. Project rules: &lt; 500 lines per file, &lt; 50 lines per function
+python3 tools/check-size.py --root .
+
+# 4. Host-side Python tools (qshare, fsproof, bench)
+python3 -m pytest host/tests -q</code></pre>
+<blockquote><p>&lt;strong&gt;Note.&lt;/strong&gt; Name your build directories <code>build</code>, <code>build-asan</code>, <code>build-*</code> is fine, but <code>tools/check-size.py</code> skips only the exact directory names <code>build</code> and <code>build-asan</code>. A directory named <code>build-docs</code> would be scanned and can trip the size guard on CMake's generated <code>CompilerIdC.c</code>. Use <code>build</code> / <code>build-asan</code>, or add the directory to <code>SKIP_DIRS</code>.</p></blockquote>
+<p>Once the other modules land, extend <code>PGW_MODULES</code>:</p>
+<pre><code class="language-bash">cmake -B build "-DPGW_MODULES=common;virtio;proto9p;protofuse;rmfs"</code></pre>
+<hr>
+<h2 id="3-cross-compilation-for-qnx-80">3. Cross-Compilation for QNX 8.0</h2>
+<pre><code class="language-bash"># Source the SDP environment (sets QNX_HOST, QNX_TARGET, qcc on PATH)
+source ~/qnx800/qnxsdp-env.sh
+
+# x86_64le guest
+cmake -B build-qnx-x86 \
+      -DCMAKE_TOOLCHAIN_FILE="$QNX_HOST/usr/cmake/QNXToolchain.cmake" \
+      -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+      "-DPGW_MODULES=common;virtio;proto9p;protofuse;rmfs;drivers"
+cmake --build build-qnx-x86 -j8
+
+# aarch64le guest
+cmake -B build-qnx-arm \
+      -DCMAKE_TOOLCHAIN_FILE="$QNX_HOST/usr/cmake/QNXToolchain.cmake" \
+      -DCMAKE_SYSTEM_PROCESSOR=aarch64le \
+      "-DPGW_MODULES=common;virtio;proto9p;protofuse;rmfs;drivers"
+cmake --build build-qnx-arm -j8</code></pre>
+<p>&lt;strong&gt;Isolation rule for QNX-only code.&lt;/strong&gt; Any file including <code>&lt;sys/neutrino.h&gt;</code>, <code>&lt;hw/pci.h&gt;</code> or <code>&lt;sys/resmgr.h&gt;</code> must be a <code>*_qnx.c</code> file added to the build &lt;strong&gt;only&lt;/strong&gt; <code>if(QNX)</code> in its module's <code>CMakeLists.txt</code>. Its portable logic lives in a sibling file that compiles on the PC. The QNX glue is syntax-checked on the PC with the <code>pgw_qnx_syntax()</code> helper (against <code>tests/qnx-stub/include</code>, <code>-DPGW_QNX_STUBS=ON</code>).</p>
+<p>&lt;strong&gt;CMake helpers&lt;/strong&gt; (from <code>cmake/passerelle.cmake</code>, mandatory for every module):</p>
+<table>
+<thead>
+<tr>
+<th>Helper</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pgw_library(&lt;name&gt;)</code></td>
+<td>Builds a static library with the project's strict C11 flags and warning set</td>
+</tr>
+<tr>
+<td><code>pgw_test(&lt;name&gt;)</code></td>
+<td>Registers a CTest test using the <code>common/include/pgw/test.h</code> harness</td>
+</tr>
+<tr>
+<td><code>pgw_qnx_syntax(&lt;name&gt; SRCS ...)</code></td>
+<td>Compiles QNX-only sources on the PC against the stub headers</td>
+</tr>
+</tbody>
+</table>
+<h3 id="installing-into-a-qnx-image">Installing into a QNX image</h3>
+<pre><code class="language-bash">cmake --install build-qnx-x86 --prefix "$QNX_TARGET/x86_64le"
+# then embed the driver and the mount line via the snippet qshare generates:
+qshare ~/my-project --mkqnximage ~/qnx-vm --driver-bin /system/bin/qnx-fs-9p</code></pre>
+<hr>
+<h2 id="4-running-each-test-level">4. Running Each Test Level</h2>
+<p>The validation plan (spec §7.1) defines five levels. Levels 0 and 1 run on the PC; levels 2–4 need a QNX guest under QEMU.</p>
+<h3 id="level-0-unit-tests-pc">Level 0 — Unit tests (PC)</h3>
+<pre><code class="language-bash">cmake -B build "-DPGW_MODULES=common;virtio;proto9p;protofuse;rmfs"
+cmake --build build -j8
+ctest --test-dir build --output-on-failure</code></pre>
+<p>Covers message encoding/decoding, translation tables, fid/node lifetime, path logic.</p>
+<h3 id="level-1-random-inputs-fuzzing-pc-sanitizers-required">Level 1 — Random inputs / fuzzing (PC, sanitizers required)</h3>
+<pre><code class="language-bash">cmake -B build-fuzz -DPGW_SANITIZERS=ON -DPGW_FUZZ=ON \
+      "-DPGW_MODULES=common;proto9p;protofuse"
+cmake --build build-fuzz -j8
+ctest --test-dir build-fuzz --output-on-failure -L fuzz</code></pre>
+<p>Target: 1 hour clean (Complete tier), 24 hours (Extreme tier). No crash, no ASan/UBSan report.</p>
+<h3 id="level-2-conformance-qemu-guest">Level 2 — Conformance (QEMU guest)</h3>
+<p>Differential testing against the host directory as ground truth:</p>
+<pre><code class="language-bash"># On the host, with the guest booted and the share mounted at /host:
+python3 -m fsproof diff --count 100000 --seed 42 --reg-dir regressions
+python3 -m fsproof exercise --dir /host/ex --ops 1000000 --threads 16
+python3 -m fsproof cases --dir /host/cases            # targeted edge cases
+python3 -m fsproof diff --client qnx-fs-9p            # same bench against Project A
+python3 -m fsproof diff --client eclipse-virtio9p     # …and Project B</code></pre>
+<p>Each run is replayable from its seed; any divergence is minimised to the shortest reproducing sequence and stored under <code>regressions/</code>.</p>
+<h3 id="level-3-performance-qemu-guest">Level 3 — Performance (QEMU guest)</h3>
+<pre><code class="language-bash">python3 -m bench roundtrips /tmp/qemu-trace.log        # PERF-01/02: round trips per call
+python3 -m bench throughput --dir /host/bench --size-mb 1024   # PERF-03
+python3 -m bench metadata  --dir /host/bench --count 10000     # PERF-04
+python3 -m bench mixed     --dir /host/bench --count 500       # §7.5 mixed load
+python3 -m bench exec      --dir /host/bench --count 1000      # exec-from-share
+python3 -m bench priority  --dir /host/bench --count 10        # PERF-05
+python3 -m bench report -o bench_report                        # PERF-07</code></pre>
+<p>QEMU traces come from <code>-trace events=...</code> (the v9fs trace events); the report is machine-independent where it counts round trips.</p>
+<h3 id="level-4-robustness-qemu-guest">Level 4 — Robustness (QEMU guest)</h3>
+<pre><code class="language-bash"># kill a client mid-request, unmount under load, mutate files on the host,
+# point the driver at a deliberately faulty 9P server
+python3 -m fsproof diff --count 10000 --seed 7 --kill-clients
+umount /host                       # while a large copy runs
+python3 -m fsproof cases --dir /host/cases --faulty-server</code></pre>
+<hr>
+<h2 id="5-continuous-integration">5. Continuous Integration</h2>
+<p>CI runs on self-hosted R630 workers with a &lt;strong&gt;5-minute budget per job&lt;/strong&gt; (see <a href="ci.html">ci.md</a>): configure + build + <code>ctest</code> + <code>size-guard</code> on the PC build, plus the sanitizer build. QEMU end-to-end jobs are kept out of pull requests and run on tags or manual dispatch.</p>
+<hr>
+<h2 id="6-troubleshooting-the-build">6. Troubleshooting the Build</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>module 'X' not present yet - skipped</code></td>
+<td>The module has no <code>CMakeLists.txt</code></td>
+<td>Expected during parallel development; narrow <code>PGW_MODULES</code></td>
+</tr>
+<tr>
+<td><code>size-guard</code> fails on <code>build-docs/.../CompilerIdC.c</code></td>
+<td>Build directory not in <code>SKIP_DIRS</code></td>
+<td>Use <code>build</code> / <code>build-asan</code></td>
+</tr>
+<tr>
+<td><code>-Wconversion</code> errors</td>
+<td>Implicit narrowing</td>
+<td>Add an explicit cast &lt;strong&gt;with a bounds check&lt;/strong&gt;; never silence the warning</td>
+</tr>
+<tr>
+<td><code>qcc: command not found</code></td>
+<td>SDP environment not sourced</td>
+<td><code>source ~/qnx800/qnxsdp-env.sh</code></td>
+</tr>
+<tr>
+<td><code>&lt;sys/neutrino.h&gt;: No such file</code> during a PC build</td>
+<td>QNX-only file included unconditionally</td>
+<td>Move it to a <code>*_qnx.c</code> file, add it <code>if(QNX)</code> only</td>
+</tr>
+<tr>
+<td>Link error on <code>InterruptAttachThread</code> in a PC build</td>
+<td>QNX glue compiled without stubs</td>
+<td>Configure with <code>-DPGW_QNX_STUBS=ON</code></td>
+</tr>
+</tbody>
+</table>
+    <nav class="pager">
+      <a class="prev" href="architecture.html">Previous</a>
+      <a class="next" href="ci.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/search.js"></script>
+</body>
+</html>
