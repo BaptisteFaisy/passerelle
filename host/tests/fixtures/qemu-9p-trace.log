@@ -1,0 +1,31 @@
+225213@1794354229.123456:v9fs_version tag 65535 id 100 msize 131072 version 9P2000.L
+225213@1794354229.123512:v9fs_version_return tag 65535 id 100 msize 131072 version 9P2000.L
+225213@1794354229.124001:v9fs_attach tag 1 id 104 fid 1 afid -1 uname root aname
+225213@1794354229.124088:v9fs_attach_return tag 1 id 104 type 0 version 0 path 1
+225213@1794354229.124510:v9fs_walk tag 2 id 110 fid 1 newfid 2 nwnames 1
+225213@1794354229.124602:v9fs_walk_return tag 2 id 110 nwnames 1 qids 0x5555
+225213@1794354229.125010:v9fs_getattr tag 3 id 24 fid 2 request_mask 0
+225213@1794354229.125077:v9fs_getattr_return tag 3 id 24 getattr={result_mask 0 mode 33188 uid 1000 gid 1000}
+225213@1794354229.125510:v9fs_open tag 4 id 12 fid 2 mode 0
+225213@1794354229.125601:v9fs_open_return tag 4 id 12 qid={type 0 version 0 path 2} iounit 0
+225213@1794354229.126010:v9fs_read tag 5 id 116 fid 2 off 0 max_count 4096
+225213@1794354229.126104:v9fs_read_return tag 5 id 116 count 4096 err 0
+225213@1794354229.126510:v9fs_read tag 6 id 117 fid 2 off 4096 max_count 4096
+225213@1794354229.126577:v9fs_read_return tag 6 id 117 count 512 err 0
+225213@1794354229.127010:v9fs_write tag 7 id 118 fid 2 off 0 count 4096 cnt 4096
+225213@1794354229.127180:v9fs_write_return tag 7 id 118 total 4096 err 0
+225213@1794354229.127610:v9fs_fsync tag 8 id 30 fid 2 datasync 0
+225213@1794354229.127690:v9fs_fsync tag 8 id 30 datasync 0
+225213@1794354229.128010:v9fs_clunk tag 9 id 120 fid 2
+225213@1794354229.128088:v9fs_clunk tag 9 id 120 fid 2
+225213@1794354229.128510:v9fs_walk tag 10 id 111 fid 1 newfid 3 nwnames 1
+225213@1794354229.128590:v9fs_walk_return tag 10 id 111 nwnames 1 qids 0x5556
+225213@1794354229.129010:v9fs_readdir tag 11 id 40 fid 3 offset 0 max_count 8192
+225213@1794354229.129101:v9fs_readdir_return tag 11 id 40 count 96 retval 96
+225213@1794354229.129510:v9fs_open tag 12 id 13 fid 4 mode 2
+225213@1794354229.129590:v9fs_rerror tag 12 id 13 err 2
+225213@1794354229.130010:v9fs_remove tag 13 id 16 fid 4
+225213@1794354229.130088:v9fs_remove tag 13 id 16 fid 4
+225213@1794354229.130510:v9fs_clunk tag 14 id 121 fid 3
+225213@1794354229.130590:v9fs_clunk tag 14 id 121 fid 3
+225213@1794354229.131010:v9fs_getattr tag 15 id 25 fid 3 request_mask 0

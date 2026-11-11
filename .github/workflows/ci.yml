@@ -279,9 +279,17 @@ jobs:
             exit 0
           fi
           includes="-I$PWD/tests/qnx-stub/include"
-          for d in common/include virtio/include proto9p/include protofuse/include rmfs/include; do
-            [ -d "$d" ] && includes="$includes -I$PWD/$d"
-          done
+          # Every module include directory of the portable stack, so a QNX-only
+          # source can reach its own module headers: drivers/common/include holds
+          # the service layer shared by fs9p and fsfuse (pgw/drvsrv.h). The
+          # codelab and upstream trees carry their own private stubs and are
+          # deliberately excluded so this check stays hermetic.
+          while IFS= read -r d; do
+            includes="$includes -I$PWD/$d"
+          done < <(find . -type d -name include \
+                     -not -path './build*' -not -path './.git/*' \
+                     -not -path './codelab/*' -not -path './upstream/*' \
+                     -not -path './tests/qnx-stub/*' | sort)
           status=0
           while IFS= read -r f; do
             module=$(dirname "$(dirname "$f")")
