@@ -100,6 +100,24 @@ check_exec_from_share() {
     fi
 }
 
+# A fixed workload, so the QEMU trace contains a known number of POSIX
+# operations and the round-trip table can be read back on the host
+# (PERF-01). Every loop iteration does: create+write, stat, read, unlink.
+run_workload() {
+    count=$(pgw_cmdline_value pgw.workload)
+    [ -n "$count" ] || return 0
+    i=1
+    while [ "$i" -le "$count" ]; do
+        echo "payload-$i" > "$SHARE/w$i" 2>/dev/null || true
+        ls -l "$SHARE/w$i" > /dev/null 2>&1 || true
+        cat "$SHARE/w$i" > /dev/null 2>&1 || true
+        rm -f "$SHARE/w$i" 2>/dev/null || true
+        i=$((i + 1))
+    done
+    df -h "$SHARE" > /dev/null 2>&1 || true
+    say "PASS workload of $count create/stat/read/unlink cycles"
+}
+
 report_environment() {
     say "INFO kernel $(uname -r) $(uname -m)"
     say "INFO virtio devices: $(ls -d /sys/bus/virtio/devices/* 2>/dev/null | wc -l)"
@@ -119,6 +137,7 @@ main() {
         check_host_to_guest  || rc=1
         check_guest_to_host  || rc=1
         check_exec_from_share
+        run_workload
     fi
     [ "$rc" -eq 0 ] && say "RESULT PASS" || say "RESULT FAIL"
     say "DONE"

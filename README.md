@@ -179,9 +179,11 @@ SDP or a QNX guest is said so explicitly.
   virtiofs**: feasibility test **E5 passed**, in 9 s per protocol
   ([docs/verification-status.md](docs/verification-status.md) §3.1).
 - **Performance (level 3) and guest-side robustness (level 4)** — the harnesses
-  are written (`host/bench`, `host/fsproof`); the numbers require a QNX guest
-  and are **not** published yet. Only the round-trip *counting* method is
-  implemented and unit-tested against recorded QEMU traces.
+  are written (`host/bench`, `host/fsproof`). The **Linux reference baseline**
+  of spec 7.5 is published in [docs/measurements/](docs/measurements/)
+  (822 requests, round-trip table from a real QEMU 8.2 trace on an active
+  guest). The numbers for our own QNX driver require a QNX guest and are
+  **not** measured yet.
 - **Feasibility tests E1–E4** — blocked on the QNX SDP (issues #2 to #6). E5 is
   done.
 - **No QNX-side requirement is claimed as verified**: no QNX SDP is installed on
@@ -189,7 +191,8 @@ SDP or a QNX guest is said so explicitly.
   without an account (the community image that ships one,
   `ghcr.io/kodebooth/qnx-sdp`, is private).
 
-See [docs/verification-status.md](docs/verification-status.md) for the full matrix.
+See [docs/verification-status.md](docs/verification-status.md) for the full
+matrix and [docs/measurements/](docs/measurements/) for the numbers.
 
 ---
 
