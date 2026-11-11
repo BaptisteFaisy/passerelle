@@ -153,13 +153,33 @@ Detailed step-by-step instructions and test level runner commands are available 
 
 ## Honest Verification Status
 
-Every requirement is tracked against rigorous automated testing. We distinguish clearly between facts verified in code vs claims to be validated on live hardware:
+Every requirement is tracked against automated testing, and this README only
+claims what a command in this repository actually proves. What still needs a QNX
+SDP or a QNX guest is said so explicitly.
 
-- **Unit & Codec Layers (Level 0)**: the `common/` module is implemented and green on the host PC (`ctest -R common`); the other modules' unit tests land with their sources.
-- **Randomized Fuzzing (Level 1)**: wire decoders are designed for it (strict, non-casting decoders) and the `-DPGW_SANITIZERS=ON` build exists; the fuzz campaign itself is pending.
-- **Differential Conformance (Level 2)**: the harness (`host/fsproof`) is written; a full QEMU campaign requires a QNX guest.
-- **Hardware & QEMU Integration (Feasibility Tests E1–E5)**: all blocked on the QNX SDP except E5, which only needs a Linux guest.
-- **No QNX-side requirement is claimed as verified**: this workstation has no QNX SDP installed.
+- **Unit & codec layers (level 0)** — implemented and green on the host PC for
+  every portable layer: `common`, `virtio`, `proto9p`, `protofuse`, `rmfs` and
+  the portable half of `drivers` (`ctest --test-dir build`). The QNX-only glue
+  is compiled on the PC against `tests/qnx-stub` (job `qnx-syntax`), which
+  proves it parses and type-checks, not that it runs.
+- **Randomized input (level 1)** — `tests/fuzz` runs deterministic seeded
+  campaigns against every wire decoder, in CI, under ASan+UBSan
+  (`fuzz_p9`, `fuzz_fuse`). The long campaigns (`fuzz-*-long`, millions of
+  iterations) are registered but disabled: they run outside pull requests.
+- **Differential conformance (level 2)** — `tests/e2e` replays seeded random
+  operation suites through `pgw_rmfs` and compares every result with the PC
+  folder, which is the truth (`test_diff`, plus the directed cases of spec 7.4
+  in `test_directed`). A divergence is automatically reduced to the shortest
+  prefix that reproduces it. `host/fsproof` runs the same method against a real
+  guest. The 1 000 000-operation campaign of spec 7.6 is `e2e-long`, out of PR.
+- **Performance (level 3) and robustness under QEMU (level 4)** — the harnesses
+  are written (`host/bench`, `host/fsproof`); the numbers require a QNX guest
+  and are **not** published yet. Only the round-trip *counting* method is
+  implemented and unit-tested against recorded QEMU traces.
+- **Feasibility tests E1–E5** — all blocked on the QNX SDP except E5, which only
+  needs a Linux guest. Tracked as issues #2 to #6.
+- **No QNX-side requirement is claimed as verified**: no QNX SDP is installed on
+  the machine that produced this tree.
 
 See [docs/verification-status.md](docs/verification-status.md) for the full matrix.
 

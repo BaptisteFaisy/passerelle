@@ -20,7 +20,7 @@ static jmp_buf g_case_jmp;
 static bool g_failed = false;
 static char g_fail_msg[256];
 
-#define MAX_TMPDIRS 16
+#define MAX_TMPDIRS 128
 static char g_tmpdirs[MAX_TMPDIRS][256];
 static int g_ntmpdirs = 0;
 static bool g_atexit_reg = false;
