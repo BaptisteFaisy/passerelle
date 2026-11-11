@@ -154,7 +154,18 @@ def build_qemu_cmd(
         cmd += ["-drive", f"file={target},if=virtio,format=raw"]
     cmd += build_qemu_args(cfg)
     if trace_log is not None:
-        cmd += ["-trace", "enable=v9fs_*", "-trace", f"file={pathlib.Path(trace_log).resolve()}"]
+        trace_path = pathlib.Path(trace_log).resolve()
+        trace_path.parent.mkdir(parents=True, exist_ok=True)
+        # Ubuntu's QEMU 8.2 builds trace events through the `log` backend,
+        # which writes plain text to the file named by `-D`: `-trace file=...`
+        # is the simpletrace binary format, not text, and the rest of the
+        # pipeline expects text lines (`v9fs_*`). We pass both: `-D` for the
+        # text log that pbench reads, `-trace enable=v9fs_*` to enable the
+        # events.
+        cmd += [
+            "-D", str(trace_path),
+            "-trace", "enable=v9fs_*",
+        ]
     cmd += list(extra_args)
     return cmd
 
