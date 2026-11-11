@@ -8,6 +8,13 @@ chaque job (clé à 2 espaces), le `timeout-minutes:` à 4 espaces.
 
 Erreurs (exit 1) : job sans `timeout-minutes`, ou timeout > MAX_MINUTES.
 Avertissements (exit 0) : `concurrency` absent, checkout sans fetch-depth: 1.
+
+Exception : un workflow qui ne tourne JAMAIS sur une pull request et qui
+porte un job long explicitement justifie est exempt (regle "sortir des PR"
+de ~/Bureau/CI-BUDGET-5MIN.md). `qemu-e2e.yml` est le banc de conformite
+long du depot passerelle : il ne se declenche que sur `workflow_dispatch` ou
+sur un push sur `main`, avec un `timeout-minutes` de 30 min commente dans
+le YAML. Sans cette entree, le garde-fou bloquerait toutes les PR.
 """
 
 import glob
@@ -17,7 +24,7 @@ import sys
 
 MAX_MINUTES = 5
 WORKFLOWS = ".github/workflows"
-SKIP_FILES = set()  # le garde-fou se contrôle lui-même
+SKIP_FILES = {"qemu-e2e.yml"}  # job long hors PR (justifie dans le YAML)
 
 TOP_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*:")
 JOB_KEY = re.compile(r"^  ([A-Za-z0-9_.-]+):\s*(#.*)?$")

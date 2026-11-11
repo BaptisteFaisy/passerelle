@@ -1,0 +1,1746 @@
+From 9b834e7d803df002ce62851b91c9f06aaa91e381 Mon Sep 17 00:00:00 2001
+From: Passerelle contributors <passerelle@example.invalid>
+Date: Wed, 11 Nov 2026 01:51:39 +0100
+Subject: [PATCH 1/4] virtio-pci: a modern PCI transport, behind transport.h
+
+fs-9p reached only the virtio-9p devices QEMU puts on the `virt` machine's
+fixed MMIO window, which is how an aarch64 guest sees them. An x86_64
+guest normally gets its 9P share from `-virtfs`, which creates a
+virtio-9p-pci device on the PCI bus, and that device is invisible to a
+virtio-mmio driver. This adds the PCI transport, behind the existing
+transport.h interface: client.c and the resource manager are untouched and
+do not know which transport they got.
+
+Only discovery, register access, notification and interrupts differ from
+transport_virtio.c; the feature negotiation, the status sequence, the
+split ring, the DMA memory, the interrupt service thread and the memory
+barriers are the ones already proven on ARM64.
+
+  src/virtio_pci_caps.{c,h}   capability decoding, no QNX header at all
+  src/virtio_pci_int.h        private state, split from the public header
+  src/transport_virtio_pci.c  PCI discovery, BARs, MSI-X, features, queue
+  src/virtio_pci_ring.c       ring, request slots, interrupt thread
+
+The decoder takes a config-space read callback instead of touching a bus,
+so it is unit-tested on the host like lib9p:
+tests/unit/test_virtio_pci_caps.c covers the capability-chain walk, a
+cyclic chain, a device without NOTIFY, the fallback to a 32-bit-only
+sweep, the rule that skips a capability's interior, the notification
+address arithmetic and the queue-size clamp. Two scans exist because
+pci_device_cfg_rd8() has been reported to return 0 silently at unaligned
+offsets on QNX.
+
+Two details come from observation rather than from a document, and are
+commented as such:
+
+  - pci_device_attach() does not enable bus mastering. Without the
+    command register's memory-space and bus-master bits the device cannot
+    DMA into the ring, so both are set explicitly.
+
+  - With DO_BUS_CONFIG=no the QNX PCI server allocates no MSI vectors and
+    pci_device_cfg_cap_enable() fails. MSI-X is therefore programmed by
+    hand: an IRQ is claimed from the kernel's MSI range through
+    rsrcdbmgr, table entry 0 is written through the BAR, and the command
+    register's INTx-disable bit is set. When any step fails the transport
+    falls back to the firmware's INTx line, which the virtio-mmio driver
+    already exercises.
+
+Completion is decided from the used ring, never from the wakeup, and a
+request that times out marks its slot stale so QEMU can still finish
+writing into buffers the driver has not reused.
+
+Not verified on an x86_64 guest yet; a later patch says what to check.
+---
+ CMakeLists.txt                    |  26 +-
+ src/transport.h                   |  15 +
+ src/transport_virtio_pci.c        | 499 ++++++++++++++++++++++++++++++
+ src/virtio_pci_caps.c             | 199 ++++++++++++
+ src/virtio_pci_caps.h             | 134 ++++++++
+ src/virtio_pci_int.h              | 120 +++++++
+ src/virtio_pci_ring.c             | 411 ++++++++++++++++++++++++
+ tests/unit/CMakeLists.txt         |  13 +
+ tests/unit/test_virtio_pci_caps.c | 174 +++++++++++
+ 9 files changed, 1588 insertions(+), 3 deletions(-)
+ create mode 100644 src/transport_virtio_pci.c
+ create mode 100644 src/virtio_pci_caps.c
+ create mode 100644 src/virtio_pci_caps.h
+ create mode 100644 src/virtio_pci_int.h
+ create mode 100644 src/virtio_pci_ring.c
+ create mode 100644 tests/unit/test_virtio_pci_caps.c
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6b8a14f..7d603ea 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -13,8 +13,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
+     endif()
+ else()
+     set(FS9P_QNX OFF)
+-    message(NOTICE "fs-9p: host build: lib9p and its unit tests only, nothing to install. To build\n"
+-                   "  fs-9p itself: -DCMAKE_TOOLCHAIN_FILE=cmake/qnx8-aarch64le.cmake (docs/user/building.md)")
++    message(NOTICE "fs-9p: host build: lib9p, the virtio PCI capability decoder and\n"
++                   "  their unit tests only, nothing to install. To build fs-9p itself:\n"
++                   "  -DCMAKE_TOOLCHAIN_FILE=cmake/qnx8-aarch64le.cmake (ARM64, virtio-mmio)\n"
++                   "  or -DCMAKE_TOOLCHAIN_FILE=cmake/qnx8-x86_64.cmake (x86_64, virtio-pci)\n"
++                   "  (docs/user/building.md)")
+ endif()
+ 
+ if(FS9P_QNX)
+@@ -66,6 +69,21 @@ if(FS9P_INSTALL_LIB)
+     install(DIRECTORY lib9p/include/lib9p DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ endif()
+ 
++# --- virtio PCI capability decoder: portable, host-testable -----------------
++# It takes a config-space read callback instead of touching a bus, so the
++# decoding arithmetic is unit-tested on the host exactly like lib9p, and the
++# QNX-only transport is left with the parts that need the hardware.
++add_library(virtio_pci_caps STATIC src/virtio_pci_caps.c)
++set_target_properties(virtio_pci_caps PROPERTIES
++    C_STANDARD 11
++    C_STANDARD_REQUIRED ON
++    C_EXTENSIONS OFF
++)
++target_include_directories(virtio_pci_caps PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
++)
++target_compile_options(virtio_pci_caps PRIVATE ${FS9P_STRICT_FLAGS})
++
+ # --- fs-9p resource manager: QNX only ---------------------------------------
+ if(FS9P_QNX)
+     add_executable(fs-9p
+@@ -77,6 +95,8 @@ if(FS9P_QNX)
+         src/resmgr_connect.c
+         src/resmgr_io.c
+         src/transport_virtio.c
++        src/transport_virtio_pci.c
++        src/virtio_pci_ring.c
+     )
+     set_target_properties(fs-9p PROPERTIES
+         C_STANDARD 11
+@@ -87,7 +107,7 @@ if(FS9P_QNX)
+     # hidden under strict -std=c11.
+     target_compile_definitions(fs-9p PRIVATE _QNX_SOURCE)
+     target_compile_options(fs-9p PRIVATE ${FS9P_STRICT_FLAGS})
+-    target_link_libraries(fs-9p PRIVATE lib9p)
++    target_link_libraries(fs-9p PRIVATE lib9p virtio_pci_caps)
+ 
+     # The use message, with the version filled in, embedded so `use fs-9p`
+     # works. LINK_DEPENDS relinks (and so re-embeds) when the text changes.
+diff --git a/src/transport.h b/src/transport.h
+index d41cd2b..6de36aa 100644
+--- a/src/transport.h
++++ b/src/transport.h
+@@ -68,4 +68,19 @@ typedef struct {
+  * -ENOMEM/-EIO/-EPERM on setup failures. */
+ int vio9p_open(const char *mount_tag, const vio9p_options_t *opt, fs9p_transport_t *out);
+ 
++/* --- virtio-pci backend (transport_virtio_pci.c) ---------------------------- */
++
++/* The same, for a modern virtio-9p-pci device on the PCI bus: what an x86_64
++ * guest gets from QEMU's -virtfs (or -device virtio-9p-pci). Discovery goes
++ * through libpci and the device's vendor-specific capabilities; the interrupt
++ * is MSI-X when the kernel lets us have a vector, the INTx line otherwise.
++ *
++ * Both backends present the same transport.h interface, so client.c and the
++ * resource manager do not know which one they got.
++ *
++ * `opt->irq` is ignored: the interrupt number comes from MSI-X or from the
++ * firmware's INTx assignment. Returns 0 or -errno, with -ENODEV also when the
++ * device found exports a different mount tag. */
++int vio9p_pci_open(const char *mount_tag, const vio9p_options_t *opt, fs9p_transport_t *out);
++
+ #endif /* FS9P_TRANSPORT_H */
+diff --git a/src/transport_virtio_pci.c b/src/transport_virtio_pci.c
+new file mode 100644
+index 0000000..20e6582
+--- /dev/null
++++ b/src/transport_virtio_pci.c
+@@ -0,0 +1,499 @@
++/*
++ * virtio-9p transport over virtio-pci (modern PCI interface).
++ *
++ * Why this file exists: the virtio-mmio transport in transport_virtio.c only
++ * reaches the devices QEMU puts on the `virt` machine's fixed MMIO window,
++ * which is how an aarch64 guest sees them. An x86_64 guest normally gets its
++ * 9P share from `-virtfs`, which creates a virtio-9p-pci device on the PCI
++ * bus, and that device is invisible to a virtio-mmio driver. This backend
++ * adds it, behind the same transport.h interface, so client.c and the
++ * resource manager are unchanged.
++ *
++ * What differs from the MMIO backend, and nothing else:
++ *   - discovery: the device is found by vendor/device id on the PCI bus, then
++ *     its vendor-specific capabilities say where the common configuration,
++ *     the notification area, the ISR byte and the device configuration live
++ *     inside the BARs (virtio 1.2, 4.1.4);
++ *   - register access: the same fields, at offsets inside the mapped BAR
++ *     instead of inside a 0x200-byte MMIO window;
++ *   - notification: a write to the address the NOTIFY capability designates,
++ *     scaled by notify_off_multiplier;
++ *   - interrupts: MSI-X when the kernel lets us have a vector, INTx
++ *     otherwise.
++ * Features, the status sequence, the split ring, DMA memory, the interrupt
++ * service thread and the barriers are the ones already proven on ARM64.
++ *
++ * Privileges: PROCMGR_AID_PCI for the PCI calls, PROCMGR_AID_MEM_PHYS for the
++ * BAR mappings and the DMA memory, PROCMGR_AID_INTERRUPT for the IST. On
++ * machines without ECAM, libpci reads config space through the 0xCF8/0xCFC
++ * ports inside the client, so PROCMGR_AID_IO is needed as well (a crash in
++ * pci_device_attach() without it).
++ *
++ * References: OASIS virtio 1.2 - 3.1 device init, 4.1.2 PCI device layout,
++ * 4.1.4 PCI capabilities, 4.1.5 legacy interfaces, 5.3 the 9P device; PCI
++ * Local Bus 3.0 for MSI-X; the QNX 8.0 PCI and Interrupt guides.
++ */
++#include <errno.h>
++#include <inttypes.h>
++#include <stdarg.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++
++#include <pci/pci.h>
++#include <sys/mman.h>
++#include <sys/neutrino.h>
++#include <sys/rsrcdbmgr.h>
++
++#include "transport.h"
++#include "virtio_pci_caps.h"
++#include "virtio_pci_int.h"
++
++/* virtio device ids (virtio 1.2, 5.3) and the PCI ids QEMU uses for them:
++ * 0x1040 + type on the modern-only interface, 0x1000 + type transitional. */
++#define VPCI_VENDOR_ID        0x1AF4u
++#define VPCI_DEVICE_9P        9u
++#define VPCI_PCI_DID_MODERN   0x1049u
++#define VPCI_PCI_DID_LEGACY   0x1009u
++
++#define VSTAT_ACK         1u
++#define VSTAT_DRIVER      2u
++#define VSTAT_DRIVER_OK   4u
++#define VSTAT_FEATURES_OK 8u
++#define VSTAT_FAILED      128u
++
++static void logv(const struct vio_pci *v, const char *fmt, ...)
++    __attribute__((format(printf, 2, 3)));
++
++static void logv(const struct vio_pci *v, const char *fmt, ...)
++{
++    if (!v->opt.verbose)
++        return;
++    va_list ap;
++    va_start(ap, fmt);
++    fputs("vio9p-pci: ", stderr);
++    vfprintf(stderr, fmt, ap);
++    va_end(ap);
++}
++
++/* --- config-space access ------------------------------------------------- */
++
++/* pci_device_cfg_rd*() take the handle, not the BDF: attaching first is what
++ * makes config-space reads work for an owned device.
++ *
++ * Only aligned 32-bit reads are used, and a caller's slice is cut out of the
++ * words they cover. pci_device_cfg_rd8() was found to return 0 silently at
++ * unaligned offsets on QNX, so nothing here depends on it. */
++static int cfg_read(void *ctx, uint32_t off, void *dst, size_t len)
++{
++    const struct vio_pci *v = ctx;
++    uint8_t buf[8];
++    uint32_t base;
++
++    if (len == 0u || len > 4u || off + len > 256u)
++        return -1;
++    base = off & ~3u;
++    const uint32_t span = ((off + (uint32_t)len - 1u) & ~3u) - base + 4u;
++    if (span > sizeof buf)
++        return -1;
++    for (uint32_t i = 0; i < span; i += 4u) {
++        uint32_t word = 0;
++        if (pci_device_cfg_rd32(v->hdl, base + i, &word) != PCI_ERR_OK)
++            return -1;
++        buf[i] = (uint8_t)word;
++        buf[i + 1u] = (uint8_t)(word >> 8u);
++        buf[i + 2u] = (uint8_t)(word >> 16u);
++        buf[i + 3u] = (uint8_t)(word >> 24u);
++    }
++    memcpy(dst, buf + (off - base), len);
++    return 0;
++}
++
++/* --- common configuration structure ------------------------------------- */
++
++static uint8_t cfg8(const struct vio_pci *v, uint32_t off)
++{
++    return *(volatile uint8_t *)(v->common + off);
++}
++
++static uint16_t cfg16(const struct vio_pci *v, uint32_t off)
++{
++    return *(volatile uint16_t *)(v->common + off);
++}
++
++static uint32_t cfg32(const struct vio_pci *v, uint32_t off)
++{
++    return *(volatile uint32_t *)(v->common + off);
++}
++
++static void set8(const struct vio_pci *v, uint32_t off, uint8_t val)
++{
++    *(volatile uint8_t *)(v->common + off) = val;
++}
++
++static void set16(const struct vio_pci *v, uint32_t off, uint16_t val)
++{
++    *(volatile uint16_t *)(v->common + off) = val;
++}
++
++static void set32(const struct vio_pci *v, uint32_t off, uint32_t val)
++{
++    *(volatile uint32_t *)(v->common + off) = val;
++}
++
++static void set64(const struct vio_pci *v, uint32_t off, uint64_t val)
++{
++    set32(v, off, (uint32_t)val);
++    set32(v, off + 4u, (uint32_t)(val >> 32u));
++}
++
++void vpci_ack_interrupt(struct vio_pci *v)
++{
++    /* A read of the ISR byte returns the pending bits and clears them
++     * (virtio 1.2, 4.1.4.5). No ISR capability means no status to read. */
++    if (v->isr != NULL)
++        (void)*(volatile uint8_t *)v->isr;
++}
++
++static uint64_t dev_features(const struct vio_pci *v)
++{
++    set32(v, VPCI_COMMON_DEVICE_FEATURE_SELECT, 0);
++    uint64_t lo = cfg32(v, VPCI_COMMON_DEVICE_FEATURE);
++    set32(v, VPCI_COMMON_DEVICE_FEATURE_SELECT, 1);
++    return lo | ((uint64_t)cfg32(v, VPCI_COMMON_DEVICE_FEATURE) << 32u);
++}
++
++static int reset_device(const struct vio_pci *v)
++{
++    set8(v, VPCI_COMMON_DEVICE_STATUS, 0);
++    /* The device must read back 0 before the driver continues (3.1.1). */
++    for (int i = 0; cfg8(v, VPCI_COMMON_DEVICE_STATUS) != 0; i++) {
++        if (i == 1000)
++            return -EIO;
++        usleep(1000);
++    }
++    return 0;
++}
++
++/* --- MSI-X --------------------------------------------------------------- */
++
++/* Program MSI-X by hand. With DO_BUS_CONFIG=no the QNX PCI server does not
++ * allocate MSI vectors, so pci_device_cfg_cap_enable() and its friends fail;
++ * the kernel's MSI range is claimed from the resource database and the table
++ * entry is written through the BAR instead. When anything here does not work
++ * out, the caller falls back to the INTx line the firmware assigned.
++ *
++ * Two constants come from the kernel's boot log, which is the only place they
++ * are published: the MSI IRQ range starts at 0x100 and the first APIC vector
++ * used for it is 78. Both are readable there ("MSI interrupt = 0x100", "MSI
++ * vector no = 78"), and this is the fallback path, not the default one. */
++#define VPCI_MSI_IRQ_BASE 0x100u
++#define VPCI_MSI_VECTOR_BASE 78u
++
++static int msix_setup(struct vio_pci *v, const vpci_caps_t *caps)
++{
++    uint16_t ctrl = 0;
++    uint32_t bir_off = 0;
++    uint8_t table_bar;
++    uint32_t table_off;
++    const uint32_t irq = VPCI_MSI_IRQ_BASE;
++
++    if (!caps->have_msix)
++        return -1;
++    if (cfg_read(v, caps->msix_off + 2u, &ctrl, sizeof ctrl) != 0)
++        return -1;
++    if (cfg_read(v, caps->msix_off + 4u, &bir_off, sizeof bir_off) != 0)
++        return -1;
++    table_bar = (uint8_t)(bir_off & 0x07u);
++    table_off = bir_off & ~0x07u;
++    if (table_bar > 5u || v->bar[table_bar] == NULL)
++        return -1;
++
++    rsrc_request_t req;
++    memset(&req, 0, sizeof req);
++    req.length = 1;
++    req.start = irq;
++    req.end = irq;
++    req.flags = RSRCDBMGR_IRQ | RSRCDBMGR_FLAG_RANGE;
++    if (rsrcdbmgr_attach(&req, 1) != EOK)
++        return -1;
++
++    /* Table entry 0: message address, message data (the APIC vector), then
++     * the control word with its mask bit. */
++    volatile uint32_t *entry = (volatile uint32_t *)(v->bar[table_bar] + table_off);
++    entry[3] = 1u;                                             /* mask */
++    entry[0] = 0xFEE00000u;                                    /* APIC, physical, dest 0 */
++    entry[1] = 0u;
++    entry[2] = VPCI_MSI_VECTOR_BASE + (irq - VPCI_MSI_IRQ_BASE);
++    entry[3] = 0u;                                             /* unmask */
++
++    /* Enable with the function mask set, then clear it (PCI 3.0, 6.8.2). */
++    uint16_t out = 0;
++    (void)pci_device_cfg_wr16(v->hdl, caps->msix_off + 2u, 0xC000u, &out);
++    (void)pci_device_cfg_wr16(v->hdl, caps->msix_off + 2u, 0x8000u, &out);
++
++    pci_cmd_t cmd = 0;
++    if (pci_device_read_cmd(v->bdf, &cmd) == PCI_ERR_OK && (cmd & 0x0400u) == 0u) {
++        pci_cmd_t after = 0;
++        (void)pci_device_write_cmd(v->hdl, (pci_cmd_t)(cmd | 0x0400u), &after); /* INTx off */
++    }
++
++    v->irq = (int)irq;
++    v->msix = true;
++    logv(v, "MSI-X entry 0 programmed, irq %u\n", irq);
++    return 0;
++}
++
++static int intx_setup(struct vio_pci *v)
++{
++    pci_irq_t irqs[4];
++    int_t nirq = 1;
++
++    memset(irqs, 0, sizeof irqs);
++    if (pci_device_read_irq(v->hdl, &nirq, irqs) != PCI_ERR_OK || nirq < 1)
++        return -EIO;
++    v->irq = (int)irqs[0];
++    v->msix = false;
++    return 0;
++}
++
++/* --- discovery ----------------------------------------------------------- */
++
++static int claim_tag(struct vio_pci *v, const char *tag)
++{
++    char name[sizeof VPCI_CLAIM_PREFIX + VPCI_TAG_MAX];
++    snprintf(name, sizeof name, VPCI_CLAIM_PREFIX "%s", tag);
++    v->claim = name_attach(NULL, name, 0);
++    if (v->claim == NULL)
++        return errno == EEXIST ? -EBUSY : -errno;
++    return 0;
++}
++
++static int read_tag(const struct vio_pci *v, char *buf, size_t cap)
++{
++    if (v->devcfg == NULL)
++        return -EIO;
++    uint16_t len = *(volatile uint16_t *)v->devcfg;
++    if (len == 0u || (size_t)len + 1u > cap || len > VPCI_TAG_MAX)
++        return -EIO;
++    for (uint16_t i = 0; i < len; i++)
++        buf[i] = (char)*(volatile uint8_t *)(v->devcfg + 2u + i);
++    buf[len] = '\0';
++    return 0;
++}
++
++/* Map the BARs the capabilities name. A BAR the PCI server did not size gets
++ * one page, which is what happens with DO_BUS_CONFIG=no for the MSI-X table. */
++static int map_bars(struct vio_pci *v)
++{
++    pci_ba_t bars[6];
++    int_t nba = 6;
++
++    memset(bars, 0, sizeof bars);
++    if (pci_device_read_ba(v->hdl, &nba, bars, pci_reqType_e_UNSPECIFIED) != PCI_ERR_OK)
++        return -EIO;
++    for (int_t i = 0; i < nba; i++) {
++        uint8_t num = (uint8_t)bars[i].bar_num;
++        if (num > 5u || v->bar[num] != NULL)
++            continue;
++        size_t size = (size_t)bars[i].size;
++        if (size == 0u)
++            size = 4096u;
++        void *m = mmap_device_memory(NULL, size, PROT_READ | PROT_WRITE | PROT_NOCACHE, 0,
++                                     (uint64_t)bars[i].addr);
++        if (m == MAP_FAILED)
++            return -errno;
++        v->bar[num] = m;
++        v->bar_len[num] = size;
++    }
++    return 0;
++}
++
++static int attach_bars(struct vio_pci *v, const vpci_caps_t *caps)
++{
++    if (v->bar[caps->common.bar] == NULL || v->bar[caps->notify.bar] == NULL)
++        return -ENODEV;
++    v->common = v->bar[caps->common.bar] + caps->common.offset;
++    v->notify = v->bar[caps->notify.bar] + caps->notify.offset;
++    v->notify_mult = caps->notify.notify_off_multiplier;
++    if (caps->have_isr && v->bar[caps->isr.bar] != NULL)
++        v->isr = v->bar[caps->isr.bar] + caps->isr.offset;
++    if (caps->have_device && v->bar[caps->device.bar] != NULL)
++        v->devcfg = v->bar[caps->device.bar] + caps->device.offset;
++    return 0;
++}
++
++static void release(struct vio_pci *v)
++{
++    for (unsigned i = 0; i < 6u; i++) {
++        if (v->bar[i] != NULL) {
++            munmap_device_memory((void *)v->bar[i], v->bar_len[i]);
++            v->bar[i] = NULL;
++        }
++    }
++    if (v->hdl != NULL) {
++        pci_device_detach(v->hdl);
++        v->hdl = NULL;
++    }
++    v->common = NULL;
++    v->notify = NULL;
++    v->isr = NULL;
++    v->devcfg = NULL;
++}
++
++static int find_device(struct vio_pci *v, const char *want)
++{
++    vpci_caps_t caps;
++    char tag[VPCI_TAG_MAX];
++    pci_err_t err = PCI_ERR_OK;
++
++    v->bdf = pci_device_find(0u, VPCI_VENDOR_ID, VPCI_PCI_DID_MODERN, PCI_CCODE_ANY);
++    if (v->bdf == PCI_BDF_NONE)
++        v->bdf = pci_device_find(0u, VPCI_VENDOR_ID, VPCI_PCI_DID_LEGACY, PCI_CCODE_ANY);
++    if (v->bdf == PCI_BDF_NONE)
++        return -ENODEV;
++
++    v->hdl = pci_device_attach(v->bdf, pci_attachFlags_e_OWNER, &err);
++    if (err != PCI_ERR_OK || v->hdl == NULL) {
++        v->hdl = NULL;
++        return -EIO;
++    }
++    /* pci_device_attach() does not enable bus mastering; without it the
++     * device cannot DMA into the ring. */
++    pci_cmd_t cmd = 0;
++    if (pci_device_read_cmd(v->bdf, &cmd) == PCI_ERR_OK) {
++        const pci_cmd_t needed = 0x06u; /* memory space + bus master */
++        if ((cmd & needed) != needed) {
++            pci_cmd_t after = 0;
++            if (pci_device_write_cmd(v->hdl, (pci_cmd_t)(cmd | needed), &after) != PCI_ERR_OK)
++                return -EIO;
++        }
++    }
++
++    if (vpci_caps_scan(cfg_read, v, &caps) != 0 || !vpci_caps_usable(&caps))
++        return -ENODEV;
++    logv(v, "caps: common %u@0x%" PRIx32 " notify %u@0x%" PRIx32 " x%" PRIu32 "\n",
++         caps.common.bar, caps.common.offset, caps.notify.bar, caps.notify.offset,
++         caps.notify.notify_off_multiplier);
++
++    int rc = map_bars(v);
++    if (rc == 0)
++        rc = attach_bars(v, &caps);
++    if (rc != 0)
++        return rc;
++
++    if (msix_setup(v, &caps) != 0)
++        rc = intx_setup(v);
++    if (rc != 0)
++        return rc;
++    logv(v, "irq %d (%s)\n", v->irq, v->msix ? "MSI-X" : "INTx");
++
++    /* The mount tag is only readable once the device offered the feature;
++     * reading device config during feature negotiation is allowed (3.1.1). */
++    if ((dev_features(v) & VPCI_9P_F_MOUNT_TAG) == 0u)
++        return -ENODEV;
++    if (read_tag(v, tag, sizeof tag) != 0)
++        return -EIO;
++    logv(v, "tag \"%s\"\n", tag);
++    return strcmp(tag, want) == 0 ? 0 : -ENODEV;
++}
++
++/* --- device setup -------------------------------------------------------- */
++
++static int negotiate(struct vio_pci *v)
++{
++    uint64_t dev = dev_features(v);
++    uint64_t want = VPCI_9P_F_MOUNT_TAG;
++    /* The modern PCI interface is version 1 by definition (4.1.2): a device
++     * that does not offer VIRTIO_F_VERSION_1 is a transitional one we cannot
++     * drive through the modern interface. */
++    if ((dev & VPCI_F_VERSION_1) == 0u)
++        return -EIO;
++    want |= VPCI_F_VERSION_1;
++
++    set8(v, VPCI_COMMON_DEVICE_STATUS, VSTAT_ACK);
++    set8(v, VPCI_COMMON_DEVICE_STATUS, VSTAT_ACK | VSTAT_DRIVER);
++    uint64_t drv = dev & want;
++    set32(v, VPCI_COMMON_DRIVER_FEATURE_SELECT, 0);
++    set32(v, VPCI_COMMON_DRIVER_FEATURE, (uint32_t)drv);
++    set32(v, VPCI_COMMON_DRIVER_FEATURE_SELECT, 1);
++    set32(v, VPCI_COMMON_DRIVER_FEATURE, (uint32_t)(drv >> 32u));
++    set8(v, VPCI_COMMON_DEVICE_STATUS, VSTAT_ACK | VSTAT_DRIVER | VSTAT_FEATURES_OK);
++    if ((cfg8(v, VPCI_COMMON_DEVICE_STATUS) & VSTAT_FEATURES_OK) == 0u)
++        return -EIO;
++    logv(v, "features: device 0x%016" PRIx64 " driver 0x%016" PRIx64 "\n", dev, drv);
++    return 0;
++}
++
++static int setup_queue(struct vio_pci *v)
++{
++    set16(v, VPCI_COMMON_QUEUE_SELECT, 0);
++    uint16_t max = cfg16(v, VPCI_COMMON_QUEUE_SIZE);
++    if (max < 2u || cfg16(v, VPCI_COMMON_QUEUE_ENABLE) != 0u)
++        return -EIO;
++    v->qsize = vpci_queue_size_clamp(max, VPCI_Q_LIMIT);
++    if (v->nreqs > v->qsize / 2u)
++        v->nreqs = v->qsize / 2u;
++
++    int rc = vpci_ring_alloc(v);
++    if (rc != 0)
++        return rc;
++
++    set16(v, VPCI_COMMON_QUEUE_SIZE, v->qsize);
++    set64(v, VPCI_COMMON_QUEUE_DESC, v->ring_phys);
++    set64(v, VPCI_COMMON_QUEUE_DRIVER, v->ring_phys + 16u * v->qsize);
++    set64(v, VPCI_COMMON_QUEUE_DEVICE, v->ring_phys + vpci_used_off(v->qsize));
++    v->notify_off = cfg16(v, VPCI_COMMON_QUEUE_NOTIFY_OFF);
++    set16(v, VPCI_COMMON_QUEUE_ENABLE, 1);
++    logv(v, "queue 0: size %u (max %u), %u slots of 2 x %" PRIu32 " bytes, notify_off %u\n",
++         v->qsize, max, v->nreqs, v->bufsize, v->notify_off);
++    return 0;
++}
++
++/* --- open ---------------------------------------------------------------- */
++
++int vio9p_pci_open(const char *mount_tag, const vio9p_options_t *opt, fs9p_transport_t *out)
++{
++    if (mount_tag == NULL || mount_tag[0] == '\0' || strlen(mount_tag) >= VPCI_TAG_MAX ||
++        opt == NULL || opt->msize < 4096u)
++        return -EINVAL;
++
++    struct vio_pci *v = calloc(1, sizeof *v); /* once per mount, at startup */
++    if (v == NULL)
++        return -ENOMEM;
++    v->opt = *opt;
++    v->bufsize = (uint32_t)((opt->msize + VPCI_PAGE - 1u) & ~(VPCI_PAGE - 1u));
++    v->nreqs = opt->slots < 1 ? 1 : opt->slots > VIO9P_MAX_SLOTS ? VIO9P_MAX_SLOTS : opt->slots;
++
++    int rc = claim_tag(v, mount_tag);
++    if (rc == 0)
++        rc = find_device(v, mount_tag);
++    if (rc == 0)
++        rc = negotiate(v);
++    if (rc == 0)
++        rc = setup_queue(v);
++    if (rc == 0)
++        rc = vpci_ist_start(v);
++    if (rc == 0) {
++        set8(v, VPCI_COMMON_DEVICE_STATUS,
++             (uint8_t)(cfg8(v, VPCI_COMMON_DEVICE_STATUS) | VSTAT_DRIVER_OK));
++        out->ops = vpci_transport_ops();
++        out->impl = v;
++        return 0;
++    }
++
++    if (v->common != NULL) {
++        set8(v, VPCI_COMMON_DEVICE_STATUS,
++             (uint8_t)(cfg8(v, VPCI_COMMON_DEVICE_STATUS) | VSTAT_FAILED));
++        (void)reset_device(v);
++    }
++    vpci_ring_free(v);
++    release(v);
++    if (v->claim != NULL)
++        (void)name_detach(v->claim, 0);
++    free(v);
++    return rc;
++}
+diff --git a/src/virtio_pci_caps.c b/src/virtio_pci_caps.c
+new file mode 100644
+index 0000000..39c88cf
+--- /dev/null
++++ b/src/virtio_pci_caps.c
+@@ -0,0 +1,199 @@
++/*
++ * virtio PCI capability decoding. See virtio_pci_caps.h for what this is for
++ * and for the specification references.
++ */
++#include "virtio_pci_caps.h"
++
++#include <string.h>
++
++/* Longest capability chain we are willing to follow: a well-formed device
++ * has a handful, and a cycle must not hang the driver. */
++#define VPCI_CHAIN_MAX 48u
++
++/* A virtio capability is at least 16 bytes: the 4-byte PCI capability
++ * header, the bar byte, the 3 padding bytes, then offset and length. */
++#define VPCI_CAP_MIN_LEN 16u
++
++/* Config space is little-endian, as are both QNX targets (x86_64 and
++ * aarch64le), so the words are read straight into the caller's struct. */
++
++static int rd_u8(vpci_cfg_read_fn read, void *ctx, uint32_t off, uint8_t *v)
++{
++    return read(ctx, off, v, sizeof *v);
++}
++
++static int rd_u32(vpci_cfg_read_fn read, void *ctx, uint32_t off, uint32_t *v)
++{
++    return read(ctx, off, v, sizeof *v);
++}
++
++static void store(vpci_caps_t *out, const vpci_cap_t *cap)
++{
++    switch (cap->cfg_type) {
++    case VPCI_CFG_COMMON:
++        out->common = *cap;
++        out->have_common = true;
++        break;
++    case VPCI_CFG_NOTIFY:
++        out->notify = *cap;
++        out->have_notify = true;
++        break;
++    case VPCI_CFG_ISR:
++        out->isr = *cap;
++        out->have_isr = true;
++        break;
++    case VPCI_CFG_DEVICE:
++        out->device = *cap;
++        out->have_device = true;
++        break;
++    case VPCI_CFG_PCI:
++        out->pci = *cap;
++        out->have_pci = true;
++        break;
++    default:
++        break; /* a future capability type: ignore, as the spec requires */
++    }
++}
++
++/* Decode one vendor-specific capability at `off`. `hdr` holds its first four
++ * bytes: cap_vndr, cap_next, cap_len, cfg_type. */
++static void decode_vendor(vpci_cfg_read_fn read, void *ctx, uint32_t off,
++                          const uint8_t *hdr, vpci_caps_t *out)
++{
++    const uint8_t cap_len = hdr[2];
++    vpci_cap_t cap;
++    uint32_t bar_word = 0;
++    uint32_t offset = 0;
++    uint32_t length = 0;
++    uint32_t multiplier = 0;
++
++    if (cap_len < VPCI_CAP_MIN_LEN)
++        return;
++    if (hdr[3] < VPCI_CFG_COMMON || hdr[3] > VPCI_CFG_PCI)
++        return;
++    if (rd_u32(read, ctx, off + 4u, &bar_word) != 0)
++        return;
++    if (rd_u32(read, ctx, off + 8u, &offset) != 0)
++        return;
++    if (rd_u32(read, ctx, off + 12u, &length) != 0)
++        return;
++
++    cap.cfg_type = hdr[3];
++    cap.bar = (uint8_t)(bar_word & 0xFFu);
++    cap.offset = offset;
++    cap.length = length;
++    cap.notify_off_multiplier = 0;
++    /* Only the notification capability carries a multiplier, and only when
++     * the capability is long enough to hold it (virtio 1.2, 4.1.4.4). */
++    if (cap.cfg_type == VPCI_CFG_NOTIFY && cap_len >= 20u) {
++        if (rd_u32(read, ctx, off + 16u, &multiplier) != 0)
++            return;
++        cap.notify_off_multiplier = multiplier;
++    }
++    if (cap.bar > 5u || cap.length == 0u)
++        return;
++    store(out, &cap);
++}
++
++int vpci_caps_scan_chain(vpci_cfg_read_fn read, void *ctx, vpci_caps_t *out)
++{
++    uint16_t status = 0;
++    uint8_t off = 0;
++
++    if (read == NULL || out == NULL)
++        return -1;
++    memset(out, 0, sizeof *out);
++    if (read(ctx, 0x06u, &status, sizeof status) != 0)
++        return -1;
++    if ((status & 0x10u) == 0u)
++        return 0; /* the device has no capability list at all */
++    if (rd_u8(read, ctx, 0x34u, &off) != 0)
++        return -1;
++
++    for (unsigned hops = 0; hops < VPCI_CHAIN_MAX && off >= 0x40u; hops++) {
++        uint8_t hdr[4];
++        if (read(ctx, off, hdr, sizeof hdr) != 0)
++            break;
++        if (hdr[0] == 0u)
++            break;
++        if (hdr[0] == VPCI_CAP_ID_VENDOR)
++            decode_vendor(read, ctx, off, hdr, out);
++        else if (hdr[0] == VPCI_CAP_ID_MSIX) {
++            out->msix_off = off;
++            out->have_msix = true;
++        }
++        if (hdr[1] == 0u || hdr[1] == off)
++            break; /* end of list, or a self-loop */
++        off = hdr[1];
++    }
++    return 0;
++}
++
++int vpci_caps_scan_linear(vpci_cfg_read_fn read, void *ctx, vpci_caps_t *out)
++{
++    if (read == NULL || out == NULL)
++        return -1;
++    memset(out, 0, sizeof *out);
++
++    for (uint32_t off = 0x40u; off <= 0xFCu; off += 4u) {
++        uint32_t word = 0;
++        uint8_t hdr[4];
++        if (rd_u32(read, ctx, off, &word) != 0)
++            return -1;
++        hdr[0] = (uint8_t)(word & 0xFFu);
++        hdr[1] = (uint8_t)((word >> 8u) & 0xFFu);
++        hdr[2] = (uint8_t)((word >> 16u) & 0xFFu);
++        hdr[3] = (uint8_t)((word >> 24u) & 0xFFu);
++        if (hdr[0] == VPCI_CAP_ID_MSIX) {
++            out->msix_off = off;
++            out->have_msix = true;
++            /* The MSI-X capability is 12 bytes long. */
++            off += 8u;
++            continue;
++        }
++        if (hdr[0] != VPCI_CAP_ID_VENDOR)
++            continue;
++        decode_vendor(read, ctx, off, hdr, out);
++        /* Skip the interior dwords so a length or offset field that happens
++         * to start with 0x09 is not mistaken for another capability. */
++        if (hdr[2] >= VPCI_CAP_MIN_LEN)
++            off += ((uint32_t)hdr[2] + 3u) / 4u * 4u - 4u;
++    }
++    return 0;
++}
++
++int vpci_caps_scan(vpci_cfg_read_fn read, void *ctx, vpci_caps_t *out)
++{
++    vpci_caps_t chain;
++
++    if (vpci_caps_scan_chain(read, ctx, &chain) == 0 && vpci_caps_usable(&chain)) {
++        *out = chain;
++        return 0;
++    }
++    return vpci_caps_scan_linear(read, ctx, out);
++}
++
++bool vpci_caps_usable(const vpci_caps_t *caps)
++{
++    return caps != NULL && caps->have_common && caps->have_notify;
++}
++
++uint32_t vpci_caps_notify_addr(const vpci_caps_t *caps, uint16_t queue_notify_off)
++{
++    if (caps == NULL || !caps->have_notify)
++        return 0;
++    /* virtio 1.2, 4.1.4.4: the multiplier may be zero, in which case every
++     * queue shares the first word (the legacy-compatible layout). */
++    return caps->notify.offset + (uint32_t)queue_notify_off * caps->notify.notify_off_multiplier;
++}
++
++uint16_t vpci_queue_size_clamp(uint16_t device_max, uint16_t wanted)
++{
++    uint16_t size = wanted < device_max ? wanted : device_max;
++
++    if (size < 2u)
++        return 2u;
++    while ((size & (uint16_t)(size - 1u)) != 0u)
++        size = (uint16_t)(size & (uint16_t)(size - 1u));
++    return size;
++}
+diff --git a/src/virtio_pci_caps.h b/src/virtio_pci_caps.h
+new file mode 100644
+index 0000000..3a27f45
+--- /dev/null
++++ b/src/virtio_pci_caps.h
+@@ -0,0 +1,134 @@
++/*
++ * virtio PCI capability decoding, without touching a bus.
++ *
++ * A modern virtio PCI device describes itself with vendor-specific PCI
++ * capabilities (virtio 1.2, 4.1.4): one for the common configuration
++ * structure, one for the notification area, one for the ISR byte, one for
++ * the device-specific configuration, and optionally one for an alternate
++ * config-space access window. Each capability names a BAR, an offset inside
++ * that BAR and a length, so a driver can map the BAR and then compute every
++ * address it needs.
++ *
++ * This file holds only that arithmetic: it reads config space through a
++ * callback the caller supplies and fills in a vpci_caps_t. No QNX header, no
++ * mmap, no allocation. That is what lets the decoder be unit-tested on a PC
++ * against a synthetic config space (tests/unit/test_virtio_pci_caps.c), and
++ * it keeps the transport itself (transport_virtio_pci.c) down to the parts
++ * that genuinely need the hardware.
++ *
++ * Two scan strategies are provided because QNX's libpci cannot always read
++ * the fields the standard one needs:
++ *
++ *   - vpci_caps_scan_chain() walks the PCI capability linked list, which
++ *     starts at config-space offset 0x34 and needs 8-bit reads there.
++ *   - vpci_caps_scan_linear() sweeps the 0x40..0xFF region with 32-bit
++ *     reads only, skipping the interior of each capability it recognises.
++ *     It is the fallback when pci_device_cfg_rd8() cannot be used below
++ *     0x40 or at unaligned offsets.
++ *
++ * vpci_caps_scan() tries the chain first and falls back to the linear sweep.
++ *
++ * Reference: OASIS virtio 1.2, 4.1.4 (PCI-specific capabilities) and 4.1.4.3
++ * (the common configuration structure layout).
++ */
++#ifndef FS9P_VIRTIO_PCI_CAPS_H
++#define FS9P_VIRTIO_PCI_CAPS_H
++
++#include <stdbool.h>
++#include <stddef.h>
++#include <stdint.h>
++
++/* PCI capability IDs we care about (PCI Local Bus 3.0, 6.7 and 6.8.2). */
++#define VPCI_CAP_ID_VENDOR 0x09u
++#define VPCI_CAP_ID_MSIX   0x11u
++
++/* virtio PCI capability types (virtio 1.2, 4.1.4.1). */
++#define VPCI_CFG_COMMON 1u
++#define VPCI_CFG_NOTIFY 2u
++#define VPCI_CFG_ISR    3u
++#define VPCI_CFG_DEVICE 4u
++#define VPCI_CFG_PCI    5u
++
++/* Offsets inside the common configuration structure (virtio 1.2, 4.1.4.3). */
++#define VPCI_COMMON_DEVICE_FEATURE_SELECT 0x00u
++#define VPCI_COMMON_DEVICE_FEATURE        0x04u
++#define VPCI_COMMON_DRIVER_FEATURE_SELECT 0x08u
++#define VPCI_COMMON_DRIVER_FEATURE        0x0Cu
++#define VPCI_COMMON_CONFIG_MSIX_VECTOR    0x10u
++#define VPCI_COMMON_NUM_QUEUES            0x12u
++#define VPCI_COMMON_DEVICE_STATUS         0x14u
++#define VPCI_COMMON_CONFIG_GENERATION     0x15u
++#define VPCI_COMMON_QUEUE_SELECT          0x16u
++#define VPCI_COMMON_QUEUE_SIZE            0x18u
++#define VPCI_COMMON_QUEUE_MSIX_VECTOR     0x1Au
++#define VPCI_COMMON_QUEUE_ENABLE          0x1Cu
++#define VPCI_COMMON_QUEUE_NOTIFY_OFF      0x1Eu
++#define VPCI_COMMON_QUEUE_DESC            0x20u
++#define VPCI_COMMON_QUEUE_DRIVER          0x28u
++#define VPCI_COMMON_QUEUE_DEVICE          0x30u
++#define VPCI_COMMON_LEN                   0x38u
++
++/* "No vector" sentinel for the *_msix_vector fields. */
++#define VPCI_MSI_NO_VECTOR 0xFFFFu
++
++/* The ISR byte (virtio 1.2, 4.1.4.5). */
++#define VPCI_ISR_QUEUE_INTR  0x01u
++#define VPCI_ISR_CONFIG     0x02u
++
++/* One decoded capability. */
++typedef struct {
++    uint8_t cfg_type;  /* VPCI_CFG_* */
++    uint8_t bar;       /* BAR index, 0..5 */
++    uint32_t offset;   /* byte offset inside that BAR */
++    uint32_t length;   /* bytes available from `offset` */
++    uint32_t notify_off_multiplier; /* NOTIFY only, 0 for the others */
++} vpci_cap_t;
++
++typedef struct {
++    vpci_cap_t common;
++    vpci_cap_t notify;
++    vpci_cap_t isr;
++    vpci_cap_t device;
++    vpci_cap_t pci; /* the alternate access window, usually absent */
++    bool have_common;
++    bool have_notify;
++    bool have_isr;
++    bool have_device;
++    bool have_pci;
++    /* Offset of the MSI-X capability in config space, 0 when absent. The
++     * transport programs that capability by hand on QNX, so it needs the
++     * offset rather than libpci's opaque capability handle. */
++    uint32_t msix_off;
++    bool have_msix;
++} vpci_caps_t;
++
++/* Reads `len` bytes of PCI configuration space at `off` into `dst`.
++ * Returns 0 on success, -1 on failure. */
++typedef int (*vpci_cfg_read_fn)(void *ctx, uint32_t off, void *dst, size_t len);
++
++/* True when the set is enough to drive a device: COMMON and NOTIFY are
++ * mandatory, the ISR byte and the device configuration are not (a device may
++ * have neither). */
++bool vpci_caps_usable(const vpci_caps_t *caps);
++
++/* Standard capability list walk. Returns 0 on success (caps possibly
++ * incomplete: check vpci_caps_usable()), -1 when config space could not be
++ * read at all. */
++int vpci_caps_scan_chain(vpci_cfg_read_fn read, void *ctx, vpci_caps_t *out);
++
++/* 32-bit-only sweep of 0x40..0xFF, for hosts that cannot read 0x34. */
++int vpci_caps_scan_linear(vpci_cfg_read_fn read, void *ctx, vpci_caps_t *out);
++
++/* Chain first, linear sweep as the fallback. */
++int vpci_caps_scan(vpci_cfg_read_fn read, void *ctx, vpci_caps_t *out);
++
++/* Address of the notification word for a queue, relative to the start of the
++ * BAR the NOTIFY capability names (virtio 1.2, 4.1.4.4). */
++uint32_t vpci_caps_notify_addr(const vpci_caps_t *caps, uint16_t queue_notify_off);
++
++/* Largest power of two <= min(device_max, wanted), and at least 2. A
++ * virtqueue size must be a power of two; asking for one that is not is a
++ * driver bug, so this rounds down instead of failing. */
++uint16_t vpci_queue_size_clamp(uint16_t device_max, uint16_t wanted);
++
++#endif /* FS9P_VIRTIO_PCI_CAPS_H */
+diff --git a/src/virtio_pci_int.h b/src/virtio_pci_int.h
+new file mode 100644
+index 0000000..f7340dc
+--- /dev/null
++++ b/src/virtio_pci_int.h
+@@ -0,0 +1,120 @@
++/*
++ * Private state of the virtio-pci transport.
++ *
++ * Split in two files so that neither grows past what a reviewer reads in one
++ * sitting: transport_virtio_pci.c finds and configures the device (PCI, BARs,
++ * MSI-X, features, queue setup) and virtio_pci_ring.c owns the split virtqueue,
++ * the request slots and the interrupt service thread. The resource manager
++ * never sees any of this: it only knows transport.h.
++ */
++#ifndef FS9P_VIRTIO_PCI_INT_H
++#define FS9P_VIRTIO_PCI_INT_H
++
++#include <pthread.h>
++#include <stdatomic.h>
++#include <stdbool.h>
++#include <stdint.h>
++
++#include <pci/pci.h>
++#include <sys/dispatch.h>
++
++#include "transport.h"
++
++#define VPCI_TAG_MAX   256u
++#define VPCI_CLAIM_PREFIX "fs-9p/"
++/* 16 entries: VIO9P_MAX_SLOTS two-descriptor chains. */
++#define VPCI_Q_LIMIT   16u
++#define VPCI_PAGE      4096u
++
++#define VPCI_F_VERSION_1    (1ull << 32)
++#define VPCI_9P_F_MOUNT_TAG (1ull << 0)
++
++#define VPCI_DESC_F_NEXT  1u
++#define VPCI_DESC_F_WRITE 2u
++
++struct vpci_desc {
++    uint64_t addr;
++    uint32_t len;
++    uint16_t flags;
++    uint16_t next;
++};
++
++struct vpci_used_elem {
++    uint32_t id;
++    uint32_t len;
++};
++
++/* One request slot: its buffers and where its descriptor chain is. All the
++ * flags are under vio_pci.lock. */
++struct vpci_req {
++    uint8_t *mem; /* request buffer, then reply buffer: 2 x bufsize */
++    uint64_t phys;
++    size_t mem_len;
++    bool taken;   /* owned by a caller between get() and put() */
++    bool pending; /* chain handed to the device and not returned yet */
++    bool done;    /* returned by the device; len is valid */
++    bool stale;   /* timed out: becomes free when the device returns it */
++    uint32_t len; /* reply length the device wrote */
++};
++
++struct vio_pci {
++    vio9p_options_t opt;
++    name_attach_t *claim; /* held for the life of the process */
++    pci_bdf_t bdf;
++    pci_devhdl_t hdl;
++    volatile uint8_t *bar[6];
++    size_t bar_len[6];
++
++    /* virtio PCI capabilities, resolved to pointers into the mapped BARs. */
++    volatile uint8_t *common;
++    volatile uint8_t *notify;
++    volatile uint8_t *isr;
++    volatile uint8_t *devcfg;
++    uint16_t notify_off;
++    uint32_t notify_mult;
++
++    int irq;
++    bool msix;
++
++    /* Ring memory (physically contiguous) and the request slots. Slot i
++     * owns descriptors 2i (request) and 2i+1 (reply). */
++    uint8_t *ring;
++    uint64_t ring_phys;
++    size_t ring_len;
++    uint32_t bufsize;
++    uint16_t qsize;
++    struct vpci_req reqs[VIO9P_MAX_SLOTS];
++    unsigned nreqs;
++
++    volatile struct vpci_desc *desc;
++    volatile uint16_t *avail;    /* flags, idx, ring[qsize], used_event */
++    volatile uint16_t *used_hdr; /* flags, idx */
++    volatile struct vpci_used_elem *used_ring;
++    uint16_t avail_idx;
++    uint16_t last_used;
++    bool broken; /* the device returned something it didn't own: give up */
++    bool closed;
++    bool stop;
++
++    pthread_mutex_t lock;
++    pthread_cond_t cond;
++    bool ist_ready;
++    int ist_err;
++    pthread_t ist;
++};
++
++/* transport_virtio_pci.c: acknowledge a device interrupt by reading the ISR
++ * byte (a read returns the pending bits and clears them). */
++void vpci_ack_interrupt(struct vio_pci *v);
++
++/* virtio_pci_ring.c */
++int vpci_ring_alloc(struct vio_pci *v);
++void vpci_ring_free(struct vio_pci *v);
++int vpci_ist_start(struct vio_pci *v);
++void vpci_reap_locked(struct vio_pci *v);
++const struct fs9p_transport_ops *vpci_transport_ops(void);
++/* Offset of the used ring inside the contiguous ring block, for the queue
++ * address registers. */
++size_t vpci_used_off(uint16_t qsize);
++
++#endif /* FS9P_VIRTIO_PCI_INT_H */
+diff --git a/src/virtio_pci_ring.c b/src/virtio_pci_ring.c
+new file mode 100644
+index 0000000..a649745
+--- /dev/null
++++ b/src/virtio_pci_ring.c
+@@ -0,0 +1,411 @@
++/*
++ * Split virtqueue, request slots and interrupt service thread for the
++ * virtio-pci transport.
++ *
++ * The algorithms are the ones already used by transport_virtio.c for
++ * virtio-mmio; only the notification path differs (a write to the address the
++ * NOTIFY capability designates, instead of a register inside the device
++ * window). Keeping them in a second file keeps both readable; a later change
++ * can move the common part into one module and have both transports use it,
++ * which is easier to review as its own patch than mixed with a new bus.
++ *
++ * Completion is always decided from used->idx, never from the wakeup: spurious
++ * interrupt-thread wakeups were observed with virtio-mmio, and the same rule
++ * costs nothing here. Chains come back in any order; the head descriptor
++ * identifies the slot.
++ *
++ * References: OASIS virtio 1.2 - 2.7 split virtqueues, 2.7.13 suppressing
++ * notifications, 4.1.4.4 notification.
++ */
++#include <errno.h>
++#include <inttypes.h>
++#include <stdatomic.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <string.h>
++#include <time.h>
++#include <unistd.h>
++
++#include <sys/cpuinline.h> /* __cpu_membarrier() */
++#include <sys/mman.h>
++#include <sys/neutrino.h>
++
++#include "virtio_pci_int.h"
++
++static size_t align_up(size_t v, size_t a)
++{
++    return (v + a - 1) & ~(a - 1);
++}
++
++static size_t vring_used_off(uint16_t n)
++{
++    return align_up(16u * n + 2u * (3u + n), VPCI_PAGE);
++}
++
++size_t vpci_used_off(uint16_t qsize)
++{
++    return vring_used_off(qsize);
++}
++
++static size_t vring_bytes(uint16_t n)
++{
++    return vring_used_off(n) + align_up(2u * 3u + 8u * n, VPCI_PAGE);
++}
++
++/* Physically contiguous, normal cacheable memory: QEMU DMA is coherent, and
++ * on x86_64 without an IOMMU the device address is the guest physical one.
++ * MAP_PHYS|MAP_ANON needs no special ability. */
++static int dma_map(size_t len, uint8_t **mem, uint64_t *phys)
++{
++    void *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_PHYS | MAP_ANON, NOFD, 0);
++    if (p == MAP_FAILED)
++        return -errno;
++    off64_t ph;
++    size_t contig;
++    if (mem_offset64(p, NOFD, len, &ph, &contig) == -1) {
++        int e = errno;
++        munmap(p, len);
++        return -e;
++    }
++    if (contig < len || (ph & (VPCI_PAGE - 1)) != 0) {
++        munmap(p, len);
++        return -ENOMEM;
++    }
++    memset(p, 0, len);
++    *mem = p;
++    *phys = (uint64_t)ph;
++    return 0;
++}
++
++int vpci_ring_alloc(struct vio_pci *v)
++{
++    v->ring_len = vring_bytes(v->qsize);
++    int rc = dma_map(v->ring_len, &v->ring, &v->ring_phys);
++    if (rc != 0)
++        return rc;
++    v->desc = (volatile struct vpci_desc *)v->ring;
++    v->avail = (volatile uint16_t *)(v->ring + 16u * v->qsize);
++    v->used_hdr = (volatile uint16_t *)(v->ring + vring_used_off(v->qsize));
++    v->used_ring = (volatile struct vpci_used_elem *)(v->ring + vring_used_off(v->qsize) + 4u);
++    for (unsigned i = 0; i < v->nreqs; i++) {
++        struct vpci_req *r = &v->reqs[i];
++        r->mem_len = 2u * (size_t)v->bufsize;
++        rc = dma_map(r->mem_len, &r->mem, &r->phys);
++        if (rc != 0)
++            return rc;
++        /* The chain never changes, only the request length. */
++        v->desc[2 * i].addr = r->phys;
++        v->desc[2 * i].flags = VPCI_DESC_F_NEXT;
++        v->desc[2 * i].next = (uint16_t)(2 * i + 1);
++        v->desc[2 * i + 1].addr = r->phys + v->bufsize;
++        v->desc[2 * i + 1].len = v->bufsize;
++        v->desc[2 * i + 1].flags = VPCI_DESC_F_WRITE;
++        v->desc[2 * i + 1].next = 0;
++    }
++    return 0;
++}
++
++void vpci_ring_free(struct vio_pci *v)
++{
++    for (unsigned i = 0; i < v->nreqs; i++)
++        if (v->reqs[i].mem != NULL)
++            munmap(v->reqs[i].mem, v->reqs[i].mem_len);
++    if (v->ring != NULL)
++        munmap(v->ring, v->ring_len);
++}
++
++/* Take every chain the device has returned off the used ring and mark its
++ * slot done; wake the waiters. Called with the lock held. */
++void vpci_reap_locked(struct vio_pci *v)
++{
++    /* Acquire: read used->idx before the used elements and the replies. */
++    uint16_t idx = v->used_hdr[1];
++    atomic_thread_fence(memory_order_acquire);
++    bool any = false;
++    while (v->last_used != idx) {
++        volatile struct vpci_used_elem *e = &v->used_ring[v->last_used % v->qsize];
++        uint32_t id = e->id;
++        uint32_t len = e->len;
++        v->last_used++;
++        unsigned i = id / 2u;
++        if ((id & 1u) != 0 || i >= v->nreqs || !v->reqs[i].pending || len > v->bufsize) {
++            v->broken = true; /* not a chain we gave it */
++            continue;
++        }
++        struct vpci_req *r = &v->reqs[i];
++        if (r->stale) {
++            /* Its caller gave up; the buffers are ours again. */
++            r->stale = false;
++            r->pending = false;
++        } else {
++            r->len = len;
++            r->done = true;
++        }
++        any = true;
++    }
++    if (any)
++        pthread_cond_broadcast(&v->cond);
++}
++
++static void *ist_main(void *arg)
++{
++    struct vio_pci *v = arg;
++    /* The calling thread becomes the IST (PROCMGR_AID_INTERRUPT). */
++    int id = InterruptAttachThread(v->irq, 0);
++    pthread_mutex_lock(&v->lock);
++    v->ist_err = id == -1 ? errno : 0;
++    v->ist_ready = true;
++    pthread_cond_broadcast(&v->cond);
++    pthread_mutex_unlock(&v->lock);
++    if (id == -1)
++        return NULL;
++
++    for (;;) {
++        if (InterruptWait(_NTO_INTR_WAIT_FLAGS_UNMASK, NULL) == -1) {
++            if (errno == EINTR)
++                continue;
++            break;
++        }
++        /* Reading the ISR byte clears the bits; MSI-X needs nothing more. */
++        vpci_ack_interrupt(v);
++        pthread_mutex_lock(&v->lock);
++        bool stop = v->stop;
++        vpci_reap_locked(v);
++        pthread_mutex_unlock(&v->lock);
++        if (stop)
++            break;
++    }
++    InterruptDetach(id);
++    return NULL;
++}
++
++int vpci_ist_start(struct vio_pci *v)
++{
++    pthread_condattr_t ca;
++    pthread_condattr_init(&ca);
++    pthread_condattr_setclock(&ca, CLOCK_MONOTONIC);
++    int rc = pthread_cond_init(&v->cond, &ca);
++    pthread_condattr_destroy(&ca);
++    if (rc != 0)
++        return -rc;
++    if ((rc = pthread_mutex_init(&v->lock, NULL)) != 0)
++        return -rc;
++    if (v->opt.poll)
++        return 0;
++    if ((rc = pthread_create(&v->ist, NULL, ist_main, v)) != 0)
++        return -rc;
++    /* The IST must be attached before the first notify, or the completion
++     * interrupt of the first request could be missed. */
++    pthread_mutex_lock(&v->lock);
++    while (!v->ist_ready)
++        pthread_cond_wait(&v->cond, &v->lock);
++    rc = v->ist_err;
++    pthread_mutex_unlock(&v->lock);
++    if (rc != 0) {
++        pthread_join(v->ist, NULL);
++        return -rc;
++    }
++    return 0;
++}
++
++/* --- transport ops ------------------------------------------------------- */
++
++static void deadline_after(struct timespec *ts, uint32_t ms)
++{
++    clock_gettime(CLOCK_MONOTONIC, ts);
++    ts->tv_sec += ms / 1000u;
++    ts->tv_nsec += (long)(ms % 1000u) * 1000000L;
++    if (ts->tv_nsec >= 1000000000L) {
++        ts->tv_sec++;
++        ts->tv_nsec -= 1000000000L;
++    }
++}
++
++static bool past(const struct timespec *dl)
++{
++    struct timespec now;
++    clock_gettime(CLOCK_MONOTONIC, &now);
++    return now.tv_sec > dl->tv_sec || (now.tv_sec == dl->tv_sec && now.tv_nsec >= dl->tv_nsec);
++}
++
++static bool req_free(const struct vpci_req *r)
++{
++    return !r->taken && !r->pending;
++}
++
++static int vpci_get(void *impl, unsigned *slot)
++{
++    struct vio_pci *v = impl;
++    /* Waiting for a slot is bounded by the request timeout too: if every slot
++     * is held by a request the device doesn't finish, callers get ETIMEDOUT
++     * instead of hanging. */
++    struct timespec dl = {0, 0};
++    if (v->opt.timeout_ms)
++        deadline_after(&dl, v->opt.timeout_ms);
++    pthread_mutex_lock(&v->lock);
++    for (;;) {
++        if (v->closed || v->broken) {
++            pthread_mutex_unlock(&v->lock);
++            return -EIO;
++        }
++        for (unsigned i = 0; i < v->nreqs; i++) {
++            if (req_free(&v->reqs[i])) {
++                v->reqs[i].taken = true;
++                pthread_mutex_unlock(&v->lock);
++                *slot = i;
++                return 0;
++            }
++        }
++        if (v->opt.timeout_ms && past(&dl)) {
++            pthread_mutex_unlock(&v->lock);
++            return -ETIMEDOUT;
++        }
++        if (v->opt.poll) {
++            vpci_reap_locked(v);
++            pthread_mutex_unlock(&v->lock);
++            usleep(100);
++            pthread_mutex_lock(&v->lock);
++        } else if (v->opt.timeout_ms) {
++            (void)pthread_cond_timedwait(&v->cond, &v->lock, &dl);
++        } else {
++            pthread_cond_wait(&v->cond, &v->lock);
++        }
++    }
++}
++
++static uint8_t *vpci_buf(void *impl, unsigned slot, size_t *cap)
++{
++    struct vio_pci *v = impl;
++    *cap = v->bufsize;
++    return v->reqs[slot].mem;
++}
++
++/* Ring the doorbell: write the queue index to the notification address the
++ * NOTIFY capability designates (virtio 1.2, 4.1.4.4). */
++static void notify(struct vio_pci *v)
++{
++    volatile uint16_t *bell =
++        (volatile uint16_t *)(v->notify + (uint32_t)v->notify_off * v->notify_mult);
++    *bell = 0;
++}
++
++static int vpci_rpc(void *impl, unsigned slot, size_t req_len, const uint8_t **resp,
++                    size_t *resp_len)
++{
++    struct vio_pci *v = impl;
++    struct vpci_req *r = &v->reqs[slot];
++    if (req_len < 7 || req_len > v->bufsize)
++        return -EINVAL;
++    struct timespec dl = {0, 0};
++    if (v->opt.timeout_ms)
++        deadline_after(&dl, v->opt.timeout_ms);
++
++    pthread_mutex_lock(&v->lock);
++    if (v->closed || v->broken) {
++        pthread_mutex_unlock(&v->lock);
++        return -EIO;
++    }
++    v->desc[2 * slot].len = (uint32_t)req_len;
++    v->avail[2 + (v->avail_idx % v->qsize)] = (uint16_t)(2 * slot);
++    r->pending = true;
++    r->done = false;
++    /* Release: descriptors and ring entry visible before idx (2.7.13). */
++    atomic_thread_fence(memory_order_release);
++    v->avail_idx++;
++    v->avail[1] = v->avail_idx;
++    /* The idx store (normal memory) must reach the device before the notify
++     * write (device memory); a C11 fence does not order against device
++     * memory, __cpu_membarrier() does. */
++    __cpu_membarrier();
++    notify(v);
++
++    int rc = 0;
++    for (;;) {
++        vpci_reap_locked(v);
++        if (r->done || v->broken)
++            break;
++        if (v->opt.poll) {
++            if (v->opt.timeout_ms && past(&dl)) {
++                rc = ETIMEDOUT;
++                break;
++            }
++            pthread_mutex_unlock(&v->lock);
++            usleep(100);
++            pthread_mutex_lock(&v->lock);
++            continue;
++        }
++        rc = v->opt.timeout_ms ? pthread_cond_timedwait(&v->cond, &v->lock, &dl)
++                               : pthread_cond_wait(&v->cond, &v->lock);
++        if (rc == ETIMEDOUT) {
++            vpci_reap_locked(v); /* the completion may have raced the timeout */
++            break;
++        }
++        rc = 0;
++    }
++    if (r->done) {
++        r->pending = false;
++        *resp = r->mem + v->bufsize;
++        *resp_len = r->len;
++        rc = 0;
++    } else if (rc == ETIMEDOUT) {
++        /* The device still owns the chain and may complete it later: the slot
++         * stays out of use until vpci_reap_locked() sees it come back. */
++        r->stale = true;
++        rc = -ETIMEDOUT;
++    } else {
++        rc = -EIO; /* broken */
++    }
++    pthread_mutex_unlock(&v->lock);
++    return rc;
++}
++
++static void vpci_put(void *impl, unsigned slot)
++{
++    struct vio_pci *v = impl;
++    pthread_mutex_lock(&v->lock);
++    v->reqs[slot].taken = false;
++    v->reqs[slot].done = false;
++    pthread_cond_broadcast(&v->cond);
++    pthread_mutex_unlock(&v->lock);
++}
++
++static unsigned vpci_slots(void *impl)
++{
++    return ((struct vio_pci *)impl)->nreqs;
++}
++
++static uint32_t vpci_max_msize(void *impl)
++{
++    return ((struct vio_pci *)impl)->bufsize;
++}
++
++static void vpci_close(void *impl)
++{
++    struct vio_pci *v = impl;
++    pthread_mutex_lock(&v->lock);
++    v->stop = true;
++    v->closed = true;
++    pthread_mutex_unlock(&v->lock);
++    /* The caller holds every slot, but a stale (timed-out) request may still
++     * be with the device: the caller resets the device before this is called,
++     * so the rings and buffers are safe to unmap here. */
++    vpci_ring_free(v);
++    if (v->claim != NULL)
++        (void)name_detach(v->claim, 0);
++}
++
++static const struct fs9p_transport_ops vpci_ops = {
++    .get = vpci_get,
++    .buf = vpci_buf,
++    .rpc = vpci_rpc,
++    .put = vpci_put,
++    .slots = vpci_slots,
++    .max_msize = vpci_max_msize,
++    .close = vpci_close,
++};
++
++const struct fs9p_transport_ops *vpci_transport_ops(void)
++{
++    return &vpci_ops;
++}
+diff --git a/tests/unit/CMakeLists.txt b/tests/unit/CMakeLists.txt
+index cca500e..fb71277 100644
+--- a/tests/unit/CMakeLists.txt
++++ b/tests/unit/CMakeLists.txt
+@@ -11,3 +11,16 @@ foreach(name test_encode test_decode test_idpool test_fuzz)
+     target_link_libraries(${name} PRIVATE lib9p)
+     add_test(NAME ${name} COMMAND ${name})
+ endforeach()
++
++# The virtio PCI capability decoder is portable by design (it reads config
++# space through a callback), so it is tested here against a synthetic config
++# space: no device, no PCI server, no QNX.
++add_executable(test_virtio_pci_caps test_virtio_pci_caps.c)
++set_target_properties(test_virtio_pci_caps PROPERTIES
++    C_STANDARD 11
++    C_STANDARD_REQUIRED ON
++    C_EXTENSIONS OFF
++)
++target_compile_options(test_virtio_pci_caps PRIVATE ${FS9P_STRICT_FLAGS})
++target_link_libraries(test_virtio_pci_caps PRIVATE virtio_pci_caps)
++add_test(NAME test_virtio_pci_caps COMMAND test_virtio_pci_caps)
+diff --git a/tests/unit/test_virtio_pci_caps.c b/tests/unit/test_virtio_pci_caps.c
+new file mode 100644
+index 0000000..e40e703
+--- /dev/null
++++ b/tests/unit/test_virtio_pci_caps.c
+@@ -0,0 +1,174 @@
++/*
++ * Host unit tests for the virtio PCI capability decoder.
++ *
++ * The decoder takes a config-space read callback, so a synthetic 256-byte
++ * config space is enough to test it without a device, a bus or QNX: this is
++ * the part of the PCI transport that can be proven on a PC.
++ */
++#include "test.h"
++
++#include "virtio_pci_caps.h"
++
++#include <stdbool.h>
++
++/* A 256-byte config space, optionally refusing reads below 0x40 the way
++ * QNX's pci_device_cfg_rd*() does. */
++typedef struct {
++    uint8_t bytes[256];
++    bool deny_below_0x40;
++    unsigned reads;
++} fake_cfg_t;
++
++static int fake_read(void *ctx, uint32_t off, void *dst, size_t len)
++{
++    fake_cfg_t *c = ctx;
++
++    if (c->deny_below_0x40 && off < 0x40u)
++        return -1;
++    if ((size_t)off + len > sizeof c->bytes)
++        return -1;
++    memcpy(dst, c->bytes + off, len);
++    c->reads++;
++    return 0;
++}
++
++static void put_u32(fake_cfg_t *c, uint32_t off, uint32_t v)
++{
++    for (unsigned i = 0; i < 4u; i++)
++        c->bytes[off + i] = (uint8_t)(v >> (8u * i));
++}
++
++/* One vendor-specific capability: the 4-byte PCI header, the BAR byte, three
++ * padding bytes, then offset and length (and the notify multiplier). */
++static void put_virtio_cap(fake_cfg_t *c, uint32_t off, uint8_t next, uint8_t type, uint8_t bar,
++                           uint32_t cap_off, uint32_t len, uint32_t multiplier)
++{
++    const uint8_t cap_len = type == VPCI_CFG_NOTIFY ? 20u : 16u;
++
++    c->bytes[off + 0u] = VPCI_CAP_ID_VENDOR;
++    c->bytes[off + 1u] = next;
++    c->bytes[off + 2u] = cap_len;
++    c->bytes[off + 3u] = type;
++    put_u32(c, off + 4u, bar);
++    put_u32(c, off + 8u, cap_off);
++    put_u32(c, off + 12u, len);
++    if (cap_len == 20u)
++        put_u32(c, off + 16u, multiplier);
++}
++
++/* A device with the four usual capabilities, linked from 0x40. */
++static void build_device(fake_cfg_t *c)
++{
++    memset(c, 0, sizeof *c);
++    c->bytes[0x06] = 0x10u; /* status: capability list present */
++    c->bytes[0x34] = 0x40u; /* first capability */
++    put_virtio_cap(c, 0x40u, 0x50u, VPCI_CFG_COMMON, 4u, 0x1000u, 0x1000u, 0u);
++    put_virtio_cap(c, 0x50u, 0x64u, VPCI_CFG_NOTIFY, 4u, 0x2000u, 0x1000u, 4u);
++    put_virtio_cap(c, 0x64u, 0x74u, VPCI_CFG_ISR, 4u, 0x3000u, 0x1000u, 0u);
++    put_virtio_cap(c, 0x74u, 0x00u, VPCI_CFG_DEVICE, 4u, 0x4000u, 0x1000u, 0u);
++}
++
++static void test_chain_finds_every_capability(void)
++{
++    fake_cfg_t cfg;
++    vpci_caps_t caps;
++
++    build_device(&cfg);
++    CHECK_EQ(vpci_caps_scan_chain(fake_read, &cfg, &caps), 0);
++    CHECK(vpci_caps_usable(&caps));
++    CHECK(caps.have_common);
++    CHECK(caps.have_notify);
++    CHECK(caps.have_isr);
++    CHECK(caps.have_device);
++    CHECK_EQ(caps.common.bar, 4);
++    CHECK_EQ(caps.common.offset, 0x1000);
++    CHECK_EQ(caps.device.offset, 0x4000);
++    CHECK_EQ(caps.notify.notify_off_multiplier, 4);
++}
++
++static void test_chain_rejects_a_cycle(void)
++{
++    fake_cfg_t cfg;
++    vpci_caps_t caps;
++
++    build_device(&cfg);
++    cfg.bytes[0x75] = 0x40u; /* DEVICE points back at COMMON */
++    CHECK_EQ(vpci_caps_scan_chain(fake_read, &cfg, &caps), 0);
++    CHECK(vpci_caps_usable(&caps));
++}
++
++static void test_missing_notify_is_not_usable(void)
++{
++    fake_cfg_t cfg;
++    vpci_caps_t caps;
++
++    build_device(&cfg);
++    cfg.bytes[0x40 + 3u] = VPCI_CFG_DEVICE; /* no COMMON either */
++    cfg.bytes[0x50 + 3u] = VPCI_CFG_ISR;    /* and no NOTIFY */
++    CHECK_EQ(vpci_caps_scan_chain(fake_read, &cfg, &caps), 0);
++    CHECK(!vpci_caps_usable(&caps));
++}
++
++static void test_scan_falls_back_when_0x34_is_unreadable(void)
++{
++    fake_cfg_t cfg;
++    vpci_caps_t caps;
++
++    build_device(&cfg);
++    cfg.deny_below_0x40 = true;
++    CHECK_EQ(vpci_caps_scan_chain(fake_read, &cfg, &caps), -1);
++    CHECK_EQ(vpci_caps_scan(fake_read, &cfg, &caps), 0);
++    CHECK(vpci_caps_usable(&caps));
++    CHECK_EQ(caps.notify.offset, 0x2000);
++    CHECK_EQ(caps.notify.notify_off_multiplier, 4);
++}
++
++static void test_linear_scan_skips_capability_interiors(void)
++{
++    fake_cfg_t cfg;
++    vpci_caps_t caps;
++
++    build_device(&cfg);
++    /* A dword inside the 20-byte NOTIFY capability (its multiplier field)
++     * that looks like the start of an ISR capability at BAR 0, offset 0.
++     * Only the skip keeps it from overwriting the real ISR capability. */
++    cfg.bytes[0x60] = VPCI_CAP_ID_VENDOR;
++    cfg.bytes[0x61] = 0x00u;
++    cfg.bytes[0x62] = 16u;
++    cfg.bytes[0x63] = VPCI_CFG_ISR;
++    CHECK_EQ(vpci_caps_scan_linear(fake_read, &cfg, &caps), 0);
++    CHECK_EQ(caps.isr.offset, 0x3000);
++    CHECK_EQ(caps.common.offset, 0x1000);
++}
++
++static void test_notify_address_uses_the_multiplier(void)
++{
++    fake_cfg_t cfg;
++    vpci_caps_t caps;
++
++    build_device(&cfg);
++    CHECK_EQ(vpci_caps_scan_chain(fake_read, &cfg, &caps), 0);
++    CHECK_EQ(vpci_caps_notify_addr(&caps, 0), 0x2000);
++    CHECK_EQ(vpci_caps_notify_addr(&caps, 3), 0x200Cu);
++}
++
++static void test_queue_size_is_clamped_to_a_power_of_two(void)
++{
++    CHECK_EQ(vpci_queue_size_clamp(1024, 128), 128);
++    CHECK_EQ(vpci_queue_size_clamp(1024, 100), 64);
++    CHECK_EQ(vpci_queue_size_clamp(8, 8), 8);
++    CHECK_EQ(vpci_queue_size_clamp(1, 16), 2);
++    CHECK_EQ(vpci_queue_size_clamp(0, 16), 2);
++}
++
++int main(void)
++{
++    test_chain_finds_every_capability();
++    test_chain_rejects_a_cycle();
++    test_missing_notify_is_not_usable();
++    test_scan_falls_back_when_0x34_is_unreadable();
++    test_linear_scan_skips_capability_interiors();
++    test_notify_address_uses_the_multiplier();
++    test_queue_size_is_clamped_to_a_power_of_two();
++    return TEST_RESULT();
++}

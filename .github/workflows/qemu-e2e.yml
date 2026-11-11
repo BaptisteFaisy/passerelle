@@ -1,0 +1,131 @@
+name: qemu-e2e (hors PR)
+
+# Long bench: full conformance run + QEMU boot + throughput measurements.
+#
+# This workflow NEVER runs on a pull request: it is triggered by
+# `workflow_dispatch` or by a push on `main` only. The 5-minute budget of
+# the PR pipeline does not apply here (see ~/Bureau/CI-BUDGET-5MIN.md,
+# "sortir des PR"), but the timeout stays explicit and justified.
+#
+#   timeout-minutes: 30
+#   -> 30 min : banc de conformite differential (1M operations) + boot QNX
+#      sous QEMU + mesures de debit, hors PR (regle CI 5 min).
+#
+# The timeout is a ceiling, not a target: the steps below are individually
+# bounded by `timeout`, and every step that finds its input missing prints
+# an explicit notice (never a silent green).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ops:
+        description: 'Number of conformance operations (0 = default)'
+        required: false
+        default: '0'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qemu-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_BUILD_JOBS: 4
+  PGW_MODULES: common;virtio;proto9p;protofuse;rmfs;drivers;tests
+  # Ceiling of a single bench step, in seconds (the job timeout is 30 min).
+  BENCH_STEP_TIMEOUT: 1500
+
+jobs:
+  qemu-e2e:
+    name: qemu-e2e
+    runs-on: [self-hosted, passerelle-worker]
+    # 30 min : banc de conformite differential (1M operations) + boot QNX
+    # sous QEMU + mesures de debit, hors PR (regle CI 5 min).
+    timeout-minutes: 30
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Toolchain (cmake)
+        run: |
+          set -euo pipefail
+          if ! command -v cmake >/dev/null 2>&1; then
+            for d in "$HOME/ci-tools/cmake/cmake/data/bin" "$HOME/.local/cmake/data/bin"; do
+              if [ -x "$d/cmake" ]; then
+                export PATH="$d:$PATH"
+                echo "$d" >> "$GITHUB_PATH"
+                break
+              fi
+            done
+          fi
+          if ! command -v cmake >/dev/null 2>&1; then
+            echo "::warning::cmake absent du runner - installation locale (reseau requise)"
+            python3 -m pip install --quiet --disable-pip-version-check \
+              --target "$GITHUB_WORKSPACE/.ci-tools/cmake" "cmake<4"
+            export PATH="$GITHUB_WORKSPACE/.ci-tools/cmake/cmake/data/bin:$PATH"
+            echo "$GITHUB_WORKSPACE/.ci-tools/cmake/cmake/data/bin" >> "$GITHUB_PATH"
+          fi
+          cmake --version
+      - name: Clean workspace (keep the build trees)
+        run: |
+          set -euo pipefail
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            git clean -ffdx -e '/build' -e '/build-asan' -e '/.ci-tools'
+          else
+            echo "no previous checkout in this workspace - nothing to clean"
+          fi
+          for d in build build-asan; do
+            if [ -f "$d/CMakeCache.txt" ]; then
+              src=$(sed -n 's/^CMAKE_HOME_DIRECTORY:INTERNAL=//p' "$d/CMakeCache.txt")
+              if [ -n "$src" ] && [ "$src" != "$PWD" ]; then
+                echo "::warning::stale CMake cache in $d ($src) - recreated"
+                cmake -E rm -rf "$d"
+              fi
+            fi
+          done
+      - name: Checkout (shallow, caches preserved)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false
+      - name: Build the portable stack
+        run: |
+          set -euo pipefail
+          cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPGW_MODULES="$PGW_MODULES"
+          cmake --build build -j"$CMAKE_BUILD_JOBS"
+      - name: Differential conformance bench
+        run: |
+          set -euo pipefail
+          found=0
+          # The number of operations is passed through the environment, so a
+          # bench script does not have to know any command-line convention.
+          export PGW_BENCH_OPS="${{ github.event.inputs.ops || '0' }}"
+          for script in host/bench/run-bench.py host/bench/bench.py host/fsproof/run-fsproof.py; do
+            [ -f "$script" ] || continue
+            found=1
+            echo "--- $script"
+            timeout "$BENCH_STEP_TIMEOUT" python3 "$script"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "::notice::no conformance bench script in the tree - bench skipped (explicit skip, not a silent green)"
+          fi
+      - name: QNX guest scenario (QEMU)
+        run: |
+          set -euo pipefail
+          found=0
+          for script in host/qshare/run-e2e.py host/qshare/e2e.py; do
+            [ -f "$script" ] || continue
+            found=1
+            echo "--- $script"
+            timeout "$BENCH_STEP_TIMEOUT" python3 "$script"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "::notice::no QEMU scenario script in the tree - scenario skipped (explicit skip, not a silent green)"
+          fi
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::qemu-e2e: $(( $(date +%s) - JOB_START ))s (ceiling 1800s)"

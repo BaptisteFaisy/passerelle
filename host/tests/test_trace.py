@@ -1,0 +1,162 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Tests for the QEMU 9P trace parser and the roundtrip table (PERF-01).
+
+The fixture is a recorded-shape trace: version, attach, walk, getattr,
+open, two reads, a write, fsync, clunk, readdir, an error reply and one
+request left without a reply. Each of those shapes is asserted.
+"""
+
+from __future__ import annotations
+
+import pathlib
+
+import pytest
+
+from bench.roundtrips import build_table, compare_tables, render_markdown
+from bench.trace import parse_line, parse_trace, posix_operation
+
+
+def test_parse_line_reads_timestamp_tag_and_id() -> None:
+    line = "225213@1794354229.123456:v9fs_read tag 5 id 116 fid 2 off 0 max_count 4096"
+    event = parse_line(line)
+    assert event is not None
+    assert event.event == "v9fs_read"
+    assert event.tag == 5
+    assert event.msg_id == 116
+    assert event.is_reply is False
+    assert event.timestamp == pytest.approx(1794354229.123456, abs=1e-6)
+
+
+def test_parse_line_marks_returns() -> None:
+    event = parse_line("1@2.000003:v9fs_read_return tag 5 id 116 count 4096 err 0")
+    assert event is not None
+    assert event.is_reply is True
+    assert event.request_name == "v9fs_read"
+
+
+def test_parse_line_ignores_foreign_lines() -> None:
+    assert parse_line("qemu-system-x86_64: something else") is None
+    assert parse_line("") is None
+
+
+def test_parse_trace_counts_events(trace_path: pathlib.Path) -> None:
+    log = parse_trace(trace_path.read_text(encoding="utf-8"))
+    assert len(log) >= 20
+    assert log.bad_lines == []
+
+
+def test_roundtrip_table_pairs_requests_and_replies(trace_path: pathlib.Path) -> None:
+    table = build_table(parse_trace(trace_path.read_text(encoding="utf-8")))
+    by_operation = {row.operation: row for row in table.rows}
+
+    read = by_operation["read"]
+    assert read.requests == 2
+    assert read.replies == 2
+    assert read.roundtrips_per_call == 1.0
+
+    write = by_operation["write"]
+    assert write.requests == 1
+    assert write.roundtrips_per_call == 1.0
+
+    assert "stat / fstat" in by_operation
+    assert by_operation["getdents"].requests == 1
+
+
+def test_roundtrip_table_reports_errors(trace_path: pathlib.Path) -> None:
+    table = build_table(parse_trace(trace_path.read_text(encoding="utf-8")))
+    assert table.total_errors >= 1
+    assert table.unpaired == 1
+
+def test_roundtrip_table_measures_latency(trace_path: pathlib.Path) -> None:
+    table = build_table(parse_trace(trace_path.read_text(encoding="utf-8")))
+    read = next(row for row in table.rows if row.operation == "read")
+    assert read.mean_latency_ms is not None and read.mean_latency_ms > 0
+    assert read.max_latency_ms >= read.mean_latency_ms
+
+
+def test_real_trace_from_qemu_is_parsed(real_trace_path: pathlib.Path) -> None:
+    """The fixture is a real QEMU 8.2 trace, captured from a Linux guest."""
+    text = real_trace_path.read_text(encoding="utf-8")
+    log = parse_trace(text)
+    assert len(log) > 200
+    assert log.bad_lines == []
+    table = build_table(log)
+    by_operation = {row.operation: row for row in table.rows}
+    for expected in ("mount (Tversion)", "mount (Tattach)", "read", "write", "getdents"):
+        assert expected in by_operation, f"missing {expected} in a real trace"
+    assert by_operation["read"].roundtrips_per_call == 1.0
+    assert table.total_errors >= 1  # the guest probed an xattr it does not have
+    assert table.unpaired == 0, "a real trace must not leave requests unanswered"
+
+
+def test_requests_without_a_reply_event_are_not_unanswered() -> None:
+    """QEMU traces no *_return for clunk, remove, fsync, link, flush.
+
+    Such a request must not be counted as unanswered, otherwise the report
+    would publish phantom missing replies.
+    """
+    text = (
+        "v9fs_clunk tag 1 id 10 fid 2\n"
+        "v9fs_remove tag 2 id 11 fid 3\n"
+        "v9fs_fsync tag 3 id 12 fid 4\n"
+    )
+    table = build_table(parse_trace(text))
+    assert table.unpaired == 0
+    assert table.total_requests == 3
+    assert table.total_replies == 3
+
+
+def test_real_trace_without_timestamps_reports_no_latency(real_trace_path: pathlib.Path) -> None:
+    """QEMU omits timestamps by default: publish n/a, never a fake 0.000 ms."""
+    table = build_table(parse_trace(real_trace_path.read_text(encoding="utf-8")))
+    assert table.timed is False
+    assert all(row.mean_latency_ms is None for row in table.rows)
+    markdown = render_markdown(table)
+    assert "n/a" in markdown
+    assert "no timestamps" in markdown
+    assert table.to_json()["timed"] is False
+
+
+def test_posix_operation_mapping() -> None:
+    assert posix_operation("v9fs_open") == "open"
+    assert posix_operation("v9fs_clunk") == "close"
+    assert posix_operation("v9fs_readdir") == "getdents"
+    assert posix_operation("v9fs_unknown_op") == "other"
+
+
+def test_render_markdown_has_a_row_per_operation(trace_path: pathlib.Path) -> None:
+    table = build_table(parse_trace(trace_path.read_text(encoding="utf-8")))
+    markdown = render_markdown(table, client="passerelle")
+    assert "| POSIX operation |" in markdown
+    assert "| read | 2 | 2 | 0 | 1.00 |" in markdown
+    assert "**total**" in markdown
+
+
+def test_compare_tables_flags_extra_roundtrips(trace_path: pathlib.Path) -> None:
+    table = build_table(parse_trace(trace_path.read_text(encoding="utf-8")))
+    worse = compare_tables(table, {"eclipse": table})
+    assert worse == {}
+
+
+def test_cli_roundtrips(tmp_path: pathlib.Path, trace_path: pathlib.Path,
+                        capsys: pytest.CaptureFixture[str]) -> None:
+    from bench.cli import main
+
+    markdown = tmp_path / "roundtrips.md"
+    payload = tmp_path / "roundtrips.json"
+    status = main(["roundtrips", str(trace_path), "--markdown", str(markdown),
+                   "--json", str(payload)])
+    assert status == 0
+    assert "roundtrips/call" in markdown.read_text(encoding="utf-8")
+    assert '"total_requests"' in payload.read_text(encoding="utf-8")
+    assert "POSIX operation" in capsys.readouterr().out
+
+
+def test_cli_roundtrips_rejects_empty_trace(tmp_path: pathlib.Path,
+                                            capsys: pytest.CaptureFixture[str]) -> None:
+    from bench.cli import main
+
+    empty = tmp_path / "empty.log"
+    empty.write_text("nothing here\n", encoding="utf-8")
+    assert main(["roundtrips", str(empty)]) == 2
+    assert "no 9P event" in capsys.readouterr().err
