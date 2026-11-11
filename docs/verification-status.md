@@ -45,6 +45,33 @@ ctest --test-dir build --output-on-failure      # 2/2 tests passed
 
 ---
 
+## 1.1 Conformance and randomized-input benches (`tests/`)
+
+Added at the second snapshot. These are the levels 1 and 2 of the validation plan
+(spec 7.1) running **on the PC, in the CI**, without a QNX SDP.
+
+| Item | State | Proof |
+|---|---|---|
+| Truth backend over a real POSIX directory | **Implemented** | `tests/posix_backend/`, an implementation of `pgw_fs_backend_ops` |
+| Differential test, seeded and replayable (spec 7.2) | **Tested on PC** | `ctest -R test_diff` — random suites through `pgw_rmfs`, compared field by field with the folder: names, types, sizes, modes, link targets, content digest |
+| Automatic reduction of a divergence | **Tested on PC** | `diff_reduce()` bisects the suite and reports the shortest prefix that reproduces, with the seed |
+| Directed cases (spec 7.4) | **Tested on PC** | `ctest -R test_directed` — rename over an existing file, exclusive create, truncate, append, permission matrix with a non-owner caller, symlink loop, 255- and 256-byte names, non-empty `rmdir`, 600-entry directory read in pages of 7, `fsync`, `statfs`, local range locks |
+| FS-11 deleted-but-open stays readable | **Tested on PC** | `test_deleted_but_open_stays_readable` |
+| FS-12 a change on the PC is seen without remounting | **Tested on PC** | `test_host_change_visible_without_remount` |
+| ROB-02 / P9-07 no descriptor or fid leak | **Tested on PC** | `test_no_handle_leak_after_many_cycles` (20 000 open/close cycles, counters back to zero) |
+| ROB-06 randomized input on every decoder | **Tested on PC** | `ctest -R fuzz` — noise plus five kinds of damage on well-formed messages, with a header invariant that fails the test when a decoder accepts garbage |
+| Priority conversion QNX → scheduler | **Implemented** | `ctest -R prio` (`common/tests/test_prio.c`) |
+| 1 000 000-operation campaign (spec 7.6) | **Registered, disabled** | `ctest -R e2e-long` after `ctest --test-dir build -L long` is enabled; never on a PR (5-minute budget) |
+| Multi-hour fuzz campaign | **Registered, disabled** | `fuzz-p9-long`, `fuzz-fuse-long` (5 000 000 iterations each) |
+| Coverage-guided fuzzing | **Optional** | `-DPGW_LIBFUZZER=ON` builds `fuzz_p9_lf`; never required, the deterministic campaigns run everywhere |
+
+What the PC bench **cannot** prove: anything that depends on the guest kernel —
+priority inheritance in the trace (QNX-03), interrupt delivery (VIO-04), running
+a binary straight from the share (FS-06), `mount`/`umount` (QNX-07), the security
+policy (QNX-06). Those need E1–E5.
+
+---
+
 ## 2. Requirement Matrix
 
 ### 2.1 Virtio transport (`virtio/`) — contract: `include/pgw/virtio.h` **[exists]**
@@ -194,19 +221,32 @@ verified under QNX**, because no QNX SDP is available on this workstation.
 
 ## 4. Known Issues at Snapshot Time
 
-| Issue | Impact | Owner |
+Second snapshot, **11 November 2026, 05:00 CET**: every module now has a
+`CMakeLists.txt`, the whole stack builds, and both guards are green.
+
+| Issue | Impact | State |
 |---|---|---|
-| `size-guard` reports violations in modules under active development (`host/bench/cli.py`, `host/fsproof/guest_agent.py`, `host/fsproof/replay.py`, `rmfs/src/path.c` at the last check — the list changes as those files are edited) | CI red until each function is split below 50 lines | `host/bench`, `host/fsproof`, `rmfs` contributors |
-| `host/tests/test_fsproof.py` failed to collect at one point: `ImportError: cannot import name 'test_concurrent_exclusive_create' from 'fsproof.cases'` | `pytest host/tests` aborts while `host/fsproof` is mid-edit | `host/fsproof` contributor |
-| `rmfs/`, `virtio/`, `proto9p/`, `protofuse/` have no `CMakeLists.txt` yet | Not part of the CMake build yet | Module owners |
-| No QNX SDP on the workstation | All QNX-side requirements unverified | Project-wide |
+| No QNX SDP on the workstation | Every QNX-side requirement stays unproven; feasibility tests E1–E5 blocked | **Open**, project-wide (issues #2–#6) |
+| No published performance number | PERF-01…PERF-07 have harnesses (`host/bench`) but no measurement | **Open**: needs a QNX guest, nothing is claimed in the README |
+| `lookup` / `getattr` symlink convention was inverted between `rmfs` and its backends | `lstat` answered `ELOOP` on a link loop while `stat` answered `OK`: FS-08 unreachable, every `lstat` on a symlink wrong | **Fixed** by the PC conformance bench; convention now written in `pgw/rmfs.h` |
+| QNX priority passed through to the submission scheduler without conversion | A background copy at QNX priority 250 overtook a priority-10 read: PERF-05 inverted on target | **Fixed**: single conversion point `pgw_prio_from_qnx()` (`common/include/pgw/prio.h`), pinned by `common/tests/test_prio.c` |
+| `*.log` in `.gitignore` swallowed the recorded QEMU traces under `host/tests/fixtures/` | `host-tools` failed on the runner with "missing trace fixture" while passing locally | **Fixed**: explicit negation in `.gitignore` |
+| `qnx-syntax` include list was hard-coded to the portable modules | The job failed on `pgw/drvsrv.h`, the drivers' shared service layer | **Fixed**: the job now discovers every `include/` directory of the stack |
 
-None of these violations is in `README.md` or `docs/`: the documentation set is
-neutral with respect to the size guard (it scans only `.c`, `.h` and `.py`).
+Both fixes in the middle of this table were found by *running* the code, not by
+reading it: the first by `tests/e2e`, the second by writing the directed case for
+PERF-05. That is the argument for the bench being part of the CI rather than a
+pre-submission chore.
 
-Re-check with:
+Re-check everything with:
 ```bash
-python3 tools/check-size.py --root .
+python3 tools/check-size.py --root .          # < 500 lines/file, < 50 lines/function
+python3 tools/check-spdx.py --root .          # Apache-2.0 header on every source file
 cmake -B build && cmake --build build -j8 && ctest --test-dir build --output-on-failure
-python3 -m pytest host/tests -q
+cmake -B build-asan -DPGW_SANITIZERS=ON && cmake --build build-asan -j8 \
+    && ctest --test-dir build-asan --output-on-failure
+(cd host && python3 -m pytest tests -q)
 ```
+At the second snapshot: **28/28 C tests** in both the normal and the
+ASan+UBSan build, **133 pytest tests** green (2 skipped: they need a QNX guest),
+both guards OK.
