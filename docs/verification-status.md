@@ -246,12 +246,20 @@ Two side results worth keeping:
 - `virtiofsd` runs **without root** here (`--cache=never`, warnings about
   setuid only), which is what SEC-03 recommends for the QEMU side too.
 
+Re-run in CI the same day, on a GitHub-hosted `ubuntu-24.04` runner (job
+`e5-guest-share`, workflow `qemu-e2e`, out of pull requests): kernel
+`7.0.0-1017-azure`, **virtiofs PASS in 7.2 s and 9P PASS in 6.7 s**, four
+markers each, job total 40 s.
+Two runner facts had to be handled, and both are documented in
+[ci.md](ci.md) §3: the runner kernel is `-rw-------` so a step runs
+`sudo chmod a+r /boot/vmlinuz-*`, and `linux-modules-extra` is not installable
+there — the Azure kernel already ships `netfs`, `9pnet`, `9pnet_virtio`, `9p`
+and `virtiofs` as modules, which is all the guest needs. The R630 workers have
+neither QEMU nor `virtiofsd`, so the same step there reports an explicit skip.
+
 What E5 does **not** cover: the QNX client. The guest above is Linux, so this
 proves the host half of the plumbing (options, daemon, shared memory, tag,
-read/write both ways) and nothing about our driver. The CI job
-`qemu-e2e` (out of pull requests) re-runs it and reports an explicit notice when
-a runner lacks QEMU or `virtiofsd`, which is currently the case on the R630
-workers.
+read/write both ways) and nothing about our driver.
 
 ---
 
