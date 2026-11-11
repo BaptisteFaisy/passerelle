@@ -61,8 +61,8 @@ Added at the second snapshot. These are the levels 1 and 2 of the validation pla
 | ROB-02 / P9-07 no descriptor or fid leak | **Tested on PC** | `test_no_handle_leak_after_many_cycles` (20 000 open/close cycles, counters back to zero) |
 | ROB-06 randomized input on every decoder | **Tested on PC** | `ctest -R fuzz` — noise plus five kinds of damage on well-formed messages, with a header invariant that fails the test when a decoder accepts garbage |
 | Priority conversion QNX → scheduler | **Implemented** | `ctest -R prio` (`common/tests/test_prio.c`) |
-| 1 000 000-operation campaign (spec 7.6) | **Registered, disabled** | `ctest -R e2e-long` after `ctest --test-dir build -L long` is enabled; never on a PR (5-minute budget) |
-| Multi-hour fuzz campaign | **Registered, disabled** | `fuzz-p9-long`, `fuzz-fuse-long` (5 000 000 iterations each) |
+| 1 000 000-operation campaign (spec 7.6) | **Executed — 0 divergence** | `PGW_DIFF_OPS=1000000 build/tests/test_diff`: 3 seeds × 1 000 000 operations = **3 000 000 operations**, 60 s, 11 Nov 2026. The CTest entry `e2e-long` stays disabled so it never runs on a PR |
+| Long randomized-input campaign | **Executed — 0 defect** | `PGW_FUZZ_ITERS=5000000`: **5 000 000 iterations** on the 9P decoders (11 s) and 5 000 000 on the FUSE decoders (10 s), 11 Nov 2026; repeated under ASan+UBSan (21 s and 18 s), still zero defect. The spec's one-hour campaign (§7.6) is not run: at this rate it would be ~10⁹ iterations, and "5 million each" is the honest claim |
 | Coverage-guided fuzzing | **Optional** | `-DPGW_LIBFUZZER=ON` builds `fuzz_p9_lf`; never required, the deterministic campaigns run everywhere |
 
 What the PC bench **cannot** prove: anything that depends on the guest kernel —
@@ -176,17 +176,17 @@ policy (QNX-06). Those need E1–E5.
 | DX-05 | Partial | This `docs/` set; `codelab/` empty | Tutorial pending |
 | DX-06 | Not started | Root-on-share (X) | Needs driver |
 
-### 2.9 virtiofs (`protofuse/`) — contract: `include/pgw/fusep.h` **[exists]**
+### 2.9 virtiofs (`protofuse/`) — implemented, tested on PC
 
 | ID | State | Proof / next step | Blocker |
 |---|---|---|---|
-| VFS-01 | Not started | `PGW_VIRTIO_ID_FS` = 26, `read_tag_fs()` | Sources pending |
-| VFS-02 | Not started | `hiprio` flag in `pgw_fuse_rpc_fn` | Sources pending |
-| VFS-03 | Not started | Opcode enum + encoders/decoders declared | Sources pending |
-| VFS-04 | Not started | `pgw_fuse_ref_get` / `forget_node` declared | Sources pending |
-| VFS-05 | Not started | `pgw_rmfs_from_fuse()` declared | Sources pending |
-| VFS-06 | Not started | `qshare` virtiofsd launch | `virtiofsd` present, E5 untested |
-| VFS-07 | Not started | Benchmark inclusion | Needs driver |
+| VFS-01 | **Tested on PC** | `PGW_VIRTIO_ID_FS` = 26 and the tag/queue-count read: `ctest -R test_virtio_dev`, and confirmed against a real QEMU by E5 (guest reports device `0x001a`) | Discovery on QNX pending (E1) |
+| VFS-02 | **Tested on PC** | hiprio lane for FORGET/INTERRUPT: `ctest -R protofuse_session` | — |
+| VFS-03 | **Tested on PC** | version negotiation with fallback, full operation set, splitting on `max_write`, 8-aligned `reclen`: `ctest -R "protofuse_codec|protofuse_session"` | — |
+| VFS-04 | **Tested on PC** | node reference counts, forget/batch-forget, session close settles every reference: `ctest -R protofuse_refs` (100 000 lookup/forget cycles) | — |
+| VFS-05 | **Implemented** | `pgw_rmfs_from_fuse()` in `rmfs/adapters/fuse_adapter.c`, built when `pgw_protofuse` exists | Conformance run through the adapter needs a guest |
+| VFS-06 | **Verified on the host** | `qshare` starts `virtiofsd` and a Linux guest mounts the share: `tests/qemu/run_share_check.py` (§3.1) | QNX guest side pending (E1) |
+| VFS-07 | Not started | Needs the comparative bench on a QNX guest | No SDP |
 
 ### 2.10 Reverse sharing (X tier)
 
@@ -209,13 +209,50 @@ verified under QNX**, because no QNX SDP is available on this workstation.
 | **E2** | Do clients A and B behave as advertised, and what do they measure? | **Blocked** | Both require the SDP to build; A is aarch64-only (needs `qemu-system-aarch64`, present, but no guest image), B needs Bazel + SDP |
 | **E3** | Does QNX execute a program served by a third-party resource manager, shared libraries included? | **Blocked** | No SDP, no `mkqnximage` image. Fallback: limit the objective to data sharing |
 | **E4** | Does `mkqnximage` accept extra QEMU options? | **Blocked** | `mkqnximage` ships with the SDP and is absent. Fallback already planned: `qshare` launches QEMU itself on the produced image |
-| **E5** | On this PC, do `virtiofsd` and shared memory work with a Linux guest? | **Partially unblocked** | `virtiofsd` present (`/usr/libexec/virtiofsd`) and QEMU 8.2.2 supports `vhost-user-fs-pci`; **not yet executed** — needs a Linux guest kernel/rootfs to boot |
+| **E5** | On this PC, do `virtiofsd` and shared memory work with a Linux guest? | **Done — PASS** (11 Nov 2026, 10:47 CET) | Nothing. Executed by `python3 tests/qemu/run_share_check.py`: a minimal Alpine guest on the host kernel, booted by QEMU 8.2.2 with **the options `qshare` emits**, mounted both shares, read what the PC had written and wrote what the PC then read back. See §5 below |
 
 **Unblocking checklist** (in order):
 
 1. Install QNX SDP 8.0 (QNX Everywhere) → unblocks E1, E2, E3, E4.
 2. Build one `mkqnximage` x86_64le image with the driver embedded → unblocks E1, E3.
-3. Boot a minimal Linux guest with `virtiofsd` → unblocks E5 (independent of the SDP).
+3. ~~Boot a minimal Linux guest with `virtiofsd`~~ → **done**, `tests/qemu/`.
+
+---
+
+## 3.1 E5, measured
+
+Command and prerequisites (`tests/qemu/README.md` explains the mechanism):
+
+```bash
+python3 tests/qemu/run_share_check.py --protos 9p,virtiofs
+```
+
+Host: `baptiste-MS-7D18`, QEMU **8.2.2**, `virtiofsd` **1.10.0**
+(`/usr/lib/qemu/virtiofsd`), guest kernel `6.14.0-37-generic` (direct boot, no
+disk), initramfs = Alpine minirootfs 3.21.9 + the host kernel's `netfs`, `9pnet`,
+`9pnet_virtio`, `9p` and `virtiofs` modules.
+
+| Protocol | virtio device seen by the guest | Mount | PC → guest | guest → PC | Time |
+|---|---|---|---|---|---|
+| 9P2000.L (`-fsdev local,…,security_model=mapped-xattr` + `virtio-9p-pci`) | `0x0009` | PASS | PASS | PASS | 9.0 s |
+| virtiofs (`memory-backend-memfd,share=on` + `vhost-user-fs-pci`) | `0x001a` = 26 | PASS | PASS | PASS | 9.0 s |
+
+Two side results worth keeping:
+
+- The device identifiers the guest reports match the constants the driver uses
+  (`PGW_VIRTIO_ID_9P` = 9, `PGW_VIRTIO_ID_FS` = 26), which cross-checks VIO-01
+  and VFS-01 against a real QEMU rather than against a datasheet.
+- `virtiofsd` runs **without root** here (`--cache=never`, warnings about
+  setuid only), which is what SEC-03 recommends for the QEMU side too.
+
+What E5 does **not** cover: the QNX client. The guest above is Linux, so this
+proves the host half of the plumbing (options, daemon, shared memory, tag,
+read/write both ways) and nothing about our driver. The CI job
+`qemu-e2e` (out of pull requests) re-runs it and reports an explicit notice when
+a runner lacks QEMU or `virtiofsd`, which is currently the case on the R630
+workers.
+
+---
 
 ---
 

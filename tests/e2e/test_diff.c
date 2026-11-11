@@ -41,21 +41,28 @@ static size_t ops_from_env(void)
 
 static void run_suite(uint32_t seed, size_t n_ops)
 {
-    static diff_op ops[PGW_DIFF_MAX_OPS];
+    /* The suite is heap-allocated: the 1 000 000-operation campaign of spec 7.6
+     * is 24 MB of operations, too large for a static array, and a static cap
+     * would silently truncate the campaign (it did: an env value above the cap
+     * fell back to 1 000 operations while looking like a million). */
+    diff_op *ops = calloc(n_ops, sizeof(*ops));
+    if (ops == NULL)
+        pgw_fail(__FILE__, __LINE__, "cannot allocate %zu operations", n_ops);
     char err[PGW_DIFF_MSG];
     diff_gen(ops, n_ops, seed);
     long bad = diff_run(ops, n_ops, seed, err, sizeof(err));
-    if (bad < 0)
+    if (bad < 0) {
+        free(ops);
         return;
-    long minimal = diff_reduce(ops, n_ops, seed, err, sizeof(err));
-    if (minimal > 0 && (size_t)minimal <= n_ops) {
-        pgw_fail(__FILE__, __LINE__,
-                 "seed %u: divergence reduced to %ld op(s); last = %s; %s",
-                 seed, minimal, diff_kind_name(ops[minimal - 1].kind), err);
     }
+    long minimal = diff_reduce(ops, n_ops, seed, err, sizeof(err));
+    const char *kind = (size_t)minimal <= n_ops && minimal > 0
+                           ? diff_kind_name(ops[minimal - 1].kind)
+                           : diff_kind_name(ops[bad < (long)n_ops ? bad : 0].kind);
+    long at = minimal > 0 ? minimal : bad;
+    free(ops);
     pgw_fail(__FILE__, __LINE__, "seed %u: divergence at op %ld (%s); %s", seed,
-             bad, (size_t)bad < n_ops ? diff_kind_name(ops[bad].kind) : "tree",
-             err);
+             at, kind, err);
 }
 
 static void test_diff_random_suites(void)

@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#define PGW_DIFF_MAX_OPS 4096
+#define PGW_DIFF_MAX_OPS 8000000
 #define PGW_DIFF_PATHS 20
 #define PGW_DIFF_MSG 512
 

@@ -10,6 +10,7 @@ virtiofsd) itself, and `--demo` replays the whole demonstration (DX-02).
 from __future__ import annotations
 
 import argparse
+import pathlib
 import sys
 
 from pgwutil import HostError, ValidationError
@@ -51,6 +52,37 @@ def _add_share_options(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_run_options(parser: argparse.ArgumentParser) -> None:
+    """Register the options that control a scripted QEMU run (--run)."""
+    parser.add_argument(
+        "--qemu-arg",
+        action="append",
+        default=[],
+        metavar="ARG",
+        help=(
+            "extra QEMU argument, repeatable (appended after the share options). "
+            "Used for a direct-kernel boot, e.g. --qemu-arg=-initrd "
+            "--qemu-arg=/tmp/initramfs.cpio.gz"
+        ),
+    )
+    parser.add_argument(
+        "--wait-for",
+        metavar="MARKER",
+        help="consider the run successful when MARKER appears on the console",
+    )
+    parser.add_argument(
+        "--console-log",
+        metavar="FILE",
+        help="write the guest console here (default: /tmp/pgw-qemu-console.log)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=120.0,
+        help="seconds to wait for the console marker (default: 120)",
+    )
+
+
 def _add_action_options(parser: argparse.ArgumentParser) -> None:
     """Register the action options (emit, image, run, demo, examples)."""
     parser.add_argument("--emit", action="store_true", help="print one shell-ready option line")
@@ -61,6 +93,7 @@ def _add_action_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--ifs", action="store_true", help="use the IFS layout for the snippets")
     parser.add_argument("--run", metavar="IMAGE", help="start QEMU on IMAGE (kernel or disk)")
     parser.add_argument("--arch", default="x86_64", help="guest architecture for --run")
+    _add_run_options(parser)
     parser.add_argument(
         "--trace", metavar="LOG", help="write the 9P trace to LOG (pbench roundtrips)"
     )
@@ -130,6 +163,7 @@ def _qemu_command(args: argparse.Namespace, cfg: object) -> list[str]:
         image=args.run,
         arch=target_arch,
         trace_log=args.trace,
+        extra_args=tuple(args.qemu_arg),
     )
 
 
@@ -140,11 +174,23 @@ def _run(args: argparse.Namespace) -> int:
     )
     cmd = _qemu_command(args, cfg)
     print("+ " + " ".join(cmd))
+    console_log = pathlib.Path(args.console_log or "/tmp/pgw-qemu-console.log")
+    marker = args.wait_for
     with share_backend(cfg):
-        instance = QemuInstance(cmd, console_log="/tmp/pgw-qemu-console.log")
+        instance = QemuInstance(cmd, console_log=console_log)
         instance.start()
         try:
-            instance.wait_for_console("Startup complete", timeout=120.0)
+            if marker:
+                # Scripted boot (tests/qemu): the guest prints a marker and powers
+                # off, so success is the marker, not a fixed banner.
+                if not instance.wait_for_console(marker, timeout=args.timeout):
+                    raise HostError(
+                        f"marker {marker!r} not seen within {args.timeout}s; "
+                        f"console: {console_log}"
+                    )
+                print(f"marker seen: {marker}")
+            else:
+                instance.wait_for_console("Startup complete", timeout=args.timeout)
         finally:
             instance.stop()
     return 0
