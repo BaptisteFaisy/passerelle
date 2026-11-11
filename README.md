@@ -178,6 +178,13 @@ SDP or a QNX guest is said so explicitly.
   the exact options `qshare` emits and exchanges files both ways, for **9P and
   virtiofs**: feasibility test **E5 passed**, in 9 s per protocol
   ([docs/verification-status.md](docs/verification-status.md) §3.1).
+- **A real QNX guest, and what it sees** — `tests/qemu/qnx71` boots QNX Neutrino
+  **7.1.0** x86_64 on this PC with our `virtio-9p-pci` device attached. Its own
+  `pci-tool` reports the device as `1af4:1009` with the MSI-X capability plus the
+  five virtio vendor capabilities and three assigned BARs, and reports
+  **no interrupt routed** to it — which is the actionable half of E1
+  ([EVIDENCE.md](tests/qemu/qnx71/EVIDENCE.md)). It has no compiler, so this
+  says nothing about our driver yet.
 - **Performance (level 3) and guest-side robustness (level 4)** — the harnesses
   are written (`host/bench`, `host/fsproof`). The **Linux reference baseline**
   of spec 7.5 is published in [docs/measurements/](docs/measurements/)
