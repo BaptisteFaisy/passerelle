@@ -257,6 +257,15 @@ it never merges. There is exactly one merge pilot — Mergify.
 `stale-base-guard` is purely informative: it reports how many commits the
 branch is behind `main` and always succeeds.
 
+**A red `Verdict` check does not always mean the gate disagreed.** The hermes-lite
+workflow carries `concurrency: cancel-in-progress: true`, so when a new commit
+arrives while a gate run is still going, GitHub cancels the older run and that
+run's check turns red with the annotation *"Canceling since a higher priority
+waiting request … exists"*. The newer run posts its own `hermes-lite/verdict`
+check. Since `Verdict` is not a required check (see the branch-protection list
+above), a cancelled run never blocks a merge — read `hermes-lite/verdict` for the
+actual verdict.
+
 ### Branch protection must NOT require up-to-date branches
 
 Measured on 11 November 2026, on PR #13: with `required_status_checks.strict:
