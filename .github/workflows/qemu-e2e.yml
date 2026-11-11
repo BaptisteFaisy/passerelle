@@ -43,6 +43,50 @@ env:
   BENCH_STEP_TIMEOUT: 1500
 
 jobs:
+  # E5 needs QEMU and virtiofsd, which the R630 workers do not have. This job
+  # therefore runs on a GitHub-hosted runner - free for a public repository -
+  # and stays out of pull requests like the rest of this workflow. It boots a
+  # minimal Linux guest under TCG (no nested KVM on hosted runners), which is
+  # why its ceiling is higher than a pull-request job: 15 minutes, measured
+  # around 2 minutes of real work (rule CI 5 min, long jobs stay out of PRs).
+  e5-guest-share:
+    name: e5-guest-share
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install QEMU, virtiofsd and the initramfs tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            qemu-system-x86 virtiofsd cpio zstd
+          qemu-system-x86_64 --version | head -1
+          command -v virtiofsd || ls /usr/lib/qemu/virtiofsd /usr/libexec/virtiofsd
+      - name: Boot the guest on the qshare options (E5)
+        run: |
+          set -uo pipefail
+          rc=0
+          python3 tests/qemu/run_share_check.py \
+            --protos "${{ github.event.inputs.protos || 'virtiofs,9p' }}" \
+            --workload 30 || rc=$?
+          if [ "$rc" -eq 2 ]; then
+            echo "::notice::E5 skipped on this runner: prerequisite missing"
+          elif [ "$rc" -ne 0 ]; then
+            echo "::error::E5 failed with code $rc"
+            exit "$rc"
+          fi
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::e5-guest-share: $(( $(date +%s) - JOB_START ))s (ceiling 900s)"
+
   qemu-e2e:
     name: qemu-e2e
     runs-on: [self-hosted, passerelle-worker]
