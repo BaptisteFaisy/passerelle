@@ -85,6 +85,26 @@ void cas_mount_close(cas_mount *m);
 /* Absolute host path of a relative path inside the fixture. */
 void cas_mount_abs(const cas_mount *m, const char *rel, char *out, size_t cap);
 
+/* --- one view of the layer under test ------------------------------------- */
+
+/* Whatever the adapter under test, a case needs the same three things: the
+ * layer, the directory that holds the truth and the caller's identity. The
+ * view makes the case bodies independent of the fixture that produced them
+ * (cas_cases.h), so the same assertions run on the POSIX backend and on the
+ * protocol adapters. */
+typedef struct cas_view {
+    pgw_rmfs *fs;
+    const char *root;
+    pgw_fs_cred cred;
+} cas_view;
+
+static inline void cas_view_of_mount(cas_view *v, const cas_mount *m)
+{
+    v->fs = m->fs;
+    v->root = m->root;
+    v->cred = m->cred;
+}
+
 /* --- scale of a case ------------------------------------------------------ */
 
 /* Read a decimal number from the environment, `def` when unset or invalid. */
@@ -114,6 +134,17 @@ size_t cas_truth_count(const char *root, const char *rel);
 /* Read a whole file of the truth into `buf`; false when it cannot be read. */
 bool cas_truth_read(const char *root, const char *rel, void *buf, size_t cap,
                     size_t *out_len);
+
+/* --- the host side of the truth ------------------------------------------ */
+
+/* Plain POSIX changes on the served directory, the way the PC does them
+ * behind the share's back. The replace case (ROB-04) and the hard-link case
+ * need all four: write, atomic replace by rename, unlink and a known stamp.
+ * They live here so no case re-implements them. */
+bool cas_host_write(const char *root, const char *rel, const void *data, size_t len);
+bool cas_host_rename(const char *root, const char *from, const char *to);
+bool cas_host_unlink(const char *root, const char *rel);
+bool cas_host_set_mtime(const char *root, const char *rel, long long sec);
 
 /* --- host helpers --------------------------------------------------------- */
 
