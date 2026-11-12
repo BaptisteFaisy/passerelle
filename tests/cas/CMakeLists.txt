@@ -51,6 +51,7 @@ pgw_library(pgw_cas_cases
         cas_cases_replace.c
         cas_cases_hardlink.c
         cas_host.c
+        cas_truth.c
     DEPS pgw_rmfs pgw_test pgw_posix_backend
     INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}" "${REF9P_DIR}"
             "${CMAKE_SOURCE_DIR}/tests/posix_backend"
@@ -68,7 +69,7 @@ pgw_test(test_cas_hardlink
 
 pgw_test(test_cas_big_file
     SRCS test_cas_big_file.c ${CAS_MAIN} ${CAS_9P_SRCS}
-    DEPS pgw_diff pgw_proto9p
+    DEPS pgw_diff pgw_proto9p pgw_cas_cases
     LABELS "directed;conformance")
 
 # The 5 GiB variant of spec 7.4. Never a pull-request gate (CI budget): the
@@ -83,7 +84,7 @@ set_tests_properties(cas-big-file-5gib PROPERTIES
 
 pgw_test(test_cas_big_dir
     SRCS test_cas_big_dir.c ${CAS_MAIN} ${CAS_9P_SRCS}
-    DEPS pgw_diff pgw_proto9p
+    DEPS pgw_diff pgw_proto9p pgw_cas_cases
     LABELS "directed;conformance")
 
 # The 100 000 entries of spec 7.4, out of the pull-request gate.
@@ -96,22 +97,22 @@ set_tests_properties(cas-big-dir-100k PROPERTIES
 
 pgw_test(test_cas_path_len
     SRCS test_cas_path_len.c ${CAS_MAIN} ${CAS_9P_SRCS}
-    DEPS pgw_diff pgw_proto9p
+    DEPS pgw_diff pgw_proto9p pgw_cas_cases
     LABELS "directed;conformance")
 
 pgw_test(test_cas_exotic
     SRCS test_cas_exotic.c ${CAS_MAIN} ${CAS_9P_SRCS}
-    DEPS pgw_diff pgw_proto9p
+    DEPS pgw_diff pgw_proto9p pgw_cas_cases
     LABELS "directed;conformance")
 
 pgw_test(test_cas_fsync
     SRCS test_cas_fsync.c ${CAS_MAIN} ${CAS_9P_SRCS}
-    DEPS pgw_diff pgw_proto9p
+    DEPS pgw_diff pgw_proto9p pgw_cas_cases
     LABELS "directed;conformance")
 
 pgw_test(test_cas_load
     SRCS test_cas_load.c ${CAS_MAIN}
-    DEPS pgw_diff
+    DEPS pgw_diff pgw_cas_cases
     LABELS "directed;conformance")
 target_link_libraries(test_cas_load PRIVATE Threads::Threads)
 

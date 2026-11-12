@@ -178,6 +178,7 @@ void cas_case_link_target(const cas_view *v)
 {
     make_file(v, "t1.txt", "data");
     PGW_ASSERT_EQ_I(pgw_rmfs_link(v->fs, &v->cred, "t1.txt", "t2.txt"), PGW_OK);
+    size_t before = cas_truth_count(v->root, ".");
 
     /* The target exists: POSIX refuses the link. */
     PGW_ASSERT_EQ_I(pgw_rmfs_link(v->fs, &v->cred, "t1.txt", "t2.txt"), PGW_EEXIST);
@@ -194,7 +195,8 @@ void cas_case_link_target(const cas_view *v)
     struct stat st;
     PGW_ASSERT(ref9p_truth_stat(v->root, "t1.txt", &st));
     PGW_ASSERT_EQ_U((uint64_t)st.st_nlink, 2);
-    PGW_ASSERT_EQ_U(cas_truth_count(v->root, "."), 2);
+    /* The refused link created no name: the directory holds what it held. */
+    PGW_ASSERT_EQ_U(cas_truth_count(v->root, "."), before);
 }
 
 /* The attribute cache must not keep a stale link count, neither after a link
