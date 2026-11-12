@@ -60,8 +60,8 @@ static void cas_append(char *out, size_t cap, const char *a, const char *b)
 
 /* Build `n` components of `comp` bytes on the truth side; `rel` receives the
  * relative path of the deepest directory, trailing slash included. */
-static size_t chain_on_truth(const char *root, char *rel, size_t cap,
-                             size_t comp, size_t n)
+static size_t chain_on_truth(const char *root, char *rel, size_t cap, size_t comp,
+                             size_t n)
 {
     char one[PGW_NAME_MAX + 1];
     char dir[CAS_PATH_MAX];
@@ -175,14 +175,14 @@ static void test_component_at_name_max(void)
     /* The same over-long name is refused by the create path too, and by the
      * read path: no layer may answer ENOENT for a name it shortened. */
     pgw_rmfs_fd *fd = NULL;
-    pgw_err got = pgw_rmfs_open(m.fs, &m.cred, long_rel,
-                                PGW_O_RDWR | PGW_O_CREAT, 0644, &fd);
-    CAS_ASSERT_MSG(got == PGW_ENAMETOOLONG,
-                   "create of a 256 byte name answered %s", pgw_err_name(got));
+    pgw_err got =
+            pgw_rmfs_open(m.fs, &m.cred, long_rel, PGW_O_RDWR | PGW_O_CREAT, 0644, &fd);
+    CAS_ASSERT_MSG(got == PGW_ENAMETOOLONG, "create of a 256 byte name answered %s",
+                   pgw_err_name(got));
     pgw_fs_attr at;
     got = pgw_rmfs_stat(m.fs, &m.cred, long_rel, &at);
-    CAS_ASSERT_MSG(got == PGW_ENAMETOOLONG,
-                   "stat of a 256 byte name answered %s", pgw_err_name(got));
+    CAS_ASSERT_MSG(got == PGW_ENAMETOOLONG, "stat of a 256 byte name answered %s",
+                   pgw_err_name(got));
     cas_mount_close(&m);
 }
 PGW_TEST(test_component_at_name_max);
@@ -204,9 +204,9 @@ static void test_deep_chain_is_not_truncated(void)
     char leaf[CAS_PATH_MAX];
     cas_append(leaf, sizeof(leaf), rel, "leaf.txt");
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, leaf,
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, leaf, PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     size_t w = 0;
     PGW_ASSERT_EQ_I(pgw_rmfs_write(m.fs, fd, 0, "deep", 4, &w), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
@@ -217,14 +217,13 @@ static void test_deep_chain_is_not_truncated(void)
     char dir[CAS_PATH_MAX];
     snprintf(dir, sizeof(dir), "%.*s", (int)(used - 1), rel);
     pgw_rmfs_fd *dh = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, dir,
-                                  PGW_O_RDONLY | PGW_O_DIRECTORY, 0, &dh),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, dir, PGW_O_RDONLY | PGW_O_DIRECTORY, 0, &dh),
+            PGW_OK);
     pgw_fs_dirent ents[8];
     size_t got = 0;
     uint64_t next = 0;
-    PGW_ASSERT_EQ_I(pgw_rmfs_readdir(m.fs, dh, 0, ents, 8, &got, &next),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_readdir(m.fs, dh, 0, ents, 8, &got, &next), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, dh), PGW_OK);
     PGW_ASSERT_EQ_U(got, 1);
     PGW_ASSERT_STR_EQ(ents[0].name, "leaf.txt");
@@ -243,6 +242,48 @@ PGW_TEST(test_deep_chain_is_not_truncated);
 
 /* FS-15, P9-08 (gap 66): the same deep path through the 9P adapter, where a
  * walk longer than PGW_MAXWELEM names is split into several messages. */
+
+/* Build `levels` components of CHAIN_COMP bytes through the layer itself, so
+ * every mkdir is a split walk; `rel` receives the deepest directory. */
+static void chain_through_client(pgw_rmfs *fs, const pgw_fs_cred *cred, size_t levels,
+                                 char *rel, size_t cap)
+{
+    char one[PGW_NAME_MAX + 1];
+    size_t used = 0;
+    rel[0] = '\0';
+    for (size_t i = 0; i < levels; i++) {
+        cas_component(one, CHAIN_COMP, i);
+        snprintf(rel + used, cap - used, "%s", one);
+        used += CHAIN_COMP;
+        PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(fs, cred, rel, 0755), PGW_OK);
+        snprintf(rel + used, cap - used, "/");
+        used += 1;
+    }
+}
+
+/* Create a leaf at the end of a deep path through the client and require that
+ * the served directory holds exactly those bytes with exactly that content. */
+static void leaf_through_client(const cas_9p *c, const char *rel)
+{
+    char leaf[CAS_PATH_MAX];
+    cas_append(leaf, sizeof(leaf), rel, "leaf.txt");
+    pgw_rmfs_fd *fd = NULL;
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(c->fs, &c->cred, leaf, PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
+    size_t w = 0;
+    PGW_ASSERT_EQ_I(pgw_rmfs_write(c->fs, fd, 0, "deep over 9P", 12, &w), PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_close(c->fs, fd), PGW_OK);
+
+    PGW_ASSERT(cas_truth_exists(c->root, leaf));
+    PGW_ASSERT_EQ_U(cas_truth_size(c->root, leaf), 12);
+    char buf[16];
+    size_t len = 0;
+    PGW_ASSERT(cas_truth_read(c->root, leaf, buf, sizeof(buf), &len));
+    PGW_ASSERT_EQ_U(len, 12);
+    PGW_ASSERT_MEM_EQ(buf, "deep over 9P", 12);
+}
+
 static void test_deep_chain_through_9p(void)
 {
     cas_9p c;
@@ -250,39 +291,9 @@ static void test_deep_chain_through_9p(void)
     const size_t levels = 20; /* more than the 16 names of one Twalk */
 
     char rel[CAS_PATH_MAX];
-    char one[PGW_NAME_MAX + 1];
-    size_t used = 0;
-    rel[0] = '\0';
-    for (size_t i = 0; i < levels; i++) {
-        cas_component(one, CHAIN_COMP, i);
-        snprintf(rel + used, sizeof(rel) - used, "%s", one);
-        used += CHAIN_COMP;
-        PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(c.fs, &c.cred, rel, 0755), PGW_OK);
-        snprintf(rel + used, sizeof(rel) - used, "/");
-        used += 1;
-    }
-    printf("# deep path over 9P: %zu levels, %zu relative bytes\n", levels,
-           used);
-
-    char leaf[CAS_PATH_MAX];
-    cas_append(leaf, sizeof(leaf), rel, "leaf.txt");
-    pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(c.fs, &c.cred, leaf,
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
-    size_t w = 0;
-    PGW_ASSERT_EQ_I(pgw_rmfs_write(c.fs, fd, 0, "deep over 9P", 12, &w),
-                    PGW_OK);
-    PGW_ASSERT_EQ_I(pgw_rmfs_close(c.fs, fd), PGW_OK);
-
-    /* The truth holds the file at the full path, with the right content. */
-    PGW_ASSERT(cas_truth_exists(c.root, leaf));
-    PGW_ASSERT_EQ_U(cas_truth_size(c.root, leaf), 12);
-    char buf[16];
-    size_t len = 0;
-    PGW_ASSERT(cas_truth_read(c.root, leaf, buf, sizeof(buf), &len));
-    PGW_ASSERT_EQ_U(len, 12);
-    PGW_ASSERT_MEM_EQ(buf, "deep over 9P", 12);
+    chain_through_client(c.fs, &c.cred, levels, rel, sizeof(rel));
+    printf("# deep path over 9P: %zu levels, %zu relative bytes\n", levels, strlen(rel));
+    leaf_through_client(&c, rel);
 
     /* An over-long name is refused on this side of the wire as well. */
     char too_long[PGW_NAME_MAX + 2];
@@ -295,4 +306,5 @@ static void test_deep_chain_through_9p(void)
                    "ENAMETOOLONG");
     cas_9p_close(&c);
 }
+
 PGW_TEST(test_deep_chain_through_9p);

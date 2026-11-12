@@ -79,8 +79,7 @@ static size_t load_threads(void)
 
 /* stat, list and unlink what the round created: the subtree stays empty, so
  * the tree comparison at the end of the load stays cheap. */
-static size_t metadata_round_tail(load_worker *w, cas_mount *m,
-                                  const char *dir)
+static size_t metadata_round_tail(load_worker *w, cas_mount *m, const char *dir)
 {
     size_t ops = 0;
     char rel[64];
@@ -92,14 +91,13 @@ static size_t metadata_round_tail(load_worker *w, cas_mount *m,
     }
     pgw_rmfs_fd *dh = NULL;
     if (w->verdict == PGW_OK)
-        w->verdict = pgw_rmfs_open(m->fs, &m->cred, dir,
-                                   PGW_O_RDONLY | PGW_O_DIRECTORY, 0, &dh);
+        w->verdict = pgw_rmfs_open(m->fs, &m->cred, dir, PGW_O_RDONLY | PGW_O_DIRECTORY,
+                                   0, &dh);
     if (w->verdict == PGW_OK) {
         pgw_fs_dirent ents[FILES_PER_ROUND];
         size_t got = 0;
         uint64_t next = 0;
-        w->verdict = pgw_rmfs_readdir(m->fs, dh, 0, ents, FILES_PER_ROUND,
-                                      &got, &next);
+        w->verdict = pgw_rmfs_readdir(m->fs, dh, 0, ents, FILES_PER_ROUND, &got, &next);
         ops += 1 + got;
         w->verdict = pgw_rmfs_close(m->fs, dh);
     }
@@ -121,8 +119,7 @@ static size_t metadata_round(load_worker *w, cas_mount *m, const char *dir)
         snprintf(rel, sizeof(rel), "%s/f%02zu", dir, i);
         pgw_rmfs_fd *fd = NULL;
         w->verdict = pgw_rmfs_open(m->fs, &m->cred, rel,
-                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644,
-                                   &fd);
+                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644, &fd);
         if (w->verdict != PGW_OK)
             break;
         char data[32];
@@ -173,8 +170,7 @@ static void *bulk_worker(void *arg)
     w->verdict = pgw_rmfs_open(m.fs, &m.cred, "src.bin", PGW_O_RDONLY, 0, &src);
     if (w->verdict == PGW_OK)
         w->verdict = pgw_rmfs_open(m.fs, &m.cred, "copy.bin",
-                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644,
-                                   &dst);
+                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644, &dst);
     uint8_t buf[CHUNK];
     while (w->verdict == PGW_OK && w->copied < SRC_BYTES) {
         size_t n = 0;
@@ -210,8 +206,7 @@ static void priority_probe(load_run *run, uint64_t deadline_ns)
     pgw_fs_cred urgent = m.cred;
     urgent.prio = 200; /* the scheduler orders by urgency, bigger is first */
     pgw_rmfs_fd *fd = NULL;
-    if (pgw_rmfs_open(m.fs, &urgent, "prio.bin", PGW_O_RDONLY, 0, &fd) !=
-        PGW_OK) {
+    if (pgw_rmfs_open(m.fs, &urgent, "prio.bin", PGW_O_RDONLY, 0, &fd) != PGW_OK) {
         cas_mount_close(&m);
         return;
     }
@@ -259,15 +254,13 @@ static void prepare_truth_tree(const char *root)
 
 /* Start the workload: `threads` metadata clients plus, when asked, the bulk
  * copy. The calling thread is the monitor and the high-priority client. */
-static void load_start(load_run *run, load_worker *w, pthread_t *th,
-                       bool with_bulk)
+static void load_start(load_run *run, load_worker *w, pthread_t *th, bool with_bulk)
 {
     const size_t n = run->threads + (with_bulk ? 1 : 0);
     for (size_t i = 0; i < n; i++) {
         w[i].run = run;
         w[i].index = i;
-        void *(*fn)(void *) = with_bulk && i + 1 == n ? bulk_worker
-                                                      : metadata_worker;
+        void *(*fn)(void *) = with_bulk && i + 1 == n ? bulk_worker : metadata_worker;
         PGW_ASSERT_EQ_I(pthread_create(&th[i], NULL, fn, &w[i]), 0);
     }
 }
@@ -283,28 +276,95 @@ static void load_join(load_run *run, pthread_t *th, bool with_bulk)
 static void expect_workers_clean(const load_worker *w, size_t n)
 {
     for (size_t i = 0; i < n; i++) {
-        CAS_ASSERT_MSG(w[i].verdict == PGW_OK,
-                       "worker %zu failed under load with %s", i,
+        CAS_ASSERT_MSG(w[i].verdict == PGW_OK, "worker %zu failed under load with %s", i,
                        pgw_err_name(w[i].verdict));
-        CAS_ASSERT_MSG(w[i].handles_left == 0,
-                       "worker %zu left %zu backend handles open", i,
-                       w[i].handles_left);
+        CAS_ASSERT_MSG(w[i].handles_left == 0, "worker %zu left %zu backend handles open",
+                       i, w[i].handles_left);
     }
 }
 
 /* PERF-05, ROB-02, ROB-03 (gap 63): the mount survives a continuous workload. */
+
+/* Prepare the run: the shared directory, its seed tree and the baseline the
+ * descriptor count must come back to. */
+static void load_prepare(load_run *run, const char *tag)
+{
+    memset(run, 0, sizeof(*run));
+    char *root = pgw_test_tmpdir(tag);
+    PGW_ASSERT(root != NULL);
+    snprintf(run->root, sizeof(run->root), "%s", root);
+    prepare_truth_tree(run->root);
+    run->threads = load_threads();
+    run->budget_ns = load_seconds() * 1000000000ULL;
+    run->fd_baseline = cas_fd_count();
+}
+
+/* No deadlock, no starvation, no leftover handle, and the bulk copy moved
+ * every byte it was asked to move. */
+static void expect_run_clean(const load_run *run, const load_worker *w, size_t n,
+                             uint64_t elapsed_ns)
+{
+    size_t ops = 0;
+    for (size_t i = 0; i < run->threads; i++) {
+        CAS_ASSERT_MSG(w[i].ops > 0, "worker %zu did no work at all", i);
+        ops += w[i].ops;
+    }
+    CAS_ASSERT_MSG(w[n - 1].copied == SRC_BYTES, "the bulk copy moved %llu of %u bytes",
+                   (unsigned long long)w[n - 1].copied, SRC_BYTES);
+    expect_workers_clean(w, n);
+    CAS_ASSERT_MSG(elapsed_ns < run->budget_ns + 30000000000ULL,
+                   "the workload did not finish in %llu s: a deadlock?",
+                   (unsigned long long)(elapsed_ns / 1000000000ULL));
+    printf("# load: %zu metadata clients, %zu operations, %u MiB copied in "
+           "%llu ms\n",
+           run->threads, ops, (unsigned)(SRC_BYTES >> 20),
+           (unsigned long long)(elapsed_ns / 1000000ULL));
+}
+
+/* The descriptors stay bounded while the load runs and come back after. */
+static void expect_descriptors_bounded(const load_run *run)
+{
+    CAS_ASSERT_MSG(run->fd_peak <= run->fd_baseline + FD_HEADROOM,
+                   "descriptors grew from %zu to %zu under load", run->fd_baseline,
+                   run->fd_peak);
+    CAS_ASSERT_MSG(cas_fd_count() <= run->fd_baseline + 8,
+                   "descriptors did not come back: %zu now, %zu before", cas_fd_count(),
+                   run->fd_baseline);
+}
+
+/* The copy is byte exact on the truth side, chunk by chunk. */
+static void expect_copy_exact(const load_run *run)
+{
+    uint8_t *whole = malloc(SRC_BYTES);
+    PGW_ASSERT(whole != NULL);
+    size_t len = 0;
+    PGW_ASSERT(cas_truth_read(run->root, "copy.bin", whole, SRC_BYTES, &len));
+    CAS_ASSERT_MSG(len == SRC_BYTES, "the copy holds %zu bytes, expected %u", len,
+                   SRC_BYTES);
+    for (uint64_t off = 0; off < SRC_BYTES; off += CHUNK)
+        CAS_ASSERT_MSG(pgw_test_pattern_ok(whole + off, CHUNK, 42, off),
+                       "the copy differs from the source at offset %llu",
+                       (unsigned long long)off);
+    free(whole);
+}
+
+/* After the load, the tree the layer reports is still the tree the PC holds:
+ * the differential verifier of the bench, reused as it is. */
+static void expect_tree_consistent(const load_run *run)
+{
+    cas_mount check;
+    PGW_ASSERT(cas_mount_open_at(&check, run->root, NULL, NULL));
+    char err[512];
+    err[0] = '\0';
+    CAS_ASSERT_MSG(diff_verify_tree(check.fs, check.root, err, sizeof(err)) == PGW_OK,
+                   "after the load the tree diverges: %s", err);
+    cas_mount_close(&check);
+}
+
 static void test_load_mount_survives_a_continuous_workload(void)
 {
     load_run run;
-    memset(&run, 0, sizeof(run));
-    char *root = pgw_test_tmpdir("pgwcas-load");
-    PGW_ASSERT(root != NULL);
-    snprintf(run.root, sizeof(run.root), "%s", root);
-    prepare_truth_tree(run.root);
-
-    run.threads = load_threads();
-    run.budget_ns = load_seconds() * 1000000000ULL;
-    run.fd_baseline = cas_fd_count();
+    load_prepare(&run, "pgwcas-load");
     const size_t n = run.threads + 1;
     load_worker *w = calloc(n, sizeof(*w));
     pthread_t *th = calloc(n, sizeof(*th));
@@ -313,62 +373,13 @@ static void test_load_mount_survives_a_continuous_workload(void)
     const uint64_t t0 = pgw_now_ns();
     run.deadline_ns = t0 + run.budget_ns;
     load_start(&run, w, th, true);
-    priority_probe(&run, run.deadline_ns);
+    priority_probe(&run, run.deadline_ns); /* this thread is the monitor */
     load_join(&run, th, true);
-    const uint64_t elapsed_ns = pgw_now_ns() - t0;
 
-    size_t ops = 0;
-    for (size_t i = 0; i < run.threads; i++) {
-        CAS_ASSERT_MSG(w[i].ops > 0, "worker %zu did no work at all", i);
-        ops += w[i].ops;
-    }
-    CAS_ASSERT_MSG(w[n - 1].copied == SRC_BYTES,
-                   "the bulk copy moved %llu of %u bytes",
-                   (unsigned long long)w[n - 1].copied, SRC_BYTES);
-    expect_workers_clean(w, n);
-
-    /* No deadlock: the whole workload is back inside the budget, plus a wide
-     * margin for a slow or instrumented machine. */
-    CAS_ASSERT_MSG(elapsed_ns < run.budget_ns + 30000000000ULL,
-                   "the workload did not finish in %llu s: a deadlock?",
-                   (unsigned long long)(elapsed_ns / 1000000000ULL));
-
-    /* No unbounded descriptor growth, and everything is back afterwards. */
-    CAS_ASSERT_MSG(run.fd_peak <= run.fd_baseline + FD_HEADROOM,
-                   "descriptors grew from %zu to %zu under load",
-                   run.fd_baseline, run.fd_peak);
-    CAS_ASSERT_MSG(cas_fd_count() <= run.fd_baseline + 8,
-                   "descriptors did not come back: %zu now, %zu before",
-                   cas_fd_count(), run.fd_baseline);
-
-    printf("# load: %zu metadata clients, %zu operations, %llu MiB copied, "
-           "%llu ms of budget\n",
-           run.threads, ops, (unsigned long long)(SRC_BYTES >> 20),
-           (unsigned long long)(elapsed_ns / 1000000ULL));
-
-    /* The copy is byte exact on the truth side: read it whole, then check
-     * every chunk against the pattern it was written with. */
-    uint8_t *whole = malloc(SRC_BYTES);
-    PGW_ASSERT(whole != NULL);
-    size_t len = 0;
-    PGW_ASSERT(cas_truth_read(run.root, "copy.bin", whole, SRC_BYTES, &len));
-    CAS_ASSERT_MSG(len == SRC_BYTES, "the copy holds %zu bytes, expected %u",
-                   len, SRC_BYTES);
-    for (uint64_t off = 0; off < SRC_BYTES; off += CHUNK)
-        CAS_ASSERT_MSG(pgw_test_pattern_ok(whole + off, CHUNK, 42, off),
-                       "the copy differs from the source at offset %llu",
-                       (unsigned long long)off);
-    free(whole);
-
-    /* And the tree the layer reports is still the tree the PC holds. */
-    cas_mount check;
-    PGW_ASSERT(cas_mount_open_at(&check, run.root, NULL, NULL));
-    char err[512];
-    err[0] = '\0';
-    CAS_ASSERT_MSG(diff_verify_tree(check.fs, check.root, err, sizeof(err)) ==
-                       PGW_OK,
-                   "after the load the tree diverges: %s", err);
-    cas_mount_close(&check);
+    expect_run_clean(&run, w, n, pgw_now_ns() - t0);
+    expect_descriptors_bounded(&run);
+    expect_copy_exact(&run);
+    expect_tree_consistent(&run);
     free(w);
     free(th);
 }
@@ -381,15 +392,8 @@ PGW_TEST(test_load_mount_survives_a_continuous_workload);
 static void test_load_high_priority_read_under_bulk_copy(void)
 {
     load_run run;
-    memset(&run, 0, sizeof(run));
-    char *root = pgw_test_tmpdir("pgwcas-loadprio");
-    PGW_ASSERT(root != NULL);
-    snprintf(run.root, sizeof(run.root), "%s", root);
-    prepare_truth_tree(run.root);
-
+    load_prepare(&run, "pgwcas-loadprio");
     run.threads = 1; /* the bulk copy is the load here */
-    run.budget_ns = load_seconds() * 1000000000ULL;
-    run.fd_baseline = cas_fd_count();
     load_worker w[2];
     pthread_t th[2];
     memset(w, 0, sizeof(w));
@@ -430,22 +434,21 @@ static void test_load_no_descriptor_leak_across_remounts(void)
         for (size_t i = 0; i < 8; i++) {
             snprintf(rel, sizeof(rel), "f%zu", i);
             pgw_rmfs_fd *fd = NULL;
-            PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, rel,
-                                          PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, rel, PGW_O_RDWR | PGW_O_CREAT,
+                                          0644, &fd),
                             PGW_OK);
             size_t n = 0;
             PGW_ASSERT_EQ_I(pgw_rmfs_write(m.fs, fd, 0, "x", 1, &n), PGW_OK);
             PGW_ASSERT_EQ_I(pgw_rmfs_fsync(m.fs, fd), PGW_OK);
             PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
-            PGW_ASSERT_EQ_I(pgw_rmfs_unlink(m.fs, &m.cred, rel, false),
-                            PGW_OK);
+            PGW_ASSERT_EQ_I(pgw_rmfs_unlink(m.fs, &m.cred, rel, false), PGW_OK);
         }
         PGW_ASSERT_EQ_U(pgw_rmfs_open_count(m.fs), 0);
         PGW_ASSERT_EQ_U(pgw_posix_backend_open_handles(m.be), 0);
         cas_mount_close(&m);
         CAS_ASSERT_MSG(cas_fd_count() <= baseline + 4,
-                       "cycle %u leaked descriptors: %zu now, %zu at start",
-                       cycle, cas_fd_count(), baseline);
+                       "cycle %u leaked descriptors: %zu now, %zu at start", cycle,
+                       cas_fd_count(), baseline);
     }
     PGW_ASSERT_EQ_U(cas_truth_count(root, "."), 0);
 }

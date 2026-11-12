@@ -41,36 +41,34 @@ typedef struct exotic {
 } exotic;
 
 static const exotic g_exotic[] = {
-    { "plain.txt", "an ordinary name" },
-    { "with spaces.txt", "spaces" },
-    { "tab\tinside", "a tab" },
-    { "newline\ninside", "a newline" },
-    { "single'quote", "a single quote" },
-    { "double\"quote", "a double quote" },
-    { "back\\slash", "a backslash" },
-    { "-leading-dash", "a leading dash" },
-    { "trailing-dot.", "a trailing dot" },
-    { "dots..inside", "two dots inside the name" },
-    { "\xc3\xa9\xc3\xa0\xc3\xbc-two-bytes", "UTF-8 two-byte sequences" },
-    { "\xe4\xb8\xad\xe6\x96\x87-three-bytes", "UTF-8 three-byte sequences" },
-    { "\xf0\x9f\xa6\x80-four-bytes", "a UTF-8 four-byte emoji" },
-    { "\xc3\xa9-composed", "NFC: one precomposed code point" },
-    { "e\xcc\x81-decomposed", "NFD: a base letter and a combining mark" },
-    { "mix \xf0\x9f\xa6\x80 \xc3\xa9 back\\slash", "all of it at once" },
+        {"plain.txt", "an ordinary name"},
+        {"with spaces.txt", "spaces"},
+        {"tab\tinside", "a tab"},
+        {"newline\ninside", "a newline"},
+        {"single'quote", "a single quote"},
+        {"double\"quote", "a double quote"},
+        {"back\\slash", "a backslash"},
+        {"-leading-dash", "a leading dash"},
+        {"trailing-dot.", "a trailing dot"},
+        {"dots..inside", "two dots inside the name"},
+        {"\xc3\xa9\xc3\xa0\xc3\xbc-two-bytes", "UTF-8 two-byte sequences"},
+        {"\xe4\xb8\xad\xe6\x96\x87-three-bytes", "UTF-8 three-byte sequences"},
+        {"\xf0\x9f\xa6\x80-four-bytes", "a UTF-8 four-byte emoji"},
+        {"\xc3\xa9-composed", "NFC: one precomposed code point"},
+        {"e\xcc\x81-decomposed", "NFD: a base letter and a combining mark"},
+        {"mix \xf0\x9f\xa6\x80 \xc3\xa9 back\\slash", "all of it at once"},
 };
 #define N_EXOTIC (sizeof(g_exotic) / sizeof(g_exotic[0]))
 
 /* Create `name` through the layer with a known pattern inside, then require
  * that the truth holds exactly those bytes under exactly that name. */
-static void create_and_verify(pgw_rmfs *fs, const pgw_fs_cred *cred,
-                              const char *root, const exotic *e, uint32_t seed)
+static void create_and_verify(pgw_rmfs *fs, const pgw_fs_cred *cred, const char *root,
+                              const exotic *e, uint32_t seed)
 {
     pgw_rmfs_fd *fd = NULL;
-    pgw_err err = pgw_rmfs_open(fs, cred, e->name,
-                                PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644,
-                                &fd);
-    CAS_ASSERT_MSG(err == PGW_OK, "create of %s failed: %s", e->what,
-                   pgw_err_name(err));
+    pgw_err err = pgw_rmfs_open(fs, cred, e->name, PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC,
+                                0644, &fd);
+    CAS_ASSERT_MSG(err == PGW_OK, "create of %s failed: %s", e->what, pgw_err_name(err));
     uint8_t buf[64];
     pgw_test_pattern(buf, sizeof(buf), seed, 0);
     size_t n = 0;
@@ -88,8 +86,7 @@ static void create_and_verify(pgw_rmfs *fs, const pgw_fs_cred *cred,
                    "the content of %s did not survive", e->what);
 
     /* And the layer reads back what it wrote, through its own path. */
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, cred, e->name, PGW_O_RDONLY, 0, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, cred, e->name, PGW_O_RDONLY, 0, &fd), PGW_OK);
     memset(back, 0, sizeof(back));
     PGW_ASSERT_EQ_I(pgw_rmfs_read(fs, fd, 0, back, sizeof(back), &n), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(fs, fd), PGW_OK);
@@ -97,12 +94,11 @@ static void create_and_verify(pgw_rmfs *fs, const pgw_fs_cred *cred,
 }
 
 /* The listing of "." must contain `name` with exactly those bytes. */
-static void expect_listed(pgw_rmfs *fs, const pgw_fs_cred *cred,
-                          const char *name, const char *what)
+static void expect_listed(pgw_rmfs *fs, const pgw_fs_cred *cred, const char *name,
+                          const char *what)
 {
     pgw_rmfs_fd *dir = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, cred, ".",
-                                  PGW_O_RDONLY | PGW_O_DIRECTORY, 0, &dir),
+    PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, cred, ".", PGW_O_RDONLY | PGW_O_DIRECTORY, 0, &dir),
                     PGW_OK);
     pgw_fs_dirent ents[64];
     size_t got = 0;
@@ -111,8 +107,7 @@ static void expect_listed(pgw_rmfs *fs, const pgw_fs_cred *cred,
     bool found = false;
     const size_t want_len = strlen(name) + 1;
     while (!found) {
-        PGW_ASSERT_EQ_I(pgw_rmfs_readdir(fs, dir, off, ents, 64, &got, &next),
-                        PGW_OK);
+        PGW_ASSERT_EQ_I(pgw_rmfs_readdir(fs, dir, off, ents, 64, &got, &next), PGW_OK);
         if (got == 0)
             break;
         for (size_t i = 0; i < got && !found; i++)
@@ -132,8 +127,7 @@ static void test_exotic_names_survive_the_layer(void)
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-exotic", NULL, NULL));
     for (size_t i = 0; i < N_EXOTIC; i++)
-        create_and_verify(m.fs, &m.cred, m.root, &g_exotic[i],
-                          (uint32_t)(i + 1));
+        create_and_verify(m.fs, &m.cred, m.root, &g_exotic[i], (uint32_t)(i + 1));
     for (size_t i = 0; i < N_EXOTIC; i++)
         expect_listed(m.fs, &m.cred, g_exotic[i].name, g_exotic[i].what);
     PGW_ASSERT_EQ_U(cas_truth_count(m.root, "."), N_EXOTIC);
@@ -152,14 +146,14 @@ static void test_exotic_names_nfc_and_nfd_stay_distinct(void)
 
     pgw_rmfs_fd *fd = NULL;
     size_t n = 0;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, nfc,
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, nfc, PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_write(m.fs, fd, 0, "NFC", 3, &n), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, nfd,
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, nfd, PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_write(m.fs, fd, 0, "NFD-longer", 10, &n), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
 
@@ -191,9 +185,9 @@ static void test_exotic_name_of_255_bytes(void)
 
     pgw_rmfs_fd *fd = NULL;
     size_t n = 0;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, name,
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, name, PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_write(m.fs, fd, 0, "long name", 9, &n), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
     PGW_ASSERT(cas_truth_exists(m.root, name));
@@ -207,7 +201,7 @@ PGW_TEST(test_exotic_name_of_255_bytes);
  * them exactly as the kernel does, and must not create anything. */
 static void test_exotic_names_dot_and_dotdot_refused(void)
 {
-    static const char *const bad[] = { ".", ".." };
+    static const char *const bad[] = {".", ".."};
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-dots", NULL, NULL));
     const size_t before = cas_truth_count(m.root, ".");
@@ -226,12 +220,10 @@ static void test_exotic_names_dot_and_dotdot_refused(void)
 
         /* create: the kernel answers EISDIR, and so must the layer. */
         pgw_rmfs_fd *fd = NULL;
-        const pgw_err got_open = pgw_rmfs_open(m.fs, &m.cred, bad[i],
-                                               PGW_O_RDWR | PGW_O_CREAT, 0644,
-                                               &fd);
+        const pgw_err got_open =
+                pgw_rmfs_open(m.fs, &m.cred, bad[i], PGW_O_RDWR | PGW_O_CREAT, 0644, &fd);
         errno = 0;
-        const int truth_open = (open(abs, O_WRONLY | O_CREAT, 0644) < 0) ? errno
-                                                                        : 0;
+        const int truth_open = (open(abs, O_WRONLY | O_CREAT, 0644) < 0) ? errno : 0;
         CAS_ASSERT_MSG(got_open == pgw_code_from_host(truth_open),
                        "create(\"%s\"): the layer answered %s, the kernel errno "
                        "%d",
@@ -260,8 +252,7 @@ static void test_exotic_names_through_9p(void)
     cas_9p c;
     PGW_ASSERT(cas_9p_open(&c, "pgwcas-exotic9p", NULL));
     for (size_t i = 0; i < N_EXOTIC; i++)
-        create_and_verify(c.fs, &c.cred, c.root, &g_exotic[i],
-                          (uint32_t)(i + 100));
+        create_and_verify(c.fs, &c.cred, c.root, &g_exotic[i], (uint32_t)(i + 100));
     for (size_t i = 0; i < N_EXOTIC; i++)
         expect_listed(c.fs, &c.cred, g_exotic[i].name, g_exotic[i].what);
     PGW_ASSERT_EQ_U(cas_truth_count(c.root, "."), N_EXOTIC);
