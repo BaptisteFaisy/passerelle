@@ -1,0 +1,103 @@
+name: examples
+
+# The DX-04 examples - the CMake and Rust projects that `qshare --example`
+# writes into the share - were generated but never executed by the CI
+# (gap 95). This workflow scaffolds them with the real command, then builds
+# the CMake example and runs its ctest. The Rust example is built only when
+# cargo already exists on the runner: the CI never installs a toolchain, so
+# its absence produces an explicit ::notice:: skip, never a red check.
+#
+# Same budget rules as ci.yml (see ~/Bureau/CI-BUDGET-5MIN.md): one
+# concurrency group per ref, timeout-minutes 5, shallow checkout, and no
+# blind `git clean -ffdx` on the persistent runner.
+on:
+  pull_request:
+    paths:
+      - 'host/**'
+      - '.github/workflows/examples.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'host/**'
+      - '.github/workflows/examples.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: examples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  examples:
+    name: examples
+    runs-on: [self-hosted, passerelle-worker]
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Toolchain (cmake)
+        run: |
+          set -euo pipefail
+          if ! command -v cmake >/dev/null 2>&1; then
+            for d in "$HOME/ci-tools/cmake/cmake/data/bin" "$HOME/.local/cmake/data/bin"; do
+              if [ -x "$d/cmake" ]; then
+                export PATH="$d:$PATH"
+                echo "$d" >> "$GITHUB_PATH"
+                break
+              fi
+            done
+          fi
+          if ! command -v cmake >/dev/null 2>&1; then
+            echo "::error::cmake absent du runner - introuvable localement"
+            exit 1
+          fi
+          cmake --version
+          ctest --version
+      - name: Clean workspace (keep the build trees)
+        run: |
+          set -euo pipefail
+          if git rev-parse --git-dir >/dev/null 2>&1; then
+            git clean -ffdx -e '/build' -e '/build-asan' -e '/.ci-tools'
+          else
+            echo "no previous checkout in this workspace - nothing to clean"
+          fi
+      - name: Checkout (shallow, caches preserved)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          clean: false
+      - name: Scaffold both examples with the real qshare command
+        run: |
+          set -euo pipefail
+          mkdir -p example-share
+          PYTHONPATH=host python3 -c 'import sys; from qshare.cli import main; sys.exit(main())' \
+            --example all example-share
+          test -f example-share/cmake_example/CMakeLists.txt
+          test -f example-share/rust_example/Cargo.toml
+      - name: Build and test the CMake example
+        run: |
+          set -euo pipefail
+          cmake -S example-share/cmake_example -B example-share/cmake_example/build
+          cmake --build example-share/cmake_example/build -j4
+          ctest --test-dir example-share/cmake_example/build \
+                --output-on-failure --no-tests=error
+      - name: Build and test the Rust example (skip with a notice if no cargo)
+        run: |
+          set -euo pipefail
+          if ! command -v cargo >/dev/null 2>&1 && [ -x "$HOME/.cargo/bin/cargo" ]; then
+            export PATH="$HOME/.cargo/bin:$PATH"
+          fi
+          if command -v cargo >/dev/null 2>&1; then
+            cargo --version
+            cd example-share/rust_example
+            cargo test --quiet
+          else
+            echo "::notice::cargo absent du runner - exemple Rust non compile (skip explicite, la CI n'installe jamais de toolchain)"
+          fi
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::examples: $(( $(date +%s) - JOB_START ))s (budget 300s)"
