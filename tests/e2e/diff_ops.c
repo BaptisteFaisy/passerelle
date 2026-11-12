@@ -198,6 +198,58 @@ static void exec_op(pgw_rmfs *fs, const diff_op *o, uint32_t seed,
     }
 }
 
+/* --- the mount of the layer under test (VFS-05) --------------------------- */
+
+/* The provider the bench asks for its mount. The default is the POSIX truth
+ * backend of tests/posix_backend; the FUSE bench of tests/fuse_e2e installs
+ * its own provider, which mounts rmfs over the FUSE adapter, so the very
+ * same suites and the very same verification run on both protocols. */
+static diff_mount_fn g_mount_fn = NULL;
+static void *g_mount_user = NULL;
+
+void diff_set_mount_provider(diff_mount_fn fn, void *user)
+{
+    g_mount_fn = fn;
+    g_mount_user = user;
+}
+
+/* The default mount: the truth backend over a fresh temporary directory. */
+static size_t posix_leaked(void *user)
+{
+    return pgw_posix_backend_open_handles((pgw_posix_backend *)user);
+}
+
+static bool mount_posix(diff_mount *m, void *user, char *err,
+                        size_t err_cap)
+{
+    (void)user; /* the default provider needs no context */
+    memset(m, 0, sizeof(*m));
+    char *root = pgw_test_tmpdir("pgwdiff");
+    if (root == NULL) {
+        snprintf(err, err_cap, "no temporary directory available");
+        return false;
+    }
+    snprintf(m->root, sizeof(m->root), "%s", root);
+    pgw_posix_backend *be = pgw_posix_backend_open(root);
+    if (be == NULL) {
+        snprintf(err, err_cap, "cannot open the truth backend");
+        return false;
+    }
+    pgw_fs_opts opts;
+    pgw_fs_opts_default(&opts);
+    m->fs = pgw_rmfs_create(&pgw_posix_backend_ops, be, &opts);
+    if (m->fs == NULL) {
+        pgw_posix_backend_close(be);
+        snprintf(err, err_cap, "cannot create the filesystem");
+        return false;
+    }
+    /* The rmfs destroy closes the backend through ops->destroy. */
+    m->user = be;
+    m->release = NULL;
+    m->leaked = posix_leaked;
+    return true;
+}
+
 /* --- one run -------------------------------------------------------------- */
 
 /* Verify the two paths an operation touched: either both sides agree, or both
@@ -246,25 +298,17 @@ long diff_run(const diff_op *ops, size_t n, uint32_t seed, char *err,
               size_t err_cap)
 {
     err[0] = '\0';
-    char *root = pgw_test_tmpdir("pgwdiff");
-    if (root == NULL) {
-        snprintf(err, err_cap, "no temporary directory available");
+    diff_mount m;
+    diff_mount_fn fn = (g_mount_fn != NULL) ? g_mount_fn : mount_posix;
+    if (!fn(&m, g_mount_user, err, err_cap))
         return -2;
-    }
-    pgw_posix_backend *be = pgw_posix_backend_open(root);
-    pgw_fs_opts opts;
-    pgw_fs_opts_default(&opts);
-    pgw_rmfs *fs = (be != NULL) ? pgw_rmfs_create(&pgw_posix_backend_ops, be,
-                                                  &opts)
-                                : NULL;
-    if (fs == NULL) {
-        pgw_posix_backend_close(be);
-        snprintf(err, err_cap, "cannot create the backend or the filesystem");
-        return -2;
-    }
-    long failed_at = run_setup_and_ops(fs, ops, n, seed, root, err, err_cap);
-    size_t leaked = pgw_posix_backend_open_handles(be);
-    pgw_rmfs_destroy(fs); /* closes the backend through ops->destroy */
+    long failed_at = run_setup_and_ops(m.fs, ops, n, seed, m.root, err, err_cap);
+    size_t leaked = pgw_rmfs_open_count(m.fs);
+    if (m.leaked != NULL)
+        leaked += m.leaked(m.user);
+    pgw_rmfs_destroy(m.fs); /* closes the backend through ops->destroy */
+    if (m.release != NULL)
+        m.release(m.user);
     if (failed_at < 0 && leaked != 0) {
         snprintf(err, err_cap, "%zu handle(s) left open at the end (ROB-02)",
                  leaked);

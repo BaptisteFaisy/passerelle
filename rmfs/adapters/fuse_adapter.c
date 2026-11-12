@@ -300,14 +300,25 @@ static pgw_err fuse_readdir(void *impl, uint64_t handle, uint64_t off,
                                    max_entries, out_count, prio);
     *next_off = off;
     if (err == PGW_OK) {
+        size_t kept = 0;
         for (size_t i = 0; i < *out_count; i++) {
-            out[i].ino = ents[i].ino;
-            out[i].type = pgw_ftype_from_dt((uint8_t)ents[i].type);
-            out[i].next_off = ents[i].off;
-            snprintf(out[i].name, sizeof(out[i].name), "%s", ents[i].name);
             if (ents[i].off > *next_off)
                 *next_off = ents[i].off;
+            /* A FUSE server lists the two pseudo entries, as the kernel does.
+             * The layer's contract excludes them (the POSIX truth backend
+             * does not report them either), so they are dropped here: the
+             * listing must not depend on the protocol underneath (VFS-05). */
+            if (strcmp(ents[i].name, ".") == 0 ||
+                strcmp(ents[i].name, "..") == 0)
+                continue;
+            out[kept].ino = ents[i].ino;
+            out[kept].type = pgw_ftype_from_dt((uint8_t)ents[i].type);
+            out[kept].next_off = ents[i].off;
+            snprintf(out[kept].name, sizeof(out[kept].name), "%s",
+                     ents[i].name);
+            kept++;
         }
+        *out_count = kept;
     }
     free(ents);
     return err;

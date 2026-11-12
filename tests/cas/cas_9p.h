@@ -39,4 +39,13 @@ void cas_9p_close(struct cas_9p *m);
 /* Absolute host path of a relative path inside the served directory. */
 void cas_9p_abs(const struct cas_9p *m, const char *rel, char *out, size_t cap);
 
+/* The view the shared case bodies take (cas_cases.h): the client view of the
+ * 9P adapter over the served directory. */
+static inline void cas_view_of_9p(cas_view *v, const struct cas_9p *m)
+{
+    v->fs = m->fs;
+    v->root = m->root;
+    v->cred = m->cred;
+}
+
 #endif /* PGW_TESTS_CAS_9P_H */
