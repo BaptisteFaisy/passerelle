@@ -107,31 +107,49 @@ static pgw_err be_tree_link(void *impl, const char *existing,
 
 /* --- readdir with a stable snapshot --------------------------------------- */
 
+/* Grow the snapshot to hold at least `need` entries. Returns false when the
+ * ceiling is reached or the allocation fails: the caller then reports an error
+ * instead of listing a truncated directory (gap 65). */
+static bool snapshot_grow(be_handle *h, size_t need)
+{
+    size_t cap = (h->cap != 0) ? h->cap * 2 : PGW_BE_DIR_CHUNK;
+    if (cap < need)
+        cap = need;
+    if (cap > PGW_BE_MAX_DIR_ENTRIES)
+        return false;
+    char (*names)[256] = realloc(h->names, cap * sizeof(*names));
+    if (names == NULL)
+        return false;
+    h->names = names;
+    uint8_t *types = realloc(h->types, cap * sizeof(*types));
+    if (types == NULL)
+        return false;
+    h->types = types;
+    h->cap = cap;
+    return true;
+}
+
 static pgw_err snapshot_dir(be_handle *h, const char *path)
 {
     DIR *d = opendir(path);
     if (d == NULL)
         return pgw_code_from_host(errno);
-    h->names = calloc(PGW_BE_MAX_DIR_ENTRIES, sizeof(*h->names));
-    h->types = calloc(PGW_BE_MAX_DIR_ENTRIES, sizeof(*h->types));
-    if (h->names == NULL || h->types == NULL) {
-        closedir(d);
-        free(h->names);
-        free(h->types);
-        h->names = NULL;
-        h->types = NULL;
-        return PGW_ENOMEM;
-    }
     struct dirent *de;
-    while ((de = readdir(d)) != NULL && h->n_entries < PGW_BE_MAX_DIR_ENTRIES) {
+    pgw_err err = PGW_OK;
+    while ((de = readdir(d)) != NULL) {
         if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
             continue;
+        if (h->n_entries == h->cap && !snapshot_grow(h, h->cap + 1)) {
+            err = (h->cap >= PGW_BE_MAX_DIR_ENTRIES) ? PGW_EOVERFLOW
+                                                     : PGW_ENOMEM;
+            break;
+        }
         size_t i = h->n_entries++;
         snprintf(h->names[i], sizeof(h->names[i]), "%s", de->d_name);
         h->types[i] = (uint8_t)de->d_type;
     }
     closedir(d);
-    return PGW_OK;
+    return err;
 }
 
 static pgw_err be_tree_readdir(void *impl, uint64_t handle, uint64_t off,
