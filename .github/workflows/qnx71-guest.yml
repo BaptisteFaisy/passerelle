@@ -73,6 +73,11 @@ env:
   QNX_REQUIRED_KB: 9000000  # ~8.6 GiB free, or skip before filling the disk
   QNX_GUEST_TIMEOUT: 45     # one SSH command in the guest
   QNX_CI_CLEANUP: 1         # ephemeral runner: give the disk back afterwards
+  # The guest must not write into the disk it boots from: QEMU puts the
+  # guest's writes in a temporary overlay (snapshot mode), so the image stays
+  # byte-for-byte the one the manifest pins - which is what makes the cached
+  # disk reusable and the checksum verification meaningful after the boot.
+  QNX_VM_SNAPSHOT: 1
 
 jobs:
   qnx71-guest:
@@ -124,9 +129,11 @@ jobs:
         with:
           # The key carries the digest the manifest pins, so the pinned version
           # and the pinned checksum invalidate the cache together. The checksum
-          # check of the disk itself stays the last word anyway.
+          # check of the disk itself stays the last word anyway. The "v2"
+          # prefix retires the first key, which held a disk the guest had
+          # written to (the guest now boots in snapshot mode).
           path: ${{ runner.temp }}/qnx71-vm/qnx71-fs.img
-          key: qnx71-guest-disk-${{ runner.os }}-${{ steps.pin.outputs.digest }}
+          key: qnx71-guest-disk-v2-${{ runner.os }}-${{ steps.pin.outputs.digest }}
 
       - name: Say whether the 6.1 GiB download is needed
         run: |

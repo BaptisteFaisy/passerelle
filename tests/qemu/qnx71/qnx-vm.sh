@@ -34,11 +34,18 @@ start() {
     mkdir -p "$SHARE"
     [ -f "$SHARE/from-host.txt" ] || echo "hello-from-the-pc" > "$SHARE/from-host.txt"
     rm -f "$MON"
+    # The disk is read-only for the guest when QNX_VM_SNAPSHOT=1: QEMU writes
+    # the guest's changes to a temporary overlay, so the image on disk stays
+    # byte-for-byte the one the manifest pins. The CI job sets it, because the
+    # disk it caches must stay pristine - and because the checksum of the disk
+    # is verified before the boot.
+    drive="format=raw,file=$IMG"
+    [ "${QNX_VM_SNAPSHOT:-0}" = "1" ] && drive="$drive,snapshot=on"
     # -device usb-kbd: the image's console expects a USB keyboard, which is what
     # `sendkey` drives. The four hostfwd rules cover the addresses the image has
     # used across reboots; only one answers with an SSH banner.
     setsid nohup qemu-system-x86_64 \
-        -drive format=raw,file="$IMG" \
+        -drive "$drive" \
         -m 1024 -smp 2 \
         -netdev "user,id=n0,net=192.168.100.0/24,dhcpstart=192.168.100.60,hostfwd=tcp:127.0.0.1:2222-192.168.100.12:22,hostfwd=tcp:127.0.0.1:2223-192.168.100.2:22,hostfwd=tcp:127.0.0.1:2224-192.168.100.100:22,hostfwd=tcp:127.0.0.1:2225-192.168.100.10:22" \
         -device vmxnet3,netdev=n0 \
