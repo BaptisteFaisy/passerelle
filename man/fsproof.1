@@ -22,7 +22,12 @@ can be put under test.
 show this help message and exit
 .TP
 \fB\-\-client\fR \fICLIENT\fR
-client under test (eclipse, passerelle, qnx\-fs\-9p) (default: passerelle)
+client under test (eclipse, passerelle, qnx\-fs\-9p) (default: configuration
+'client' = 'passerelle')
+.TP
+\fB\-\-show\-config\fR \fIFORMAT\fR
+print the effective configuration (text or json) and exit (choices: text,
+json)
 .SS fsproof diff
 .TP
 \fBdiff\fR
@@ -32,10 +37,10 @@ seeded differential test against the PC truth
 show this help message and exit
 .TP
 \fB\-\-seed\fR \fISEED\fR
-seed of the operation sequence (default: 1)
+seed of the sequence (default: configuration 'seed' = '1')
 .TP
 \fB\-\-count\fR \fICOUNT\fR
-number of operations (default: 200)
+number of operations (default: configuration 'count' = '200')
 .TP
 \fB\-\-local\fR
 replay on the PC, no guest
@@ -44,7 +49,7 @@ replay on the PC, no guest
 guest agent command, e.g. 'qrun \-\-console /tmp/ser.sock'
 .TP
 \fB\-\-regressions\fR \fIREGRESSIONS\fR
-regression directory (default: regressions)
+regression directory (default: configuration 'regressions' = 'regressions')
 .TP
 \fB\-\-replay\fR \fIFILE\fR
 replay a stored regression case
@@ -66,10 +71,10 @@ show this help message and exit
 directory to exercise (default: temporary)
 .TP
 \fB\-\-ops\fR \fIOPS\fR
-operations per run (default: 10000)
+operations per run (default: configuration 'ops' = '10000')
 .TP
 \fB\-\-workers\fR \fIWORKERS\fR
-concurrent workers (default: 1)
+concurrent workers (default: configuration 'workers' = '1')
 .TP
 \fB\-\-shared\fR
 all workers on one file
@@ -77,8 +82,8 @@ all workers on one file
 \fB\-\-plan\fR
 run the three shapes of 7.3
 .TP
-\fB\-\-seed\fR \fISEED\fR
-seed (default: 2026)
+\fB\-\-seed\fR \fIEXERCISE_SEED\fR
+seed of the exerciser (default: configuration 'exercise\-seed' = '2026')
 .SS fsproof cases
 .TP
 \fBcases\fR
