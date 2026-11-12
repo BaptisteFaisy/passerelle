@@ -4,11 +4,22 @@ SPDX-License-Identifier: Apache-2.0
 
 # Gap analysis — what is still missing
 
-**Date: 11 November 2026, 21:00 CET.** The specification
-([spec-en.md](spec-en.md)) has **77 distinct numbered requirements** (87 lines if
-the grouped ranges are counted line by line). This file lists **100 concrete
-gaps**: the requirement lines that are not fully satisfied, and everything else a
-submission is judged on that is not a requirement line.
+**Date: 11 November 2026, 21:00 CET. Updated 12 November 2026, 15:30 CET.**
+The specification ([spec-en.md](spec-en.md)) has **77 distinct numbered
+requirements** (87 lines if the grouped ranges are counted line by line). This
+file listed **100 concrete gaps**: the requirement lines that are not fully
+satisfied, and everything else a submission is judged on that is not a
+requirement line.
+
+**43 of those 100 are closed** and are marked inline (`Closed 11-12/11` for the
+night wave that delivered the reference servers, the publication pipeline, the
+quality gates, the QNX 7.1 guest in CI and the submission pack; `Closed 12/11`
+for the wave that delivered the faulty server, the directed cases of §7.4, the
+vhost-user front end driving the real `virtiofsd`, the shared configuration
+file, the Debian skeleton, the devcontainer, the generated man pages and the examples built in CI). Rows are kept rather than
+deleted: the closure note says *what* closed them, so a claim can be checked.
+What is left: 28 requirement gaps (24 of them blocked on the QNX SDP, 2
+de-scoped X-tier, 2 doable here), and 29 non-requirement gaps.
 
 Where the 77 requirements stand:
 
@@ -47,7 +58,7 @@ purpose.
 | 17 | **PERF-07** — published comparative report (this driver, A, B, `scp`, virtiofs): harness and Linux baseline exist, the four other rows do not | **[S]** |
 | 18 | **ROB-03** — unmount under load | **[S]** |
 | 19 | **ROB-04** — a file replaced on the PC while in use: partly covered, the replace case is not | **[P]** |
-| 20 | **ROB-07** — a deliberately faulty server must not crash the client (X tier): no faulty server exists | **[P]** |
+| 20 | **Closed 12/11** - `tests/faulty/`: a faulty 9P server (9 message faults, 5 transport faults) driving the production client, plus `test_faulty.c` under ASan/UBSan. It found a real crash: a `close()` mid-frame killed the client with SIGPIPE (PR #33). **ROB-07** — a deliberately faulty server must not crash the client (X tier): no faulty server exists | **[P]** |
 | 21 | **SEC-02** — the driver touches no device but its own: written, never audited on a running system | **[S]** |
 | 22 | **DX-02** — the one-command demonstration: the demo script exists, it cannot run without an image | **[S]** |
 | 23 | **DX-03** — `qrun` executes a program from the share and returns its output and exit code | **[S]** |
@@ -64,88 +75,88 @@ purpose.
 
 | # | Gap |
 |---|---|
-| 30 | No `CHANGELOG.md` — what changed, when, and against which requirement |
-| 31 | No release notes for `v0.1.0`, the version a judge would point at |
-| 32 | No git tag, no source tarball, no SHA256 of that tarball |
-| 33 | The Python tools are not installable as a package (`pip install` is never tested) |
-| 34 | No `qshare --version` |
-| 35 | The console entry points (`qshare`, `qrun`, `fsproof`, `pbench`) are declared but never installed and run in CI |
-| 36 | No root `Makefile`: `make check`, `make bench`, `make demo` do not exist |
+| 30 | **Closed 11-12/11** - `CHANGELOG.md`, Keep a Changelog format, entries cite the requirement identifiers. No `CHANGELOG.md` — what changed, when, and against which requirement |
+| 31 | **Closed 11-12/11** - release notes for `v0.1.0` in `CHANGELOG.md` and `docs/release.md`. No release notes for `v0.1.0`, the version a judge would point at |
+| 32 | **Closed 11-12/11** - `tools/release/` (tarball + SHA256) and `.github/workflows/release.yml`. No git tag, no source tarball, no SHA256 of that tarball |
+| 33 | **Closed 11-12/11** - `release.yml` job `install-check`: `pip install ./host` in a venv. The Python tools are not installable as a package (`pip install` is never tested) |
+| 34 | **Closed 11-12/11** - `qshare --version`, compared with the released tag by `release.yml`. No `qshare --version` |
+| 35 | **Closed 11-12/11** - the four console scripts are installed and run in `release.yml`. The console entry points (`qshare`, `qrun`, `fsproof`, `pbench`) are declared but never installed and run in CI |
+| 36 | **Closed 11-12/11** - root `Makefile`, 13 idempotent targets (`make help` lists them). No root `Makefile`: `make check`, `make bench`, `make demo` do not exist |
 | 37 | No `cmake --install` target, no `pkg-config` file, no exported CMake package |
 | 38 | No out-of-tree install check (install to a prefix, run the tools from there) |
 | 39 | No SBOM, no build provenance |
-| 40 | No `SECURITY.md` — how to report a vulnerability in a driver |
-| 41 | No `CONTRIBUTING.md`, no `CODE_OF_CONDUCT.md` |
-| 42 | No `VERSION` file and no single source of truth for the version string |
+| 40 | **Closed 11-12/11** - `SECURITY.md`. No `SECURITY.md` — how to report a vulnerability in a driver |
+| 41 | **Closed 11-12/11** - `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`. No `CONTRIBUTING.md`, no `CODE_OF_CONDUCT.md` |
+| 42 | **Closed 11-12/11** - `VERSION` is the single source of truth; `tools/release/test_version_sync.py` fails the build on any drift. No `VERSION` file and no single source of truth for the version string |
 
 ### B2. Quality gates and CI (14)
 
 | # | Gap |
 |---|---|
-| 43 | No coverage measurement (gcov/lcov) and no coverage report among the artifacts |
+| 43 | **Closed 11-12/11** - `quality.yml` job `coverage`, report uploaded as an artefact. No coverage measurement (gcov/lcov) and no coverage report among the artifacts |
 | 44 | No coverage badge |
-| 45 | No static analysis job (clang-tidy / cppcheck) |
-| 46 | No nightly job: the long campaigns and the fuzzing should run every night |
-| 47 | No continuous fuzzing (libFuzzer with a corpus) |
+| 45 | **Closed 11-12/11** - `quality.yml` job `static-analysis` (clang-tidy). No static analysis job (clang-tidy / cppcheck) |
+| 46 | **Closed 11-12/11** - `nightly.yml`: long differential campaign, long fuzzing, compiler matrix, libFuzzer. No nightly job: the long campaigns and the fuzzing should run every night |
+| 47 | **Closed 11-12/11** - `nightly.yml` job `libfuzzer` (`-DPGW_LIBFUZZER=ON`, bounded per harness). No continuous fuzzing (libFuzzer with a corpus) |
 | 48 | The fuzz corpus is not kept as a repository artifact for regression |
-| 49 | No CTest presets (`ctest --preset quick`, `--preset long`) |
-| 50 | No CI artifact upload (console logs, traces, bench reports) |
+| 49 | **Closed 11-12/11** - `CMakePresets.json`: `quick`, `ci`, `asan`, `long`, `coverage`, `fuzz`. No CTest presets (`ctest --preset quick`, `--preset long`) |
+| 50 | **Closed 11-12/11** - `nightly.yml` and `qnx71-guest.yml` upload logs, traces and artefacts. No CI artifact upload (console logs, traces, bench reports) |
 | 51 | No dependency cache for the QEMU and QNX downloads in CI |
-| 52 | The QNX 7.1 guest job is not in CI — today it is only run by hand |
-| 53 | The CI matrix covers one compiler only (gcc), not clang |
-| 54 | CI does not run on tags |
+| 52 | **Closed 11-12/11** - `.github/workflows/qnx71-guest.yml` boots a real QNX 7.1 guest on a hosted runner (~2 min) and cross-checks `image/pci_hw.cfg` against what QEMU assigns. The QNX 7.1 guest job is not in CI — today it is only run by hand |
+| 53 | **Closed 11-12/11** - `nightly.yml` job `compilers`: gcc and clang; since 12/11 gcc in `Debug` with `-Werror` as well (PR #35). The CI matrix covers one compiler only (gcc), not clang |
+| 54 | **Closed 11-12/11** - `release.yml` runs on tags. CI does not run on tags |
 | 55 | The 9P trace fixtures are never regenerated, so a parser change can keep passing on stale data |
-| 56 | No formatting gate (`clang-format` + `.editorconfig` not enforced) |
+| 56 | **Closed 11-12/11** - `quality.yml` job `format` with a ratchet baseline (`tools/quality/format-baseline.txt`), clang-format pinned to 23.1.5. No formatting gate (`clang-format` + `.editorconfig` not enforced) |
 
 ### B3. Verification depth (13)
 
 | # | Gap |
 |---|---|
-| 57 | **No reference 9P server**: the client is only tested against an in-memory fake, never against a real server implementation |
-| 58 | **No reference FUSE backend**: the virtiofs client is only tested against a fake |
+| 57 | **Closed 11-12/11** - `tests/ref9p/`: an independent Python 9P2000.L server, and C benches driving our client against it over a socket. **No reference 9P server**: the client is only tested against an in-memory fake, never against a real server implementation |
+| 58 | **Closed 11-12/11, and further on 12/11** - `tests/fuse_ref/` is the independent FUSE backend; `host/vhost/` now drives the *real* `virtiofsd` over a vhost-user socket (memfd memory table, split virtqueue, eventfd kick/call), so the virtiofs path is no longer tested only against our own code (PR #36). **No reference FUSE backend**: the virtiofs client is only tested against a fake |
 | 59 | No cross-check against a third-party 9P client (interoperability proof) |
 | 60 | No cross-check against `diod`'s protocol description turned into an executable test |
 | 61 | No property-based tests (Hypothesis) on the codec boundaries |
 | 62 | The divergences reduced by the bench are not stored as regression cases |
-| 63 | No load test: mount under a continuous workload |
-| 64 | The 5 GiB file case of the directed suite is not implemented |
-| 65 | The 100 000-entry directory case is not implemented |
-| 66 | The maximum path length case is not implemented |
-| 67 | Exotic names (UTF-8, combining marks, emoji) are only partly covered |
+| 63 | **Closed 12/11** - `tests/cas/test_cas_load.c`: a mount under a continuous workload, with a bounded priority read (PR #38). No load test: mount under a continuous workload |
+| 64 | **Closed 12/11** - `tests/cas/test_cas_big_file.c`: the 5 GiB case, sparse, with a scaled variant in the PR gate and the full size as a `DISABLED` long test (PR #38). The 5 GiB file case of the directed suite is not implemented |
+| 65 | **Closed 12/11** - `tests/cas/test_cas_big_dir.c`: 100 000 entries, paged. It exposed a silent 4 096-entry truncation in the truth backend, fixed in the same PR (#38). The 100 000-entry directory case is not implemented |
+| 66 | **Closed 12/11** - `tests/cas/test_cas_path_len.c`: PATH_MAX and NAME_MAX on both sides, compared with the kernel (PR #38). The maximum path length case is not implemented |
+| 67 | **Closed 12/11** - `tests/cas/test_cas_exotic.c`: UTF-8, combining marks, emoji, hostile punctuation. It exposed a `strstr(relpath, "..")` guard that refused valid names, fixed in the same PR (#38). Exotic names (UTF-8, combining marks, emoji) are only partly covered |
 | 68 | Hard-link semantics beyond `nlink` are not checked |
-| 69 | `fsync` durability is not checked against a real disk (only against the host cache) |
+| 69 | **Closed 12/11** - `tests/cas/test_cas_fsync.c`: `fsync` proven to reach the backend and to survive a cache drop. Durability on a real platter is *not* claimed (PR #38). `fsync` durability is not checked against a real disk (only against the host cache) |
 
 ### B4. The QNX 7.1 guest we now have (10)
 
 | # | Gap |
 |---|---|
-| 70 | The guest's `pci_hw.cfg` routes no interrupt for our device: there is no INTx entry for `B0:D05:F0` |
+| 70 | **Closed 11-12/11** - `image/pci_hw.cfg` carries the INTx entry for `B0:D5:F0`, cross-checked in CI against what QEMU really assigns. The guest's `pci_hw.cfg` routes no interrupt for our device: there is no INTx entry for `B0:D05:F0` |
 | 71 | The guest image has no compiler, so nothing of ours can run inside it |
 | 72 | The guest is QNX 7.1, not 8.0: the kernel differences the specification relies on are not exercised |
-| 73 | No automation: booting the guest and capturing its PCI view is a manual command sequence |
+| 73 | **Closed 11-12/11** - `qnx71-guest.yml` automates the boot, the SSH session, `pci-tool` and the artefact. No automation: booting the guest and capturing its PCI view is a manual command sequence |
 | 74 | The 6.1 GiB guest image is not in the repository and not versioned: nobody can reproduce it from the repository alone |
 | 75 | No check that the guest boots with the `qshare` options **and** the `image/passerelle.build` fragment |
 | 76 | The QNX 6.5 cross-check is not done: an SDP 6.5 (aarch64) exists in a public image and could at least prove the portable layers compile for a real QNX target, API generation aside |
 | 77 | The INTx-versus-MSI-X question is measured but not *decided* in the design |
-| 78 | No `pci_hw.cfg` fragment for our device in `image/` |
+| 78 | **Closed 11-12/11** - `image/pci_hw.cfg`. No `pci_hw.cfg` fragment for our device in `image/` |
 | 79 | No capture of the guest's kernel trace, so QNX-09 has no reference even guest-side |
 
 ### B5. The submission itself (12)
 
 | # | Gap |
 |---|---|
-| 80 | No Devpost submission text (the form wants a description, a video link, a repository link) |
-| 81 | No 60-second "read this first" summary at the top of the repository |
-| 82 | No submission checklist (dates, licence, video, repository, demo command, prior-art disclosure) |
+| 80 | **Closed 11-12/11** - `docs/submission/devpost.md`. No Devpost submission text (the form wants a description, a video link, a repository link) |
+| 81 | **Closed 11-12/11** - `docs/submission/readme-summary.md`, the 60-second read. No 60-second "read this first" summary at the top of the repository |
+| 82 | **Closed 11-12/11** - `docs/submission/checklist.md`. No submission checklist (dates, licence, video, repository, demo command, prior-art disclosure) |
 | 83 | The demo video itself is not recorded (explicitly postponed) |
-| 84 | No poster or one-pager for the judges |
+| 84 | **Closed 11-12/11** - `docs/submission/one-pager.md`. No poster or one-pager for the judges |
 | 85 | The Discord question on the submission category (D1) is drafted but not asked |
 | 86 | No upstream pull request to the existing 9P client (the patches are ready, nobody sent them) |
 | 87 | No architecture diagram as an image (the ASCII one is fine, a picture is better) |
 | 88 | No English glossary — the specification has one in French only |
-| 89 | No `docs/adr/` — the decisions live in prose, not as records |
-| 90 | No "what we tried that failed" note, which judges appreciate |
-| 91 | The requirement traceability matrix is hand-written; it should be generated from the specification and the code |
+| 89 | **Closed 11-12/11** - `docs/adr/`, five decision records. No `docs/adr/` — the decisions live in prose, not as records |
+| 90 | **Closed 11-12/11** - `docs/submission/what-did-not-work.md`. No "what we tried that failed" note, which judges appreciate |
+| 91 | **Closed 11-12/11** - `tools/traceability.py` with `tools/traceability-map.yml` generates the matrix from the specification and the code. The requirement traceability matrix is hand-written; it should be generated from the specification and the code |
 
 ### B6. Everyday use of the tools (9)
 
@@ -154,12 +165,12 @@ purpose.
 | 92 | No `qshare doctor`: one command saying what is missing here (QEMU, virtiofsd, SDP, kernel) |
 | 93 | No `qshare init`: scaffolding a guest project ready to be shared |
 | 94 | No `qshare smoke`: one command proving the whole chain works on this machine |
-| 95 | The CMake and Rust examples (`qshare --example`) are written but never executed by CI |
-| 96 | No packaging of the tools for `pipx` or `apt` |
+| 95 | **Closed 12/11** - `.github/workflows/examples.yml` scaffolds both examples with the real `qshare --example all`, builds the CMake one and runs its ctest, and builds the Rust one only when `cargo` is already present - an explicit `::notice::` skip otherwise, never a toolchain install (PR #43). The CMake and Rust examples (`qshare --example`) are written but never executed by CI |
+| 96 | **Closed 12/11** - `packaging/`: a Debian skeleton validated by pytest against `VERSION`, plus the pipx path already covered by the release install check (PR #37). No packaging of the tools for `pipx` or `apt` |
 | 97 | The `host/fsproof` guest agent has no way to run inside a guest yet (needs a cross-compiler) |
-| 98 | No man pages for the four commands |
+| 98 | **Closed 12/11** - `man/qshare.1`, `qrun.1`, `fsproof.1`, `pbench.1`, generated from the CLI definitions by `tools/man/build_man.py`; the date is pinned (`tools/man/PAGE_DATE`) and a pytest fails on any drift (PR #43). No man pages for the four commands |
 | 99 | The tools do not share one configuration file; each re-reads its own options |
-| 100 | No `.devcontainer` or Dockerfile reproducing the development environment in one command |
+| 100 | **Closed 12/11** - `.devcontainer/`: one environment definition shared with the root `Dockerfile`, validated statically (PR #37). No `.devcontainer` or Dockerfile reproducing the development environment in one command |
 
 ---
 
@@ -170,15 +181,15 @@ this machine, without an account and without a camera.
 
 | Rank | What | Why it pays | Effort |
 |---|---|---|---|
-| 1 | **Reference 9P server + cross-check** (57, 59, 60) | the client is only tested against a fake today; against a real server, PERF-01 becomes a measurement and P9-01…P9-10 stop being self-referential | 2 days |
-| 2 | **Reference FUSE backend + cross-check** (58, 25) | same for virtiofs: VFS-01…VFS-07 and the VFS-05 bench through the adapter become real | 2 days |
-| 3 | **Host-side vhost-user backend** (58, 75) | drive the real `virtiofsd` from our own mock transport: the first end-to-end proof of the virtiofs path, and it needs no QNX | 3 days |
-| 4 | **Submission pack** (80, 81, 82, 84, 90, 91) | the deadline is 15 December; a judge must read, run and understand the project in five minutes, and the traceability matrix must be generated, not hand-written | 1 day |
-| 5 | **Automate the QNX 7.1 guest** (52, 70, 73, 78) | what we discovered by hand today becomes a CI job, and the INTx entry for our device lands in `image/` | 1 day |
-| 6 | **Publication pipeline** (30, 31, 32, 33, 34, 35, 36, 39) | a tagged, checksummed, installable release is what "open source project" means to a judge | 1 day |
-| 7 | **Quality gates** (43, 44, 45, 46, 47, 48, 49, 50, 53, 56) | coverage, static analysis, nightly fuzzing, formatting: the difference between "it works" and "it is maintained" | 2 days |
-| 8 | **Verification depth** (20, 61, 62, 63, 64, 65, 66, 67, 69) | property-based tests, the faulty server, the load test and the missing directed cases — this is where the remaining crashes hide | 3 days |
-| 9 | **Documentation quality** (7, 8, 9, 87, 88, 89, 91) | Doxygen for the C API, decision records, diagrams, glossary: a repository is read as much as it is run | 2 days |
-| 10 | **Everyday tooling** (92, 93, 94, 95, 96, 98, 99, 100) | `qshare doctor`, `qshare init`, `qshare smoke`, one command to reproduce the whole environment | 2 days |
+| 1 | **Reference 9P server + cross-check** (57, 59, 60) - delivered 11-12/11 (`tests/ref9p/`) | the client is only tested against a fake today; against a real server, PERF-01 becomes a measurement and P9-01…P9-10 stop being self-referential | 2 days |
+| 2 | **Reference FUSE backend + cross-check** (58, 25) - delivered 11-12/11 (`tests/fuse_ref/`) | same for virtiofs: VFS-01…VFS-07 and the VFS-05 bench through the adapter become real | 2 days |
+| 3 | **Host-side vhost-user backend** (58, 75) - **delivered 12/11** (`host/vhost/`, PR #36) | drive the real `virtiofsd` from our own mock transport: the first end-to-end proof of the virtiofs path, and it needs no QNX | 3 days |
+| 4 | **Submission pack** (80, 81, 82, 84, 90, 91) - delivered 11-12/11 (`docs/submission/`, `docs/adr/`, generated traceability) | the deadline is 15 December; a judge must read, run and understand the project in five minutes, and the traceability matrix must be generated, not hand-written | 1 day |
+| 5 | **Automate the QNX 7.1 guest** (52, 70, 73, 78) - delivered 11-12/11 (`qnx71-guest.yml`, `image/pci_hw.cfg`) | what we discovered by hand today becomes a CI job, and the INTx entry for our device lands in `image/` | 1 day |
+| 6 | **Publication pipeline** (30, 31, 32, 33, 34, 35, 36, 39) - delivered 11-12/11 (`VERSION`, `CHANGELOG.md`, `Makefile`, `tools/release/`, `release.yml`) | a tagged, checksummed, installable release is what "open source project" means to a judge | 1 day |
+| 7 | **Quality gates** (43, 44, 45, 46, 47, 48, 49, 50, 53, 56) - delivered 11-12/11 (coverage, clang-tidy, nightly, presets, format ratchet) | coverage, static analysis, nightly fuzzing, formatting: the difference between "it works" and "it is maintained" | 2 days |
+| 8 | **Verification depth** (20, 61, 62, 63, 64, 65, 66, 67, 69) - **mostly delivered 12/11** (`tests/faulty/`, `tests/cas/`); property tests and the persisted corpus are in flight | property-based tests, the faulty server, the load test and the missing directed cases — this is where the remaining crashes hide | 3 days |
+| 9 | **Documentation quality** (7, 8, 9, 87, 88, 89, 91) - delivered 11-12/11 (5 ADRs, generated traceability, release and QNX docs) | Doxygen for the C API, decision records, diagrams, glossary: a repository is read as much as it is run | 2 days |
+| 10 | **Everyday tooling** (92, 93, 94, 95, 96, 98, 99, 100) - **partly delivered 12/11** (shared configuration file, `packaging/`, `.devcontainer/`); `doctor` / `init` / `smoke`, the man pages and the examples in CI are in flight | `qshare doctor`, `qshare init`, `qshare smoke`, one command to reproduce the whole environment | 2 days |
 
 Nothing on this list needs an account, a purchase or a camera.

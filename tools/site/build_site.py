@@ -220,7 +220,7 @@ def write_assets(out: pathlib.Path) -> None:
     """Copy the static assets next to the generated pages."""
     assets = out / "_assets"
     assets.mkdir(parents=True, exist_ok=True)
-    for name in ("style.css", "search.js", "favicon.svg"):
+    for name in ("style.css", "search.js", "favicon.svg", "architecture.svg"):
         source = HERE / "assets" / name
         if source.exists():
             shutil.copy2(source, assets / name)

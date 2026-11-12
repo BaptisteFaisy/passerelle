@@ -16,6 +16,76 @@ the command that proves it, lives in
 lives in [docs/gap-analysis.md](docs/gap-analysis.md). This file only records what
 changed.
 
+## [Unreleased]
+
+Verification-depth wave of 12 November 2026: what was "written, not run" becomes
+"run, and it found things". Four bugs were found by *executing* the code against
+a hostile or a larger-than-expected peer, not by reading it.
+
+### Added
+
+- `tests/faulty/`: a deliberately faulty 9P2000.L server — nine message faults
+  (truncated frame, `size[4]` claiming 2 GiB, bad tag, out-of-order reply,
+  garbage, a lying `Rread` count, a lying `Rwalk nwname`, version mismatch,
+  short frame) and five transport faults (unsolicited reply, 4 GiB prefix, a
+  frame that never ends, a reply 1.2 s late, `close()` mid-frame). `test_faulty.c`
+  drives the production client against each one and asserts the error code, a
+  bounded wait, exactly one fid left open, and — under ASan/UBSan — no
+  out-of-bounds read and no leak (ROB-05, ROB-06, ROB-07, P9-07, P9-09).
+- `tests/cas/`: the directed cases of §7.4 that were missing — the 5 GiB file
+  (sparse), the 100 000-entry directory (paged), the maximum path length,
+  exotic names (UTF-8, combining marks, emoji, hostile punctuation), a mount
+  under a continuous workload with a bounded priority read, and what `fsync`
+  really proves. 28 named cases, each with a scaled variant inside the 5-minute
+  CI budget and a full-size variant registered `DISABLED` for the long
+  campaigns (FS-03, FS-10, FS-13, FS-15, P9-08, PERF-04, PERF-05, ROB-02,
+  ROB-03).
+- `host/vhost/`: a vhost-user **front end** in Python — this process plays the
+  hypervisor side of the socket, so the real `virtiofsd` becomes the peer
+  instead of our own fake: framing and `REPLY_ACK`, feature negotiation, a
+  memfd-backed memory table passed over `SCM_RIGHTS`, a split virtqueue in
+  shared memory, eventfd kick/call, `SET_VRING_ENABLE`. `INIT`, `LOOKUP`,
+  `GETATTR`, `OPEN`, `READ`, `WRITE` and `READDIR` are driven end to end and
+  compared with the truth on the shared directory (VFS-02, VFS-03, VFS-04,
+  VFS-06). 43 pytest cases, plus a Python vhost-user *backend* so the unit
+  tests need no `virtiofsd`.
+- `host/pgwutil/fuse_wire.py`: the single Python declaration of the FUSE wire
+  ABI, now shared by `tests/fuse_ref/` and the vhost-user front end.
+- `packaging/`: a Debian skeleton (`control`, `rules`, `changelog`, `copyright`,
+  native source format) validated by pytest against `VERSION` and against the
+  real file list, plus the pipx path (PR #37).
+- `.devcontainer/`: one development-environment definition, shared with the
+  root `Dockerfile` and validated statically (PR #37).
+- `docs/vhost-user-front-end.md`: what that proof covers, and what it does not.
+
+### Fixed
+
+- **A hostile server could kill the client with a single `close()`**: after the
+  peer closed the socket, `pgw_p9_session_close()` still sent its final
+  `Tclunk` and the transport called `send()` without `MSG_NOSIGNAL`, so the
+  client died of SIGPIPE (exit 141). The transport now reports `PGW_EIO`
+  (ROB-07).
+- **The POSIX truth backend silently truncated a directory at 4 096 entries**:
+  the snapshot stopped reading with no error, so a client listing a 5 000-entry
+  directory believed it had seen everything — the 100 000-entry case of the
+  specification would have hidden 96 % of the tree. The snapshot now grows as
+  the directory is read and the ceiling answers `EOVERFLOW` loudly (FS-03,
+  PERF-04).
+- **A valid name holding two dots was refused**: `pgw_posix_join()` rejected any
+  path containing `..` as a substring, so `dots..inside` or `back..up.txt` —
+  perfectly legal POSIX names — were answered `ENAMETOOLONG`. The guard now
+  walks the components and refuses only a component that is exactly `..`
+  (FS-15).
+- **The reference-server socket was delayed**: no `TCP_NODELAY`, so every frame
+  waited for Nagle and a round trip cost ~40 ms more than the protocol needs
+  (P9-10).
+- Two test buffers copied a 256-byte protocol name into a 64- and a 32-byte
+  buffer; with `-Werror=format-truncation` the `Debug` build did not compile at
+  all. Fixed, and `nightly.yml` now builds `gcc + Debug + -Werror` so it cannot
+  rot again (PR #31, #35).
+
+
+
 ## [0.1.0] - 2026-11-11
 
 First public release, prepared for the QNX Global Hackathon 2026.

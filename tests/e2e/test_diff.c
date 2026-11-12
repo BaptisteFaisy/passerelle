@@ -13,6 +13,7 @@
  *   PGW_DIFF_OPS=1000000 ./test_diff
  */
 #define _POSIX_C_SOURCE 200809L
+#include "corpus.h"
 #include "diff.h"
 #include "testfs.h"
 
@@ -39,6 +40,30 @@ static size_t ops_from_env(void)
     return (size_t)n;
 }
 
+/* Persist the reduced case, but only on an explicit request: PGW_CORPUS_SAVE
+ * names the directory (tools/corpus-save.sh sets it to tests/corpus/). The
+ * normal suite never sets it, so a test run never writes to the tree (gap 62). */
+static void corpus_maybe_save(uint32_t seed, const diff_op *ops, long minimal,
+                              long bad, const char *err)
+{
+    const char *dir = getenv(PGW_CORPUS_ENV);
+    if (dir == NULL || *dir == '\0')
+        return;
+    long at = (minimal > 0) ? minimal : bad;
+    pgw_corpus_case c;
+    memset(&c, 0, sizeof(c));
+    c.suite_seed = seed;
+    c.n_ops = (at > 0) ? (size_t)at : 1u;
+    c.ops_digest = pgw_corpus_digest(ops, c.n_ops);
+    c.diverged_at = at;
+    snprintf(c.detail, sizeof(c.detail), "%s", err);
+    char path[PGW_CORPUS_PATH];
+    if (pgw_corpus_save(dir, &c, path, sizeof(path)) == 0)
+        fprintf(stderr, "corpus: stored %s\n", path);
+    else
+        fprintf(stderr, "corpus: cannot store into %s\n", dir);
+}
+
 static void run_suite(uint32_t seed, size_t n_ops)
 {
     /* The suite is heap-allocated: the 1 000 000-operation campaign of spec 7.6
@@ -56,6 +81,7 @@ static void run_suite(uint32_t seed, size_t n_ops)
         return;
     }
     long minimal = diff_reduce(ops, n_ops, seed, err, sizeof(err));
+    corpus_maybe_save(seed, ops, minimal, bad, err);
     const char *kind = (size_t)minimal <= n_ops && minimal > 0
                            ? diff_kind_name(ops[minimal - 1].kind)
                            : diff_kind_name(ops[bad < (long)n_ops ? bad : 0].kind);

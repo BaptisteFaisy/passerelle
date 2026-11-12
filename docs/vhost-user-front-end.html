@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vhost User Front End - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="_assets/style.css">
+<link rel="icon" href="_assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+<a class="nav-item" data-title="vhost user front end" href="vhost-user-front-end.html">Vhost User Front End</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="the-host-side-vhost-user-front-end">The host-side vhost-user front end</h1>
+<p>Gap 58 of <a href="gap-analysis.html">gap-analysis.md</a>, rank 3 of the backlog: &lt;em&gt;drive the real <code>virtiofsd</code> through the real vhost-user protocol&lt;/em&gt;. Until this, the virtiofs path was only ever exercised against our own fake (<code>protofuse/tests/fake_virtiofsd.c</code>) and against the Python reference server of <code>tests/fuse_ref/</code>. Both are ours, so a mistake in our reading of the wire could be repeated on both sides and still pass.</p>
+<p><code>host/vhost/</code> removes that self-reference for the transport layer: the peer is now <code>virtiofsd</code> 1.10.0, an independent implementation, and it answers.</p>
+<h2 id="what-is-implemented">What is implemented</h2>
+<p>A vhost-user &lt;strong&gt;front end&lt;/strong&gt; (the hypervisor/device side of the socket) in Python, standard library only:</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>protocol.py</code></td>
+<td>request numbers, header flags, virtio and protocol feature bits, payload codecs</td>
+</tr>
+<tr>
+<td><code>transport.py</code></td>
+<td>UNIX socket, 12-byte header framing, <code>SCM_RIGHTS</code>, reply correlation</td>
+</tr>
+<tr>
+<td><code>memory.py</code></td>
+<td><code>os.memfd_create</code> + <code>mmap</code> region, the <code>SET_MEM_TABLE</code> payload</td>
+</tr>
+<tr>
+<td><code>vring.py</code></td>
+<td>split virtqueue: desc table, avail ring, used ring, buffers, <code>eventfd</code> kick/call</td>
+</tr>
+<tr>
+<td><code>device.py</code></td>
+<td>the handshake and the per-queue setup, in the order the protocol requires</td>
+</tr>
+<tr>
+<td><code>fuse_client.py</code></td>
+<td>FUSE requests posted on the queue, replies harvested and decoded</td>
+</tr>
+<tr>
+<td><code>fake_backend.py</code></td>
+<td>a vhost-user &lt;strong&gt;backend&lt;/strong&gt; in Python, so unit tests need no <code>virtiofsd</code></td>
+</tr>
+<tr>
+<td><code>driver.py</code></td>
+<td>launches <code>virtiofsd</code>, runs the sequence, compares with the truth</td>
+</tr>
+</tbody>
+</table>
+<p>The FUSE wire table is not declared a second time: <code>host/pgwutil/fuse_wire.py</code> is now the single Python declaration, used by this front end &lt;em&gt;and&lt;/em&gt; by <code>tests/fuse_ref/fuse_ref_wire.py</code>. Its C twin stays <code>protofuse/src/fusep_abi.h</code>, and two tests compare the two tables field by field.</p>
+<h2 id="the-address-convention-the-part-that-is-easy-to-get-wrong">The address convention (the part that is easy to get wrong)</h2>
+<p><code>vhost</code> 0.10 maps the memfd wherever it likes and translates through the memory table, so the two kinds of address in play are &lt;strong&gt;not&lt;/strong&gt; the same:</p>
+<ul>
+<li>the three ring addresses of `SET_VRING_ADDR` are front-end virtual addresses; the backend converts them with `vmm_va_to_gpa()` using the `userspace_addr` we reported, so we report the address of our own `mmap`;</li>
+<li>the `addr` field of every descriptor is a **guest physical address**, which the backend converts with its own mapping.</li>
+</ul>
+<p>With one region based at guest physical address 0, a descriptor address is simply the offset in the shared region. <code>host/vhost/fake_backend.py</code> maps the memfd at an address of its own and translates through the table, exactly like the crate, so the unit tests would catch a front end that confused the two.</p>
+<p>Two more details that only show up when running against a real backend:</p>
+<ul>
+<li>`GET_QUEUE_NUM` is refused unless the `MQ` protocol feature was negotiated;</li>
+<li>a queue is armed by `SET_VRING_KICK` but stays **disabled** until `SET_VRING_ENABLE`, which itself requires the `VHOST_USER_F_PROTOCOL_FEATURES` virtio bit (bit 30) to have been acked.</li>
+</ul>
+<h2 id="what-this-proves">What this proves</h2>
+<p>Running <code>python3 -m pytest host/tests/test_vhost_virtiofsd.py -q</code> with <code>virtiofsd</code> installed:</p>
+<ul>
+<li>the vhost-user handshake completes against a real backend: `GET_FEATURES` returns `INDIRECT_DESC|EVENT_IDX|PROTOCOL_FEATURES|VERSION_1`, we ack `PROTOCOL_FEATURES|VERSION_1`, and `REPLY_ACK` is negotiated (every later request is answered by an acknowledgement we check);</li>
+<li>the memfd published over `SCM_RIGHTS` is really shared: `virtiofsd` reads our descriptors and writes its replies into our mapping;</li>
+<li>one split virtqueue, driven only by `eventfd` kick/call pairs, carries FUSE traffic both ways;</li>
+<li>`INIT` negotiates FUSE 7.38 with a 1 MiB `max_write`;</li>
+<li>`LOOKUP` returns the inode, size and mode `os.stat` reports on the host;</li>
+<li>`GETATTR` agrees with the same truth;</li>
+<li>`OPEN` + `READ` return the exact bytes of the file;</li>
+<li>`WRITE` + `FLUSH` + `RELEASE` put the bytes **on the host disk**, verified by reading the file back with `open()`;</li>
+<li>`OPENDIR` + `READDIR` return exactly the entries of the directory (dot entries included, as a FUSE server does);</li>
+<li>`FORGET` gives the lookup reference back (VFS-04).</li>
+</ul>
+<p>The whole scenario runs in about one second, well inside the 5-minute CI budget, and it is skipped with an explicit reason when <code>virtiofsd</code> is absent.</p>
+<h2 id="what-this-does-not-prove">What this does NOT prove</h2>
+<p>Stated plainly, because the gap is real:</p>
+<ul>
+<li>**No QNX guest.** Nothing here runs on the target. The guest side of the driver (`drivers/fsfuse`, `rmfs`) is untouched and unexercised by this work.</li>
+<li>**No virtio PCI or MMIO device.** We are the device side of a vhost-user socket; there is no capability walk, no BAR, no doorbell, no MSI-X. The transport of `virtio/` (`pci_modern.c`, `mmio.c`) is still only tested against its own simulated transport.</li>
+<li>**No QEMU.** `qshare` still emits the QEMU options, but this proof bypasses QEMU entirely: our process is the hypervisor side.</li>
+<li>**One request queue, one region, synchronous traffic.** No multiqueue (`MQ` is not negotiated), no hiprio traffic, no indirect descriptors, no packed virtqueue, no `EVENT_IDX` (we use legacy kick/call signalling), no in-flight tracking, no live migration, no `IOTLB`/`ACCESS_PLATFORM`.</li>
+<li>**A handful of FUSE operations.** `SETATTR`, `CREATE`, `MKDIR`, `UNLINK`, `RENAME`, `SYMLINK`, `LINK`, `READLINK`, `FSYNC`, `STATFS`, `INTERRUPT` and `BATCH_FORGET` are not driven through `virtiofsd` here; they remain covered against our own fake and the reference server.</li>
+<li>**No performance claim.** One-shot operations, no throughput measurement, so nothing is said about PERF-03.</li>
+<li>**The sandbox is off.** `driver.py` runs `virtiofsd` with `--sandbox=none --seccomp=none` so an unprivileged CI worker can run it; that is fine for a temporary directory, and it is not how a guest should be served.</li>
+</ul>
+<h2 id="reproduce">Reproduce</h2>
+<pre><code class="language-sh">cd host
+python3 -m vhost --share /tmp/pgw-shared          # the report, line by line
+python3 -m pytest tests/test_vhost_virtiofsd.py -q # the same, as a test
+python3 -m pytest tests/test_vhost_protocol.py \
+    tests/test_vhost_vring.py \
+    tests/test_vhost_fuse_client.py -q            # no virtiofsd needed</code></pre>
+    <nav class="pager">
+      <a class="prev" href="traceability.html">Previous</a>
+      <a class="next" href="index.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="_assets/search.js"></script>
+</body>
+</html>
