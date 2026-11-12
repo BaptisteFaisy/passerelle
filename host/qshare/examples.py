@@ -9,6 +9,10 @@ complete, minimal project whose tests can be launched from the guest with
     qshare --example cmake ~/projet      # writes the CMake example in the share
     qrun --console /tmp/ser.sock --share ~/projet cmake_example/run_tests.sh
     qshare --example rust ~/projet       # same for Cargo
+
+`qshare init` scaffolds the same trees, so the tree of an example is
+described once, here: `plan_example` returns what a project is made of,
+the writers put it on disk.
 """
 
 from __future__ import annotations
@@ -16,7 +20,7 @@ from __future__ import annotations
 import pathlib
 from dataclasses import dataclass
 
-from pgwutil import ValidationError, write_atomic
+from pgwutil import ValidationError, write_if_changed
 
 CMAKE_DIR = "cmake_example"
 RUST_DIR = "rust_example"
@@ -104,6 +108,28 @@ cd "$(dirname "$0")"
 exec cargo test --quiet
 """
 
+# The files of each example, as relative path -> content.
+TREES: dict[str, dict[str, str]] = {
+    "cmake": {
+        "CMakeLists.txt": CMAKE_LISTS,
+        "adder.c": CMAKE_ADDER,
+        "adder.h": CMAKE_HEADER,
+        "adder_test.c": CMAKE_TEST,
+        "run_tests.sh": CMAKE_SCRIPT,
+    },
+    "rust": {
+        "Cargo.toml": CARGO_TOML,
+        "src/lib.rs": RUST_LIB,
+        "run_tests.sh": RUST_SCRIPT,
+    },
+}
+
+# The directory each example lives in, inside the share.
+DIRS = {"cmake": CMAKE_DIR, "rust": RUST_DIR}
+
+# The files of an example that must stay executable.
+EXECUTABLE = frozenset({"run_tests.sh"})
+
 
 @dataclass(frozen=True)
 class Example:
@@ -118,39 +144,44 @@ class Example:
         return f"{self.directory.name}/run_tests.sh"
 
 
-def _write_script(path: pathlib.Path, content: str) -> pathlib.Path:
-    """Write an executable shell script."""
-    written = write_atomic(path, content)
-    written.chmod(0o755)
-    return written
+def example_base(kind: str, share: pathlib.Path | str) -> pathlib.Path:
+    """Directory of the example named *kind*, inside the share."""
+    if kind not in TREES:
+        raise ValidationError(f"unknown example '{kind}'; choose from {', '.join(TREES)}")
+    base = pathlib.Path(share).expanduser().resolve() / DIRS[kind]
+    if not base.parent.is_dir():
+        raise ValidationError(f"share directory does not exist: {base.parent}")
+    return base
+
+
+def plan_example(kind: str, share: pathlib.Path | str) -> list[tuple[pathlib.Path, str]]:
+    """Files of the example named *kind*, as (absolute path, content) pairs.
+
+    The one description of an example: the writers put it on disk, and
+    `qshare init` compares it with what is already there.
+    """
+    base = example_base(kind, share)
+    return [(base / relative, content) for relative, content in TREES[kind].items()]
+
+
+def _write_example(kind: str, share: pathlib.Path | str) -> Example:
+    """Write the example named *kind* into the share and describe it."""
+    planned = plan_example(kind, share)
+    files = []
+    for path, content in planned:
+        write_if_changed(path, content, executable=path.name in EXECUTABLE)
+        files.append(path)
+    return Example(kind=kind, directory=example_base(kind, share), files=files)
 
 
 def write_cmake_example(share: pathlib.Path | str) -> Example:
     """Write the CMake example project into the share."""
-    base = pathlib.Path(share).expanduser().resolve() / CMAKE_DIR
-    if not base.parent.is_dir():
-        raise ValidationError(f"share directory does not exist: {base.parent}")
-    files = [
-        write_atomic(base / "CMakeLists.txt", CMAKE_LISTS),
-        write_atomic(base / "adder.c", CMAKE_ADDER),
-        write_atomic(base / "adder.h", CMAKE_HEADER),
-        write_atomic(base / "adder_test.c", CMAKE_TEST),
-        _write_script(base / "run_tests.sh", CMAKE_SCRIPT),
-    ]
-    return Example(kind="cmake", directory=base, files=files)
+    return _write_example("cmake", share)
 
 
 def write_rust_example(share: pathlib.Path | str) -> Example:
     """Write the Rust example project into the share."""
-    base = pathlib.Path(share).expanduser().resolve() / RUST_DIR
-    if not base.parent.is_dir():
-        raise ValidationError(f"share directory does not exist: {base.parent}")
-    files = [
-        write_atomic(base / "Cargo.toml", CARGO_TOML),
-        write_atomic(base / "src" / "lib.rs", RUST_LIB),
-        _write_script(base / "run_tests.sh", RUST_SCRIPT),
-    ]
-    return Example(kind="rust", directory=base, files=files)
+    return _write_example("rust", share)
 
 
 EXAMPLES = {"cmake": write_cmake_example, "rust": write_rust_example}
