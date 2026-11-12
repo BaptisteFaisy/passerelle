@@ -5,20 +5,26 @@
 `--emit` prints them as one shell-ready line, `--emit-image` or
 `--mkqnximage` produce the mkqnximage snippets, `--run` starts QEMU (and
 virtiofsd) itself, and `--demo` replays the whole demonstration (DX-02).
+
+Three subcommands answer the everyday questions (gaps 92, 93, 94):
+`qshare doctor` says what is missing on this machine, `qshare init`
+scaffolds a guest project ready to be shared, and `qshare smoke` proves the
+whole chain here. Every option of the share itself is resolved through the
+one configuration file of the four tools (gap 99, `--show-config`).
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib
 import pathlib
 import sys
 
-from pgwutil import HostError, ValidationError
+from pgwutil import HostError, ValidationError, package_version
+from pgwutil import config as pgwconfig
 from qshare.image import build_fragment, install_fragment, render_fragment
 from qshare.options import (
-    DEFAULT_TAG,
     PROTOCOLS,
-    RECOMMENDED_SECURITY,
     SECURITY_MODELS,
     build_qemu_args,
     describe_security_models,
@@ -26,49 +32,43 @@ from qshare.options import (
 )
 from qshare.runner import QemuInstance, build_qemu_cmd, share_backend
 
+TOOL = "qshare"
+# Subcommands that take the first positional word instead of a share directory.
+COMMANDS = ("doctor", "init", "smoke")
+
 
 def _version_string() -> str:
-    """Version of the installed package, else the repository's VERSION file.
-
-    The package metadata is authoritative once installed; when running straight
-    from a checkout there is no metadata, so the VERSION file at the repository
-    root answers instead. Both must agree - `tools/release/test_version_sync.py`
-    is what enforces it.
-    """
-    try:
-        from importlib.metadata import version
-
-        return version("passerelle-host")
-    except Exception:  # noqa: BLE001 - not installed as a package
-        pass
-    candidate = pathlib.Path(__file__).resolve().parents[2] / "VERSION"
-    if candidate.is_file():
-        return candidate.read_text(encoding="utf-8").strip()
-    return "0.0.0"
+    """Version of the tools: the installed package, else the VERSION file."""
+    return package_version()
 
 
 def _add_share_options(parser: argparse.ArgumentParser) -> None:
-    """Register the share-definition options (directory, tag, protocol, model)."""
+    """Register the share-definition options (directory, tag, protocol, model).
+
+    Every configurable option defaults to None: `pgwutil.config.apply` fills
+    the ones the user did not type, which is what makes the precedence
+    command line > environment > file > built-in default hold (gap 99).
+    """
+    help_text = pgwconfig.help_text
     parser.add_argument("directory", nargs="?", help="host directory to share")
     parser.add_argument(
-        "--tag", "-t", default=DEFAULT_TAG, help="mount tag (9P <=31 bytes, virtiofs <=36)"
+        "--tag", "-t", default=None,
+        help=help_text("tag", "mount tag (9P <=31 bytes, virtiofs <=36)"),
     )
     parser.add_argument(
-        "--proto", choices=PROTOCOLS, default="9p", help="share protocol (default: 9p)"
+        "--proto", choices=PROTOCOLS, default=None, help=help_text("proto", "share protocol")
     )
     parser.add_argument(
-        "--security",
-        "-S",
-        choices=tuple(SECURITY_MODELS),
-        default=RECOMMENDED_SECURITY,
-        help=f"QEMU security model (default: {RECOMMENDED_SECURITY}, no root needed)",
+        "--security", "-S", choices=tuple(SECURITY_MODELS), default=None,
+        help=help_text("security", "QEMU security model, no root needed"),
     )
-    parser.add_argument("--mount-point", default="/host", help="guest mount point")
-    parser.add_argument("--driver", default="passerelle", help="guest driver name")
     parser.add_argument(
-        "--driver-bin",
-        default="/opt/passerelle/sbin/passerelle",
-        help="absolute host path of the driver binary",
+        "--mount-point", default=None, help=help_text("mount-point", "guest mount point")
+    )
+    parser.add_argument("--driver", default=None, help=help_text("driver", "guest driver name"))
+    parser.add_argument(
+        "--driver-bin", default=None,
+        help=help_text("driver-bin", "absolute host path of the driver binary"),
     )
 
 
@@ -98,8 +98,8 @@ def _add_run_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--timeout",
         type=float,
-        default=120.0,
-        help="seconds to wait for the console marker (default: 120)",
+        default=None,
+        help=pgwconfig.help_text("timeout", "seconds to wait for the console marker"),
     )
 
 
@@ -112,7 +112,10 @@ def _add_action_options(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--ifs", action="store_true", help="use the IFS layout for the snippets")
     parser.add_argument("--run", metavar="IMAGE", help="start QEMU on IMAGE (kernel or disk)")
-    parser.add_argument("--arch", default="x86_64", help="guest architecture for --run")
+    parser.add_argument(
+        "--arch", default=None,
+        help=pgwconfig.help_text("arch", "guest architecture for --run"),
+    )
     _add_run_options(parser)
     parser.add_argument(
         "--trace", metavar="LOG", help="write the 9P trace to LOG (pbench roundtrips)"
@@ -133,6 +136,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="qshare",
         description="Share a host directory with a QNX guest under QEMU (DX-01)",
+        epilog="subcommands: " + ", ".join(f"qshare {name}" for name in COMMANDS),
     )
     parser.add_argument(
         "--version",
@@ -142,7 +146,31 @@ def _parser() -> argparse.ArgumentParser:
     )
     _add_share_options(parser)
     _add_action_options(parser)
+    pgwconfig.add_show_config(parser)
     return parser
+
+
+def run_command(name: str, argv: list[str]) -> int:
+    """Run one `qshare <name>` subcommand (doctor, init, smoke).
+
+    Each subcommand lives in its own module and brings its own parser, its
+    options and its exit statuses; this dispatcher only maps the two errors
+    every host tool reports the same way (invalid input, host failure).
+    """
+    module = importlib.import_module(f"qshare.{name}")
+    parser = argparse.ArgumentParser(
+        prog=f"qshare {name}", description=module.DESCRIPTION.splitlines()[0]
+    )
+    module.register(parser)
+    args = parser.parse_args(argv)
+    try:
+        return module.run(args)
+    except ValidationError as err:
+        sys.stderr.write(f"qshare {name}: invalid input: {err}\n")
+        return 2
+    except HostError as err:
+        sys.stderr.write(f"qshare {name}: {err}\n")
+        return 3
 
 
 def _emit_line(args: argparse.Namespace) -> int:
@@ -253,16 +281,23 @@ def _examples(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point of the qshare command."""
-    args = _parser().parse_args(argv)
-    if args.security_help:
-        print(describe_security_models())
-        return 0
-    if args.demo:
-        return _demo(args)
-    if not args.directory:
-        sys.stderr.write("qshare: a share directory is required (or use --demo)\n")
-        return 2
+    words = list(sys.argv[1:] if argv is None else argv)
+    if words and words[0] in COMMANDS:
+        return run_command(words[0], words[1:])
+    args = _parser().parse_args(words)
     try:
+        cfg = pgwconfig.apply(args, pgwconfig.load(TOOL))
+        if args.show_config:
+            print(pgwconfig.render(cfg, args.show_config))
+            return 0
+        if args.security_help:
+            print(describe_security_models())
+            return 0
+        if args.demo:
+            return _demo(args)
+        if not args.directory:
+            sys.stderr.write("qshare: a share directory is required (or use --demo)\n")
+            return 2
         if args.example:
             return _examples(args)
         if args.mkqnximage or args.emit_image:
@@ -276,3 +311,7 @@ def main(argv: list[str] | None = None) -> int:
     except HostError as err:
         sys.stderr.write(f"qshare: {err}\n")
         return 3
+
+
+if __name__ == "__main__":  # pragma: no cover - console entry point
+    raise SystemExit(main())

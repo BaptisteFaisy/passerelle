@@ -46,6 +46,31 @@ def write_atomic(path: pathlib.Path | str, content: str | bytes) -> pathlib.Path
     return target
 
 
+def write_if_changed(
+    path: pathlib.Path | str, content: str, executable: bool = False
+) -> bool:
+    """Write *content* to *path* only when it differs; True when it was written.
+
+    A scaffolded file that is already there with the same content is left
+    alone, so running the scaffolder twice changes nothing the second time
+    (and the modification time of the tree stays meaningful).
+    """
+    target = pathlib.Path(path).expanduser()
+    if target.is_file():
+        try:
+            same = target.read_text(encoding="utf-8") == content
+        except (OSError, UnicodeDecodeError):
+            same = False
+        if same:
+            if executable and not os.access(target, os.X_OK):
+                target.chmod(0o755)
+            return False
+    written = write_atomic(target, content)
+    if executable:
+        written.chmod(0o755)
+    return True
+
+
 def dump_json(obj: Any, indent: int = 2) -> str:
     """Serialise *obj* to a stable, human-readable JSON document."""
     return json.dumps(obj, indent=indent, sort_keys=True, default=str)
@@ -75,6 +100,26 @@ def run_cmd(
         check=False,
         env=merged,
     )
+
+
+def package_version(package: str = "passerelle-host") -> str:
+    """Version of the installed host tools, else the repository's VERSION file.
+
+    The package metadata is authoritative once installed; a plain checkout has
+    none, so the VERSION file at the repository root answers instead. Both must
+    agree - `tools/release/test_version_sync.py` is what enforces it. One
+    implementation, used by `qshare --version` and by `qshare doctor`.
+    """
+    try:
+        from importlib.metadata import version
+
+        return version(package)
+    except Exception:  # noqa: BLE001 - not installed as a package
+        pass
+    candidate = pathlib.Path(__file__).resolve().parents[2] / "VERSION"
+    if candidate.is_file():
+        return candidate.read_text(encoding="utf-8").strip()
+    return "0.0.0"
 
 
 def which(program: str, extra: Sequence[str] = ()) -> pathlib.Path | None:

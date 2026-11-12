@@ -18,6 +18,11 @@ install the guest driver, writes the CMake and Rust example projects with
 Inside the guest, the share is mounted with the passerelle driver at the
 \-\-mount\-point location; qrun(1) then runs programs from it, and fsproof(1)
 and pbench(1) prove and measure it.
+.P
+Three subcommands answer the everyday questions: qshare doctor says what is
+missing on this machine, qshare init scaffolds a guest project ready to be
+shared, and qshare smoke proves the whole chain here (configure, build, ctest,
+pytest, the reference benches and the guest check).
 .SH OPTIONS
 .TP
 \fB\-h\fR, \fB\-\-help\fR
@@ -30,24 +35,25 @@ print the version and exit
 host directory to share
 .TP
 \fB\-\-tag\fR \fITAG\fR, \fB\-t\fR \fITAG\fR
-mount tag (9P <=31 bytes, virtiofs <=36) (default: hostshare)
+mount tag (9P <=31 bytes, virtiofs <=36) (default: configuration 'tag' =
+'hostshare')
 .TP
 \fB\-\-proto\fR \fIPROTO\fR
-share protocol (default: 9p) (choices: 9p, virtiofs)
+share protocol (default: configuration 'proto' = '9p') (choices: 9p, virtiofs)
 .TP
 \fB\-\-security\fR \fISECURITY\fR, \fB\-S\fR \fISECURITY\fR
-QEMU security model (default: mapped\-xattr, no root needed) (choices:
-mapped\-xattr, mapped\-file, passthrough, none)
+QEMU security model, no root needed (default: configuration 'security' =
+'mapped\-xattr') (choices: mapped\-xattr, mapped\-file, passthrough, none)
 .TP
 \fB\-\-mount\-point\fR \fIMOUNT_POINT\fR
-guest mount point (default: /host)
+guest mount point (default: configuration 'mount\-point' = '/host')
 .TP
 \fB\-\-driver\fR \fIDRIVER\fR
-guest driver name (default: passerelle)
+guest driver name (default: configuration 'driver' = 'passerelle')
 .TP
 \fB\-\-driver\-bin\fR \fIDRIVER_BIN\fR
-absolute host path of the driver binary (default:
-/opt/passerelle/sbin/passerelle)
+absolute host path of the driver binary (default: configuration 'driver\-bin'
+= '/opt/passerelle/sbin/passerelle')
 .TP
 \fB\-\-emit\fR
 print one shell\-ready option line
@@ -65,7 +71,7 @@ use the IFS layout for the snippets
 start QEMU on IMAGE (kernel or disk)
 .TP
 \fB\-\-arch\fR \fIARCH\fR
-guest architecture for \-\-run (default: x86_64)
+guest architecture for \-\-run (default: configuration 'arch' = 'x86_64')
 .TP
 \fB\-\-qemu\-arg\fR \fIARG\fR
 extra QEMU argument, repeatable (appended after the share options). Used for a
@@ -79,7 +85,8 @@ consider the run successful when MARKER appears on the console
 write the guest console here (default: /tmp/pgw\-qemu\-console.log)
 .TP
 \fB\-\-timeout\fR \fITIMEOUT\fR
-seconds to wait for the console marker (default: 120)
+seconds to wait for the console marker (default: configuration 'timeout' =
+'120')
 .TP
 \fB\-\-trace\fR \fILOG\fR
 write the 9P trace to LOG (pbench roundtrips)
@@ -93,6 +100,10 @@ rust, all)
 .TP
 \fB\-\-security\-help\fR
 explain the security models (SEC\-03)
+.TP
+\fB\-\-show\-config\fR \fIFORMAT\fR
+print the effective configuration (text or json) and exit (choices: text,
+json)
 .SH EXIT STATUS
 .TP
 \fB0\fR
@@ -110,6 +121,9 @@ mkqnximage fragments written by \-\-mkqnximage
 .TP
 \fI<share>/cmake_example/, <share>/rust_example/\fR
 projects written by \-\-example
+.TP
+\fI<share>/README.md, <share>/qemu\-options.txt, <share>/guest\-setup.txt\fR
+the project written by 'qshare init'
 .TP
 \fI/tmp/pgw\-qemu\-console.log\fR
 default guest console log of \-\-run
