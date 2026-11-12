@@ -66,7 +66,7 @@ set(PGW_SECPOLPUSH "${QNX_SDP_BIN}/secpolpush" CACHE FILEPATH "secpolpush")
 # aarch64le variant explicitly. qcc also defines __QNX__ and __QNXNTO__ itself
 # (adding them again would be a redefinition, and the build treats warnings as
 # errors), so the only initial flag here is the variant selection.
-set(CMAKE_C_FLAGS_INIT "-Vgcc_ntoaarch64le")
+set(CMAKE_C_FLAGS_INIT "-Vgcc_ntoaarch64le -D_QNX_SOURCE=1")
 
 message(STATUS "QNX target: ${QNX_TARGET}")
 message(STATUS "QNX host tools: ${QNX_SDP_BIN}")
