@@ -224,6 +224,11 @@ def write_assets(out: pathlib.Path) -> None:
         source = HERE / "assets" / name
         if source.exists():
             shutil.copy2(source, assets / name)
+    # GitHub Pages runs Jekyll by default, and Jekyll ignores any path starting
+    # with an underscore - which is exactly where the assets live. An empty
+    # .nojekyll at the Pages root disables Jekyll so the generated site is
+    # served as-is.
+    (out / ".nojekyll").touch()
 
 
 def clean_generated(out: pathlib.Path) -> None:
