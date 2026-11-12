@@ -10,16 +10,23 @@
  * and the same set is what image/passerelle.sec grants through the security
  * policy.
  *
+ * QNX 8 packs an ability request into one descriptor: the ability id
+ * (PROCMGR_AID_*), the operation (PROCMGR_AOP_*) and the domain(s)
+ * (PROCMGR_ADN_*), and every call is terminated by PROCMGR_AID_EOL. The older
+ * PROCMGR_AID_INHERIT / PROCMGR_AID_LOCK names do not exist in QNX 8; their
+ * meanings are PROCMGR_AOP_INHERIT_YES and PROCMGR_AOP_LOCK.
+ *
  * Covered requirements: QNX-06 (works without root, minimum capabilities, and a
  * policy is provided), SEC-01, SEC-02 (no access to any other device: mem_phys
  * is granted for the device's own BAR range only, by the security policy).
  */
-/* The project compiles with -std=c11 (no GNU extensions). QNX ignores these
- * feature macros: its own headers always expose S_IF*, strnlen and the POSIX
- * realtime interfaces. The host needs them declared to build this file against
- * the stubs in tests/qnx-stub, so both are spelled out here once. */
+/* The project compiles with -std=c11 (no GNU extensions). _POSIX_C_SOURCE pins
+ * the POSIX surface for the host build (which compiles this file against
+ * tests/qnx-stub); _QNX_SOURCE is what makes the QNX target expose its own
+ * extensions here, such as initgroups() (ignored, and harmless, on the host). */
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE 1
+#define _QNX_SOURCE 1
 #include "pgw/drvsrv.h"
 
 #include "pgw/log.h"
@@ -32,20 +39,32 @@
 
 #include <sys/procmgr.h>
 
+/* Grant one ability in both domains, inherited across spawn/exec (QNX-06).
+ * See the file comment for how the descriptor packs aid|op|domains. */
 static pgw_err allow_ability(unsigned aid, const char *why)
 {
-    /* nonroot: the abilities survive the setuid() below. inherit: the threads
-     * created afterwards have them too. lock: nothing can add an ability
-     * later, so the drop cannot be undone. */
     if (procmgr_ability(0,
-                        PROCMGR_ADN_NONROOT | PROCMGR_ADN_ROOT | PROCMGR_AOP_ALLOW |
-                            PROCMGR_AID_INHERIT | PROCMGR_AID_LOCK,
-                        aid, NULL) != 0) {
+                        (unsigned)(aid | PROCMGR_AOP_ALLOW | PROCMGR_AOP_INHERIT_YES |
+                                   PROCMGR_ADN_ROOT | PROCMGR_ADN_NONROOT),
+                        (unsigned)PROCMGR_AID_EOL) != 0) {
         PGW_ERR("privdrop: ability %u (%s) refused: %s", aid, why,
                 strerror(errno));
         return pgw_code_from_host(errno);
     }
     PGW_INFO("privdrop: granted ability %u (%s)", aid, why);
+    return PGW_OK;
+}
+
+/* Lock every ability once they are all granted, so no further call can widen
+ * the set: the drop cannot be undone (QNX-06, SEC-01). */
+static pgw_err lock_abilities(void)
+{
+    if (procmgr_ability(0,
+                        (unsigned)(PROCMGR_AOP_LOCK | PROCMGR_ADN_ROOT |
+                                   PROCMGR_ADN_NONROOT | PROCMGR_AID_EOL)) != 0) {
+        PGW_ERR("privdrop: cannot lock the ability set: %s", strerror(errno));
+        return pgw_code_from_host(errno);
+    }
     return PGW_OK;
 }
 
@@ -71,8 +90,11 @@ pgw_err pgw_privdrop_apply(const pgw_ability *list, size_t n, const char *user)
         if (rc != PGW_OK)
             return rc;
     }
+    pgw_err rc = lock_abilities();
+    if (rc != PGW_OK)
+        return rc;
     if (user != NULL) {
-        pgw_err rc = drop_to_user(user);
+        rc = drop_to_user(user);
         if (rc != PGW_OK)
             return rc;
     }
