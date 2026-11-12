@@ -2480,5 +2480,43 @@
     "level": 2
    }
   ]
+ },
+ {
+  "title": "Vhost User Front End",
+  "url": "vhost-user-front-end.html",
+  "section": "Project",
+  "source": "docs/vhost-user-front-end.md",
+  "headings": [
+   {
+    "text": "The host-side vhost-user front end",
+    "anchor": "the-host-side-vhost-user-front-end",
+    "level": 1
+   },
+   {
+    "text": "What is implemented",
+    "anchor": "what-is-implemented",
+    "level": 2
+   },
+   {
+    "text": "The address convention (the part that is easy to get wrong)",
+    "anchor": "the-address-convention-the-part-that-is-easy-to-get-wrong",
+    "level": 2
+   },
+   {
+    "text": "What this proves",
+    "anchor": "what-this-proves",
+    "level": 2
+   },
+   {
+    "text": "What this does NOT prove",
+    "anchor": "what-this-does-not-prove",
+    "level": 2
+   },
+   {
+    "text": "Reproduce",
+    "anchor": "reproduce",
+    "level": 2
+   }
+  ]
  }
 ]
