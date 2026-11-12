@@ -74,7 +74,7 @@
     <p class="crumb">Project</p>
     <h1 id="gap-analysis-what-is-still-missing">Gap analysis — what is still missing</h1>
 <p>&lt;strong&gt;Date: 11 November 2026, 21:00 CET. Updated 12 November 2026, 15:30 CET.&lt;/strong&gt; The specification (<a href="spec-en.html">spec-en.md</a>) has &lt;strong&gt;77 distinct numbered requirements&lt;/strong&gt; (87 lines if the grouped ranges are counted line by line). This file listed &lt;strong&gt;100 concrete gaps&lt;/strong&gt;: the requirement lines that are not fully satisfied, and everything else a submission is judged on that is not a requirement line.</p>
-<p>&lt;strong&gt;41 of those 100 are closed&lt;/strong&gt; and are marked inline (<code>Closed 11-12/11</code> for the night wave that delivered the reference servers, the publication pipeline, the quality gates, the QNX 7.1 guest in CI and the submission pack; <code>Closed 12/11</code> for the wave that delivered the faulty server, the directed cases of §7.4, the vhost-user front end driving the real <code>virtiofsd</code>, the shared configuration file, the Debian skeleton and the devcontainer). Rows are kept rather than deleted: the closure note says &lt;em&gt;what&lt;/em&gt; closed them, so a claim can be checked. What is left: 28 requirement gaps (24 of them blocked on the QNX SDP, 2 de-scoped X-tier, 2 doable here), and 31 non-requirement gaps.</p>
+<p>&lt;strong&gt;43 of those 100 are closed&lt;/strong&gt; and are marked inline (<code>Closed 11-12/11</code> for the night wave that delivered the reference servers, the publication pipeline, the quality gates, the QNX 7.1 guest in CI and the submission pack; <code>Closed 12/11</code> for the wave that delivered the faulty server, the directed cases of §7.4, the vhost-user front end driving the real <code>virtiofsd</code>, the shared configuration file, the Debian skeleton, the devcontainer, the generated man pages and the examples built in CI). Rows are kept rather than deleted: the closure note says &lt;em&gt;what&lt;/em&gt; closed them, so a claim can be checked. What is left: 28 requirement gaps (24 of them blocked on the QNX SDP, 2 de-scoped X-tier, 2 doable here), and 29 non-requirement gaps.</p>
 <p>Where the 77 requirements stand:</p>
 <table>
 <thead>
@@ -588,7 +588,7 @@
 </tr>
 <tr>
 <td>95</td>
-<td>The CMake and Rust examples (<code>qshare --example</code>) are written but never executed by CI</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>.github/workflows/examples.yml</code> scaffolds both examples with the real <code>qshare --example all</code>, builds the CMake one and runs its ctest, and builds the Rust one only when <code>cargo</code> is already present - an explicit <code>::notice::</code> skip otherwise, never a toolchain install (PR #43). The CMake and Rust examples (<code>qshare --example</code>) are written but never executed by CI</td>
 </tr>
 <tr>
 <td>96</td>
@@ -600,7 +600,7 @@
 </tr>
 <tr>
 <td>98</td>
-<td>No man pages for the four commands</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>man/qshare.1</code>, <code>qrun.1</code>, <code>fsproof.1</code>, <code>pbench.1</code>, generated from the CLI definitions by <code>tools/man/build_man.py</code>; the date is pinned (<code>tools/man/PAGE_DATE</code>) and a pytest fails on any drift (PR #43). No man pages for the four commands</td>
 </tr>
 <tr>
 <td>99</td>
