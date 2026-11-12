@@ -85,6 +85,14 @@ Passerelle follows a modular three-layer design:
 
 See [docs/architecture.md](docs/architecture.md) for full design documentation.
 
+![Passerelle architecture: the three layers inside the QNX guest, the QEMU device, and the host side with the shared directory and the host tools](docs/_assets/architecture.svg)
+
+The picture is the README version of the design: three layers inside the guest
+(resource manager `rmfs/`, wire protocols `proto9p/` and `protofuse/`, virtio
+transport `virtio/`), one QEMU device band underneath, and the host directory on
+the other side — plus the host tools (`qshare`, `qrun`, `fsproof`, `pbench`) and
+the reference servers that drive the same client without QNX.
+
 ---
 
 ## One-Command Demo
@@ -207,6 +215,7 @@ matrix and [docs/measurements/](docs/measurements/) for the numbers.
 
 - [docs/spec-en.md](docs/spec-en.md) — Complete English Specification (Requirements VIO, P9, FS, QNX, PERF, ROB, SEC, DX, VFS, SRV)
 - [docs/spec-fr.md](docs/spec-fr.md) — Original French Specification (authoritative text)
+- [docs/glossary.md](docs/glossary.md) — English glossary of every term (9P, virtio, FUSE, QNX, host tools), with the French equivalent and the source of each term
 - [docs/architecture.md](docs/architecture.md) — Detailed Three-Layer Design & Tricky Issues Resolution
 - [docs/user-guide.md](docs/user-guide.md) — User Guide, Mounting Options, CMake and Rust Workflows
 - [docs/state-of-the-art.md](docs/state-of-the-art.md) — Comprehensive Analysis of Existing Projects

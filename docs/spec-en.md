@@ -555,6 +555,11 @@ Beyond the Complete tier, ordered by impact:
 
 ## 15. Glossary
 
+The table below lists the terms the specification needs in passing. The
+complete glossary of the project — every term of the code as well, with its
+French equivalent and the document or source file it comes from — is in
+[glossary.md](glossary.md).
+
 | Term | Meaning |
 |---|---|
 | 9P, 9P2000.L | Remote filesystem protocol originally from Plan 9; Linux-adapted variant |
