@@ -75,3 +75,8 @@ pgw_test(test_cas_path_len
     SRCS test_cas_path_len.c ${CAS_MAIN} ${CAS_9P_SRCS}
     DEPS pgw_diff pgw_proto9p
     LABELS "directed;conformance")
+
+pgw_test(test_cas_exotic
+    SRCS test_cas_exotic.c ${CAS_MAIN} ${CAS_9P_SRCS}
+    DEPS pgw_diff pgw_proto9p
+    LABELS "directed;conformance")
