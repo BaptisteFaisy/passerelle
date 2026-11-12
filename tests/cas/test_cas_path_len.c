@@ -308,7 +308,9 @@ static void test_deep_chain_through_9p(void)
     /* An over-long name is refused on this side of the wire as well. */
     char too_long[PGW_NAME_MAX + 2];
     cas_component(too_long, PGW_NAME_MAX + 1, 3);
-    char bad[CAS_PATH_MAX];
+    /* Wide enough for the deepest chain of the long variant plus the over-long
+     * name appended to it. */
+    char bad[CAS_PATH_MAX + PGW_NAME_MAX + 2];
     cas_append(bad, sizeof(bad), rel, too_long);
     pgw_fs_attr at;
     CAS_ASSERT_MSG(pgw_rmfs_stat(c.fs, &c.cred, bad, &at) == PGW_ENAMETOOLONG,
