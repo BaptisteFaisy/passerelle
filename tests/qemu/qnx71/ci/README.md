@@ -11,9 +11,9 @@ Nothing here modifies the guest scripts of the parent directory: `qnx-vm.sh` and
 
 | File | What it does |
 |---|---|
-| `fetch_image.sh` | Makes `$QNX_VM_DIR/qnx71-fs.img` exist, by pulling `autosarai/qemu_qnx7_1:1.1.0` and extracting `/home/popcornsar/fs_3GB.img` out of it. Idempotent: a disk already there is reused, never downloaded again. |
+| `fetch_image.sh` | Makes `$QNX_VM_DIR/qnx71-fs.img` exist **and match the pin**: pulls the container by digest (from `tools/qnx-image/qnx71-image.manifest.json`), checks that the pulled image carries that digest, extracts `/home/popcornsar/fs_3GB.img` and verifies its size and SHA256 before use. Idempotent: a disk already there is verified and reused, never downloaded again. |
 | `wait_ssh.py` | Bounded poll of the four forwarded ports until one answers with an SSH banner; prints `SSH_PORT=<n>` and can write it to a file. Returns early when QEMU dies. |
-| `guest_probe.sh` | Runs the guest commands (`uname`, `pidin`, `pci-tool`, `/proc/boot/pci_hw.cfg`, `/proc/boot/pci_server.cfg`), captures the host-side `info pci`, writes `summary.txt`, and asserts the device is there. |
+| `guest_probe.sh` | Runs the guest commands (`uname`, `pidin`, `pci-tool`, `/proc/boot/pci_hw.cfg`, `/proc/boot/pci_server.cfg`), captures the host-side `info pci` **and the kernel-side trace the guest can give** (the tracing tools it ships, the system log, the VGA console), writes `summary.txt`, and asserts the device is there. |
 | `qemu_monitor.py` | Sends one HMP command to the QEMU monitor and prints the cleaned answer. Reuses the connection helper of `../qnx_console.py`. |
 | `test_ci_helpers.py` | Unit tests of the parts that need no guest: port-list parsing, monitor output cleaning, pid-file liveness. |
 
@@ -50,11 +50,20 @@ cat /tmp/qnx71-probe/summary.txt
 ```
 
 `fetch_image.sh` can be exercised without the 6 GB download by pointing it at
-any small image and file, which is how its skip and failure paths were tested:
+a manifest of your own (`QNX_IMAGE_MANIFEST`) — the disk it finds on disk is
+always verified against the pin, so a file that is not the pinned one is
+refused (exit 1), and a missing docker or a full disk is a skip (exit 2):
 
 ```bash
-QNX_VM_DIR=/tmp/mock QNX_GUEST_IMAGE=alpine:3.24 QNX_GUEST_DISK=/bin/busybox \
-QNX_REQUIRED_KB=1000 QNX_MIN_IMAGE_BYTES=1000 tests/qemu/qnx71/ci/fetch_image.sh
+QNX_VM_DIR=/tmp/mock QNX_REQUIRED_KB=1000 QNX_MIN_IMAGE_BYTES=1000 \
+  tests/qemu/qnx71/ci/fetch_image.sh
+```
+
+The checksum logic itself is unit-tested on small synthetic files, with no
+docker, no network and no gigabytes:
+
+```bash
+python3 -m pytest host/tests/test_image_manifest.py -q
 ```
 
 Unit tests (no guest, no docker, no network):

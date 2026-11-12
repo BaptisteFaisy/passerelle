@@ -26,13 +26,24 @@ sees. What that answered is in [EVIDENCE.md](EVIDENCE.md).
 
 The image comes from the community container `autosarai/qemu_qnx7_1:1.1.0`
 (QNX 7.1.0, 6.1 GiB raw disk with an installed QNX system, sshd and qconn).
+It is **pinned**: the repository records the source by digest and the disk by
+size and SHA256 in
+[`tools/qnx-image/qnx71-image.manifest.json`](../../../tools/qnx-image/qnx71-image.manifest.json),
+and the script below pulls that digest and verifies the disk against the pin
+before it is used.
 
 ```bash
-docker pull autosarai/qemu_qnx7_1:1.1.0
-CID=$(docker create autosarai/qemu_qnx7_1:1.1.0)
+# the pinned way (this is what CI does): pulls by digest, checks the checksum
+tests/qemu/qnx71/ci/fetch_image.sh
+
+# the same thing by hand, if you prefer to see every step
+docker pull autosarai/qemu_qnx7_1@sha256:07319f04f85ea25f2629e7b6cf30b4572c47f37e7031ba9150c86226b2de553a
+CID=$(docker create autosarai/qemu_qnx7_1@sha256:07319f04f85ea25f2629e7b6cf30b4572c47f37e7031ba9150c86226b2de553a)
 mkdir -p ~/qnx71-vm
 docker cp "$CID:/home/popcornsar/fs_3GB.img" ~/qnx71-vm/qnx71-fs.img
 docker rm "$CID"
+python3 tools/qnx-image/image_manifest.py verify \
+    --manifest tools/qnx-image/qnx71-image.manifest.json --file ~/qnx71-vm/qnx71-fs.img
 ```
 
 Then, every time:
