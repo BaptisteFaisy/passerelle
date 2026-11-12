@@ -1,0 +1,8 @@
+passerelle (0.1.0) unstable; urgency=low
+
+  * Initial packaging skeleton (gap 96): the passerelle-host binary package
+    ships the qshare, qrun, fsproof and pbench console tools, built from
+    host/ with pybuild. The version of this changelog is kept equal to the
+    top-level VERSION file; host/tests/test_packaging.py enforces it.
+
+ -- Passerelle Team <packaging@passerelle.invalid>  Thu, 12 Nov 2026 12:00:00 +0100
