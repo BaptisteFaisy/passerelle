@@ -1,0 +1,262 @@
+.\" SPDX-License-Identifier: Apache-2.0
+.TH "PBENCH" "1" "2026-11-12" "passerelle 0.1.0" "Passerelle host tools"
+.SH NAME
+pbench \- Passerelle measurements: roundtrips, workloads, comparative report
+.SH SYNOPSIS
+.B pbench
+.RI [ OPTION ]...
+.I COMMAND
+.RI [ COMMAND\-OPTION ]...
+.SH DESCRIPTION
+Passerelle measurements: roundtrips, workloads, comparative report
+.P
+pbench runs the measurements of sections 7.5\-7.6 of the specification:
+`roundtrips` counts the 9P roundtrips per POSIX call from a QEMU trace, the
+workload subcommands measure throughput, metadata, tree walks, mixed load,
+program launches and priority reads, `mount` measures the guest mount time,
+`all` writes one JSON conformance file, and `report` aggregates runs into
+Markdown, JSON and SVG and checks the section 7.6 thresholds.
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.SS pbench roundtrips
+.TP
+\fBroundtrips\fR
+roundtrips per POSIX call from a trace
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fITRACE\fR
+QEMU trace file (\-trace 'v9fs_*')
+.TP
+\fB\-\-client\fR \fICLIENT\fR
+client name for the report (default: passerelle)
+.TP
+\fB\-\-markdown\fR \fIFILE\fR
+write the table as Markdown
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the table as JSON
+.SS pbench throughput
+.TP
+\fBthroughput\fR
+run the throughput workload
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-scale\fR \fISCALE\fR
+1.0 = specification size (default: 1.0)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the result as JSON
+.SS pbench metadata
+.TP
+\fBmetadata\fR
+run the metadata workload
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-scale\fR \fISCALE\fR
+1.0 = specification size (default: 1.0)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the result as JSON
+.SS pbench tree
+.TP
+\fBtree\fR
+run the tree workload
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-scale\fR \fISCALE\fR
+1.0 = specification size (default: 1.0)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the result as JSON
+.SS pbench mixed
+.TP
+\fBmixed\fR
+run the mixed workload
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-scale\fR \fISCALE\fR
+1.0 = specification size (default: 1.0)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the result as JSON
+.SS pbench exec
+.TP
+\fBexec\fR
+run the exec workload
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-scale\fR \fISCALE\fR
+1.0 = specification size (default: 1.0)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the result as JSON
+.SS pbench priority
+.TP
+\fBpriority\fR
+run the priority workload
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-scale\fR \fISCALE\fR
+1.0 = specification size (default: 1.0)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the result as JSON
+.SS pbench all
+.TP
+\fBall\fR
+run every workload and write one JSON file
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-scale\fR \fISCALE\fR
+1.0 = specification size (default: 1.0)
+.TP
+\fB\-\-client\fR \fICLIENT\fR
+client name (default: passerelle)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+output JSON file
+.TP
+\fB\-\-mount\-ms\fR \fIMOUNT_MS\fR
+measured mount time (PERF\-06) (default: 0.0)
+.TP
+\fB\-\-diff\-ops\fR \fIDIFF_OPS\fR
+differential operations run (default: 0)
+.TP
+\fB\-\-diff\-divergences\fR \fIDIFF_DIVERGENCES\fR
+divergences seen (default: 0)
+.TP
+\fB\-\-exercise\-ops\fR \fIEXERCISE_OPS\fR
+exerciser operations run (default: 0)
+.TP
+\fB\-\-exercise\-workers\fR \fIEXERCISE_WORKERS\fR
+exerciser workers used (default: 1)
+.TP
+\fB\-\-cases\-passed\fR \fICASES_PASSED\fR
+directed cases passed (default: 0)
+.TP
+\fB\-\-cases\-total\fR \fICASES_TOTAL\fR
+directed cases run (default: 0)
+.TP
+\fB\-\-leaks\fR \fILEAKS\fR
+leaks after a million opens (default: 0)
+.TP
+\fB\-\-fuzz\-seconds\fR \fIFUZZ_SECONDS\fR
+random\-input run time (default: 0.0)
+.TP
+\fB\-\-virtiofs\fR
+also ran the virtiofs path
+.TP
+\fB\-\-conformance\fR
+also run fsproof (diff, exerciser, cases) and fill those figures
+.TP
+\fB\-\-conformance\-scale\fR \fICONFORMANCE_SCALE\fR
+scale of the conformance run (1.0 = socle sizes, slow) (default: 0.01)
+.TP
+\fB\-\-workers\fR \fIWORKERS\fR
+exerciser workers (default: 16)
+.SS pbench mount
+.TP
+\fBmount\fR
+measure the guest mount time (PERF\-06)
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-console\fR \fICONSOLE\fR
+guest console unix socket
+.TP
+\fB\-\-driver\fR \fIDRIVER\fR
+guest driver command (default: passerelle)
+.TP
+\fB\-\-tag\fR \fITAG\fR
+mount tag (default: hostshare)
+.TP
+\fB\-\-mount\-point\fR \fIMOUNT_POINT\fR
+guest mount point (default: /host)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+write the measurement as JSON
+.SS pbench report
+.TP
+\fBreport\fR
+aggregate runs and check section 7.6
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-run\fR \fIJSON\fR
+JSON file produced by 'pbench all' (repeatable)
+.TP
+\fB\-\-level\fR \fILEVEL\fR
+threshold level (choices: socle, complet, extreme) (default: socle)
+.TP
+\fB\-\-output\fR \fIOUTPUT\fR, \fB\-o\fR \fIOUTPUT\fR
+output prefix (default: bench_report)
+.SS pbench workloads
+.TP
+\fBworkloads\fR
+list the workload names
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.SH EXIT STATUS
+.TP
+\fB0\fR
+the command ran, and the report verdict is PASS
+.TP
+\fB1\fR
+the report verdict is FAIL (a section 7.6 threshold is missed)
+.TP
+\fB2\fR
+usage error or host environment error
+.SH FILES
+.TP
+\fIbench_report.md, .json, .svg\fR
+default outputs of `report` (\-\-output)
+.TP
+\fI\-\-json FILE\fR
+JSON result of a workload or of `all`
+.TP
+\fI\-\-markdown FILE\fR
+Markdown table of `roundtrips`
+.SH SEE ALSO
+qshare(1), qrun(1), fsproof(1)
