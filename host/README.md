@@ -199,11 +199,35 @@ a fast rehearsal of all of them.
 `pbench mount --console /tmp/ser.sock` measures the guest mount time
 (PERF-06, under 50 ms).
 
+## Drive virtiofsd without a guest (VFS-02, VFS-03, VFS-06)
+
+`host/vhost/` is a vhost-user **front end** in pure Python: this process plays
+the hypervisor side of the socket, so the virtiofs path can be proven with no
+QEMU, no QNX and no guest image.
+
+```sh
+python3 -m vhost --share /tmp/shared     # from host/, or PYTHONPATH=host
+```
+
+It launches `virtiofsd` (reusing `qshare.runner.VirtiofsdDaemon`), publishes a
+`memfd_create` region as guest memory over `SCM_RIGHTS`, arms a split
+virtqueue with `eventfd` kick/call pairs, negotiates `VERSION_1` +
+`REPLY_ACK`, and then runs INIT, LOOKUP, GETATTR, OPEN, READ, WRITE, READDIR,
+FLUSH, RELEASE and FORGET through it. Every answer is compared with what the
+host itself sees on the shared directory - the same oracle `tests/fuse_ref/`
+uses. The whole sequence takes about a second.
+
+`host/vhost/fake_backend.py` is a vhost-user backend written in Python, so the
+framing, the negotiation, the memory table and the virtqueue signalling are
+unit-tested everywhere, including on a machine without `virtiofsd`. See
+[docs/vhost-user-front-end.md](../docs/vhost-user-front-end.md) for what this
+proves and what it does not.
+
 ## Tests
 
 ```sh
 cd host
-python3 -m pytest tests -q          # 133 passed, 2 skipped, under 10 s
+python3 -m pytest tests -q          # 194 passed, 2 skipped, under 30 s
 python3 -m compileall -q qshare fsproof bench
 python3 ../tools/check-size.py --root .
 ```
@@ -224,5 +248,10 @@ host/
 │                exercise.py, cases.py, clients.py
 ├── bench/       trace.py (QEMU 9P trace), roundtrips.py, loads.py,
 │                conformance.py, mount.py, report.py
+├── vhost/       protocol.py (wire), transport.py (SCM_RIGHTS socket),
+│                memory.py (memfd), vring.py (split virtqueue),
+│                device.py (front end), fuse_client.py (FUSE on the queue),
+│                fake_backend.py (Python backend for the tests),
+│                driver.py (virtiofsd end to end), testing.py (wiring)
 └── tests/       pytest suite + two 9P trace fixtures (synthetic and real)
 ```
