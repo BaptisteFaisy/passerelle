@@ -36,6 +36,10 @@ from markdown import Doc, render, slugify  # noqa: E402
 
 GITHUB = "https://github.com/Tradoooo/passerelle"
 BLOB = f"{GITHUB}/blob/main"
+# The files the site builder copies into the generated site's _assets
+# directory. They live in tools/site/assets/, not in docs/_assets/: the pages
+# link to them, so the link checker has to know about them.
+SITE_ASSETS = ("style.css", "search.js", "favicon.svg", "architecture.svg")
 
 # Ordered navigation. "section" groups the entries in the sidebar.
 PAGES: list[tuple[str, str, str]] = [
@@ -131,7 +135,15 @@ def rewrite_links(body: str, source: str, by_source: dict[str, str]) -> tuple[st
             return match.group(0)
         start = target if target.startswith("/") else posixpath.join(posixpath.dirname(source), target)
         resolved = posixpath.normpath(start).lstrip("./")
-        if resolved in by_source:
+        asset = posixpath.basename(resolved)
+        if (posixpath.dirname(resolved) == "docs/_assets"
+                and asset in SITE_ASSETS):
+            # write_assets copies these files into the generated site's own
+            # _assets directory: they exist in the output, not in the source
+            # tree, so the generic "is it a file?" test would call them broken.
+            # The site serves them next to the page, so the path stays relative.
+            url = f"_assets/{asset}"
+        elif resolved in by_source:
             url = by_source[resolved]
         elif (REPO / resolved).is_file():
             url = f"{BLOB}/{resolved}"
@@ -220,7 +232,7 @@ def write_assets(out: pathlib.Path) -> None:
     """Copy the static assets next to the generated pages."""
     assets = out / "_assets"
     assets.mkdir(parents=True, exist_ok=True)
-    for name in ("style.css", "search.js", "favicon.svg", "architecture.svg"):
+    for name in SITE_ASSETS:
         source = HERE / "assets" / name
         if source.exists():
             shutil.copy2(source, assets / name)
