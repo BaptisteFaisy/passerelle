@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define P9_ITERS   4000u
+#define P9_ITERS 4000u
 #define P9_MAX_ENT 4u
 
 /* Indexes into p9_snap::e, one per decoder exercised below. */
@@ -85,18 +85,16 @@ static void decode_all(const uint8_t *msg, size_t len, uint16_t tag, p9_snap *s)
     s->e[S_HDR] = pgw_p9_dec_hdr(msg, len, &s->hdr);
     s->e[S_LERROR] = pgw_p9_dec_rlerror(msg, len, tag, &s->ecode);
     s->e[S_VERSION] =
-        pgw_p9_dec_rversion(msg, len, tag, &s->msize, s->ver, sizeof(s->ver));
+            pgw_p9_dec_rversion(msg, len, tag, &s->msize, s->ver, sizeof(s->ver));
     s->e[S_ATTACH] = pgw_p9_dec_rattach(msg, len, tag, &s->qid);
-    s->e[S_WALK] = pgw_p9_dec_rwalk(msg, len, tag, &s->nwqid, s->wqids,
-                                    PGW_MAXWELEM);
+    s->e[S_WALK] = pgw_p9_dec_rwalk(msg, len, tag, &s->nwqid, s->wqids, PGW_MAXWELEM);
     s->e[S_LOPEN] = pgw_p9_dec_rlopen(msg, len, tag, &s->qid, &s->iounit);
     s->e[S_READ] = pgw_p9_dec_rread(msg, len, tag, &s->rcount, &data);
     s->e[S_WRITE] = pgw_p9_dec_rwrite(msg, len, tag, &s->wcount);
     s->e[S_GETATTR] = pgw_p9_dec_rgetattr(msg, len, tag, &s->attr);
-    s->e[S_READDIR] = pgw_p9_dec_rreaddir_iter(msg, len, tag, s->ents,
-                                               P9_MAX_ENT, &s->ndirents);
-    s->e[S_READLINK] =
-        pgw_p9_dec_rreadlink(msg, len, tag, s->str, sizeof(s->str));
+    s->e[S_READDIR] =
+            pgw_p9_dec_rreaddir_iter(msg, len, tag, s->ents, P9_MAX_ENT, &s->ndirents);
+    s->e[S_READLINK] = pgw_p9_dec_rreadlink(msg, len, tag, s->str, sizeof(s->str));
     s->e[S_MKDIR] = pgw_p9_dec_rmkdir(msg, len, tag, &s->qid);
     s->e[S_STATFS] = pgw_p9_dec_rstatfs(msg, len, tag, &s->sfs);
     s->e[S_EMPTY] = pgw_p9_dec_empty(msg, len, PGW_P9_RCLUNK, tag);
@@ -145,7 +143,7 @@ static bool snap_bounded(const p9_snap *s, size_t len)
  * the call, so any non-zero byte is a partial result (P9-09). */
 static bool snap_clean_on_error(const p9_snap *s)
 {
-    static const char zero_str[1] = { '\0' };
+    static const char zero_str[1] = {'\0'};
     if (s->e[S_LERROR] != PGW_OK && s->ecode != 0u)
         return false;
     if (s->e[S_READ] != PGW_OK && (s->rcount != 0u || s->data_len != 0u))

@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FU_BUF      2048u
+#define FU_BUF 2048u
 #define FU_NAME_BUF 600u
-#define FU_ITERS    3000u
+#define FU_ITERS 3000u
 #define FU_NAME_LEN 200u
 
 /* The encoders under test. `is_dir` and `flags` are held at their plain value
@@ -61,18 +61,16 @@ enum {
 };
 
 static const uint32_t g_op[F_KINDS] = {
-    PGW_FUSE_INIT,     PGW_FUSE_LOOKUP,   PGW_FUSE_FORGET,  PGW_FUSE_GETATTR,
-    PGW_FUSE_SETATTR,  PGW_FUSE_OPEN,     PGW_FUSE_CREATE,  PGW_FUSE_RELEASE,
-    PGW_FUSE_READ,     PGW_FUSE_WRITE,    PGW_FUSE_MKDIR,   PGW_FUSE_UNLINK,
-    PGW_FUSE_RENAME,   PGW_FUSE_SYMLINK,  PGW_FUSE_LINK,    PGW_FUSE_READLINK,
-    PGW_FUSE_FSYNC,    PGW_FUSE_STATFS,   PGW_FUSE_INTERRUPT
-};
+        PGW_FUSE_INIT,    PGW_FUSE_LOOKUP,  PGW_FUSE_FORGET,   PGW_FUSE_GETATTR,
+        PGW_FUSE_SETATTR, PGW_FUSE_OPEN,    PGW_FUSE_CREATE,   PGW_FUSE_RELEASE,
+        PGW_FUSE_READ,    PGW_FUSE_WRITE,   PGW_FUSE_MKDIR,    PGW_FUSE_UNLINK,
+        PGW_FUSE_RENAME,  PGW_FUSE_SYMLINK, PGW_FUSE_LINK,     PGW_FUSE_READLINK,
+        PGW_FUSE_FSYNC,   PGW_FUSE_STATFS,  PGW_FUSE_INTERRUPT};
 
 static const char *const g_op_name[F_KINDS] = {
-    "init",   "lookup", "forget",   "getattr", "setattr", "open",    "create",
-    "release", "read",  "write",    "mkdir",   "unlink",  "rename",  "symlink",
-    "link",   "readlink", "fsync",  "statfs",  "interrupt"
-};
+        "init",    "lookup",   "forget", "getattr", "setattr",  "open",   "create",
+        "release", "read",     "write",  "mkdir",   "unlink",   "rename", "symlink",
+        "link",    "readlink", "fsync",  "statfs",  "interrupt"};
 
 static uint32_t g_kind;
 static uint8_t g_buf[FU_BUF + PROP_GUARD];
@@ -111,21 +109,19 @@ static int32_t encode_low(const prop_case *c, size_t cap)
     case F_FORGET:
         return pgw_fuse_enc_forget(g_buf, cap, u, node, c->value);
     case F_GETATTR:
-        return pgw_fuse_enc_getattr(g_buf, cap, u, node, c->value,
-                                    (c->b & 1u) != 0u);
+        return pgw_fuse_enc_getattr(g_buf, cap, u, node, c->value, (c->b & 1u) != 0u);
     case F_SETATTR:
         case_setattr(c);
         return pgw_fuse_enc_setattr(g_buf, cap, u, node, &g_sa);
     case F_OPEN:
         return pgw_fuse_enc_open(g_buf, cap, u, node, num, false);
     case F_CREATE:
-        return pgw_fuse_enc_create(g_buf, cap, u, node, g_name, num, 0644u,
-                                   022u);
+        return pgw_fuse_enc_create(g_buf, cap, u, node, g_name, num, 0644u, 022u);
     case F_RELEASE:
         return pgw_fuse_enc_release(g_buf, cap, u, node, c->value, false);
     default:
-        return pgw_fuse_enc_read(g_buf, cap, u, node, c->value, c->value >> 1,
-                                 num % 512u, false);
+        return pgw_fuse_enc_read(g_buf, cap, u, node, c->value, c->value >> 1, num % 512u,
+                                 false);
     }
 }
 
@@ -138,16 +134,14 @@ static int32_t encode_high(const prop_case *c, size_t cap)
     prop_name(g_name2, sizeof(g_name2), (size_t)(c->b % FU_NAME_LEN));
     switch (g_kind) {
     case F_WRITE:
-        return pgw_fuse_enc_write(g_buf, cap, u, node, c->value, c->value >> 1,
-                                  c->bytes, num % 512u);
+        return pgw_fuse_enc_write(g_buf, cap, u, node, c->value, c->value >> 1, c->bytes,
+                                  num % 512u);
     case F_MKDIR:
         return pgw_fuse_enc_mkdir(g_buf, cap, u, node, g_name, 0755u, 022u);
     case F_UNLINK:
-        return pgw_fuse_enc_name_op(g_buf, cap, PGW_FUSE_UNLINK, u, node,
-                                    g_name);
+        return pgw_fuse_enc_name_op(g_buf, cap, PGW_FUSE_UNLINK, u, node, g_name);
     case F_RENAME:
-        return pgw_fuse_enc_rename(g_buf, cap, u, node, g_name, node + 1u,
-                                   g_name2, 0u);
+        return pgw_fuse_enc_rename(g_buf, cap, u, node, g_name, node + 1u, g_name2, 0u);
     case F_SYMLINK:
         return pgw_fuse_enc_symlink(g_buf, cap, u, node, g_name, g_name2);
     case F_LINK:
@@ -207,8 +201,8 @@ static void test_fuse_prop_encode_header_round_trip(void)
     uint32_t iters = prop_iters("PGW_PROP_ITERS", FU_ITERS);
     for (uint32_t k = 0; k < F_KINDS; k++) {
         g_kind = k;
-        prop_forall("fuse encode -> input header round trip", gen_frame,
-                    pred_frame, iters, 0x9E3779B912345678ULL ^ k);
+        prop_forall("fuse encode -> input header round trip", gen_frame, pred_frame,
+                    iters, 0x9E3779B912345678ULL ^ k);
     }
 }
 PGW_TEST(test_fuse_prop_encode_header_round_trip);
@@ -246,8 +240,8 @@ static void test_fuse_prop_encode_respects_capacity(void)
     uint32_t iters = prop_iters("PGW_PROP_ITERS", FU_ITERS);
     for (uint32_t k = 0; k < F_KINDS; k++) {
         g_kind = k;
-        prop_forall("fuse encoder never leaves its capacity", gen_cap, pred_cap,
-                    iters, 0xD1B54A32D192ED03ULL ^ k);
+        prop_forall("fuse encoder never leaves its capacity", gen_cap, pred_cap, iters,
+                    0xD1B54A32D192ED03ULL ^ k);
     }
 }
 PGW_TEST(test_fuse_prop_encode_respects_capacity);
@@ -264,14 +258,10 @@ static void test_fuse_prop_extremes_are_refused(void)
     /* A name above the protocol limit is refused, and so is a missing one. */
     prop_name(name, sizeof(name), PGW_FUSE_NAME_WIRE_MAX + 1u);
     PGW_ASSERT_EQ_I(pgw_fuse_enc_lookup(buf, sizeof(buf), 1u, 2u, name), -1);
-    PGW_ASSERT_EQ_I(pgw_fuse_enc_create(buf, sizeof(buf), 1u, 2u, name, 0u,
-                                        0644u, 0u),
+    PGW_ASSERT_EQ_I(pgw_fuse_enc_create(buf, sizeof(buf), 1u, 2u, name, 0u, 0644u, 0u),
                     -1);
-    PGW_ASSERT_EQ_I(pgw_fuse_enc_mkdir(buf, sizeof(buf), 1u, 2u, name, 0755u,
-                                       0u),
-                    -1);
-    PGW_ASSERT_EQ_I(pgw_fuse_enc_symlink(buf, sizeof(buf), 1u, 2u, name, "t"),
-                    -1);
+    PGW_ASSERT_EQ_I(pgw_fuse_enc_mkdir(buf, sizeof(buf), 1u, 2u, name, 0755u, 0u), -1);
+    PGW_ASSERT_EQ_I(pgw_fuse_enc_symlink(buf, sizeof(buf), 1u, 2u, name, "t"), -1);
     PGW_ASSERT_EQ_I(pgw_fuse_enc_lookup(buf, sizeof(buf), 1u, 2u, NULL), -1);
     PGW_ASSERT_EQ_I(pgw_fuse_enc_setattr(buf, sizeof(buf), 1u, 2u, NULL), -1);
 

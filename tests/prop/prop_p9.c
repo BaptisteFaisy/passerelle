@@ -33,24 +33,22 @@
 #include <stdio.h>
 #include <string.h>
 
-#define P9_BUF       4096u
-#define P9_NAME_BUF  600u /* above PGW_NAME_MAX, so the refusal is reachable */
-#define P9_ITERS     3000u
+#define P9_BUF 4096u
+#define P9_NAME_BUF 600u /* above PGW_NAME_MAX, so the refusal is reachable */
+#define P9_ITERS 3000u
 #define P9_NAME_MAX_LEN 200u
 
 static const char *const g_enc_names[] = {
-    "tversion", "tattach",  "twalk",     "tlopen",    "tlcreate",  "tread",
-    "twrite",   "tclunk",   "tflush",    "tgetattr",  "tsetattr",  "treaddir",
-    "tmkdir",   "tunlinkat", "trenameat", "tsymlink", "treadlink", "tlink",
-    "tfsync",   "tstatfs"
-};
+        "tversion", "tattach",   "twalk",  "tlopen",    "tlcreate",
+        "tread",    "twrite",    "tclunk", "tflush",    "tgetattr",
+        "tsetattr", "treaddir",  "tmkdir", "tunlinkat", "trenameat",
+        "tsymlink", "treadlink", "tlink",  "tfsync",    "tstatfs"};
 static const uint8_t g_enc_types[] = {
-    PGW_P9_TVERSION,   PGW_P9_TATTACH,  PGW_P9_TWALK,     PGW_P9_TLOPEN,
-    PGW_P9_TLCREATE,   PGW_P9_TREAD,    PGW_P9_TWRITE,    PGW_P9_TCLUNK,
-    PGW_P9_TFLUSH,     PGW_P9_TGETATTR, PGW_P9_TSETATTR,  PGW_P9_TREADDIR,
-    PGW_P9_TMKDIR,     PGW_P9_TUNLINKAT, PGW_P9_TRENAMEAT, PGW_P9_TSYMLINK,
-    PGW_P9_TREADLINK,  PGW_P9_TLINK,    PGW_P9_TFSYNC,    PGW_P9_TSTATFS
-};
+        PGW_P9_TVERSION,  PGW_P9_TATTACH,   PGW_P9_TWALK,     PGW_P9_TLOPEN,
+        PGW_P9_TLCREATE,  PGW_P9_TREAD,     PGW_P9_TWRITE,    PGW_P9_TCLUNK,
+        PGW_P9_TFLUSH,    PGW_P9_TGETATTR,  PGW_P9_TSETATTR,  PGW_P9_TREADDIR,
+        PGW_P9_TMKDIR,    PGW_P9_TUNLINKAT, PGW_P9_TRENAMEAT, PGW_P9_TSYMLINK,
+        PGW_P9_TREADLINK, PGW_P9_TLINK,     PGW_P9_TFSYNC,    PGW_P9_TSTATFS};
 #define P9_KINDS (sizeof(g_enc_names) / sizeof(g_enc_names[0]))
 
 /* Encoder under test, set by the campaign loop before each prop_forall. */
@@ -91,8 +89,8 @@ static int32_t encode_low(const prop_case *c, size_t cap)
     case 0:
         return pgw_p9_enc_tversion(g_buf, cap, tag, num, g_name);
     case 1:
-        return pgw_p9_enc_tattach(g_buf, cap, tag, fid, PGW_FID_NONE, g_name,
-                                  g_name, num);
+        return pgw_p9_enc_tattach(g_buf, cap, tag, fid, PGW_FID_NONE, g_name, g_name,
+                                  num);
     case 2: {
         uint16_t nw = (uint16_t)(num % (PGW_MAXWELEM + 1u));
         for (uint32_t i = 0; i < PGW_MAXWELEM; i++)
@@ -102,13 +100,11 @@ static int32_t encode_low(const prop_case *c, size_t cap)
     case 3:
         return pgw_p9_enc_tlopen(g_buf, cap, tag, fid, num);
     case 4:
-        return pgw_p9_enc_tlcreate(g_buf, cap, tag, fid, g_name, num, 0644u,
-                                   num);
+        return pgw_p9_enc_tlcreate(g_buf, cap, tag, fid, g_name, num, 0644u, num);
     case 5:
         return pgw_p9_enc_tread(g_buf, cap, tag, fid, c->value, num % 512u);
     case 6:
-        return pgw_p9_enc_twrite(g_buf, cap, tag, fid, c->value, c->bytes,
-                                 num % 512u);
+        return pgw_p9_enc_twrite(g_buf, cap, tag, fid, c->value, c->bytes, num % 512u);
     case 7:
         return pgw_p9_enc_tclunk(g_buf, cap, tag, fid);
     case 8:
@@ -136,8 +132,7 @@ static int32_t encode_high(const prop_case *c, size_t cap)
     case 13:
         return pgw_p9_enc_tunlinkat(g_buf, cap, tag, fid, g_name, num);
     case 14:
-        return pgw_p9_enc_trenameat(g_buf, cap, tag, fid, g_name, fid + 1u,
-                                    g_name2);
+        return pgw_p9_enc_trenameat(g_buf, cap, tag, fid, g_name, fid + 1u, g_name2);
     case 15:
         return pgw_p9_enc_tsymlink(g_buf, cap, tag, fid, g_name, g_name2, num);
     case 16:
@@ -179,8 +174,7 @@ static bool pred_frame(const prop_case *c)
     memset(&h, 0, sizeof(h));
     if (pgw_p9_dec_hdr(g_buf, (size_t)n, &h) != PGW_OK)
         return false;
-    return h.size == (uint32_t)n && h.type == g_enc_types[g_kind] &&
-           h.tag == case_tag(c);
+    return h.size == (uint32_t)n && h.type == g_enc_types[g_kind] && h.tag == case_tag(c);
 }
 
 static void test_p9_prop_encode_decode_framing(void)
@@ -220,8 +214,7 @@ static bool pred_cap(const prop_case *c)
     if ((size_t)n > cap)
         return false; /* claimed more than the buffer holds */
     pgw_p9_hdr h;
-    return pgw_p9_dec_hdr(g_buf, (size_t)n, &h) == PGW_OK &&
-           h.size == (uint32_t)n;
+    return pgw_p9_dec_hdr(g_buf, (size_t)n, &h) == PGW_OK && h.size == (uint32_t)n;
 }
 
 static void test_p9_prop_encode_respects_capacity(void)
@@ -229,8 +222,8 @@ static void test_p9_prop_encode_respects_capacity(void)
     uint32_t iters = prop_iters("PGW_PROP_ITERS", P9_ITERS);
     for (uint32_t k = 0; k < P9_KINDS; k++) {
         g_kind = k;
-        prop_forall("9p encoder never leaves its capacity", gen_cap, pred_cap,
-                    iters, 0xD1B54A32D192ED03ULL ^ k);
+        prop_forall("9p encoder never leaves its capacity", gen_cap, pred_cap, iters,
+                    0xD1B54A32D192ED03ULL ^ k);
     }
 }
 PGW_TEST(test_p9_prop_encode_respects_capacity);
@@ -242,14 +235,22 @@ PGW_TEST(test_p9_prop_encode_respects_capacity);
 static uint32_t hostile(uint32_t pick, size_t cap)
 {
     switch (pick % 8u) {
-    case 0:  return 0u;
-    case 1:  return 1u;
-    case 2:  return UINT32_MAX;
-    case 3:  return UINT32_MAX - 1u;
-    case 4:  return 0x7FFFFFFFu;
-    case 5:  return (uint32_t)cap;
-    case 6:  return (uint32_t)cap + 1u;
-    default: return PGW_NAME_MAX + 1u;
+    case 0:
+        return 0u;
+    case 1:
+        return 1u;
+    case 2:
+        return UINT32_MAX;
+    case 3:
+        return UINT32_MAX - 1u;
+    case 4:
+        return 0x7FFFFFFFu;
+    case 5:
+        return (uint32_t)cap;
+    case 6:
+        return (uint32_t)cap + 1u;
+    default:
+        return PGW_NAME_MAX + 1u;
     }
 }
 
@@ -298,8 +299,8 @@ static void test_p9_prop_extremes_are_refused(void)
     uint32_t iters = prop_iters("PGW_PROP_ITERS", P9_ITERS / 3u);
     for (uint32_t k = 0; k < P9_KINDS; k++) {
         g_kind = k;
-        prop_forall("9p extremes refused with an error code", gen_extreme,
-                    pred_extreme, iters, 0xC2B2AE3D27D4EB4FULL ^ k);
+        prop_forall("9p extremes refused with an error code", gen_extreme, pred_extreme,
+                    iters, 0xC2B2AE3D27D4EB4FULL ^ k);
     }
 }
 PGW_TEST(test_p9_prop_extremes_are_refused);
@@ -310,8 +311,7 @@ static void test_p9_prop_overlong_name_refused(void)
 {
     prop_name(g_name, sizeof(g_name), PGW_NAME_MAX + 1u);
     uint8_t buf[P9_BUF];
-    int32_t rc = pgw_p9_enc_tlcreate(buf, sizeof(buf), 1u, 2u, g_name, 0u,
-                                     0644u, 0u);
+    int32_t rc = pgw_p9_enc_tlcreate(buf, sizeof(buf), 1u, 2u, g_name, 0u, 0644u, 0u);
     PGW_ASSERT_EQ_I(rc, -(int32_t)PGW_EINVAL);
     rc = pgw_p9_enc_tmkdir(buf, sizeof(buf), 1u, 2u, g_name, 0755u, 0u);
     PGW_ASSERT_EQ_I(rc, -(int32_t)PGW_EINVAL);
