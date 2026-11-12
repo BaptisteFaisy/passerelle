@@ -39,6 +39,12 @@
 #define PGW_QNX_IRQ_PRIO 21
 #define PGW_QNX_PAGE     4096u
 
+/* The PCI command register (PCI Local Bus 3.0, 6.2.2): memory space enable
+ * (bit 1) and bus master enable (bit 2). The SDP 8.0 headers do not name
+ * these bits, so they are spelled out here once. */
+#define PGW_PCI_CMD_MEM    0x0002u
+#define PGW_PCI_CMD_MASTER 0x0004u
+
 typedef struct qnx_pci {
     pci_bdf_t bdf;
     pci_devhdl_t hdl;
@@ -78,7 +84,7 @@ static pgw_err qnx_cfg_write(void *ctx, uint16_t off, const void *in,
             return PGW_EIO;
         uint32_t shift = 8u * (at & 3u);
         word = (word & ~(0xFFu << shift)) | ((uint32_t)p[i] << shift);
-        if (pci_device_cfg_wr32(q->hdl, (uint16_t)(at & ~3u), word) !=
+        if (pci_device_cfg_wr32(q->hdl, (uint16_t)(at & ~3u), word, &word) !=
             PCI_ERR_OK)
             return PGW_EIO;
     }
@@ -112,7 +118,7 @@ static void qnx_irq_release(pgw_vio_dev *dev)
 
 static bool qnx_irq_attach(qnx_pci *q)
 {
-    uint32_t nirq = 0;
+    int_t nirq = 0;
     pci_irq_t irqs[4] = {0, 0, 0, 0};
     if (pci_device_read_irq(q->hdl, &nirq, irqs) != PCI_ERR_OK || nirq == 0) {
         PGW_ERR("virtio-pci: the device reports no interrupt line");
@@ -223,7 +229,8 @@ pgw_vio_dev *pgw_vio_pci_open(uint16_t device_id, const char *expected_tag,
     if (pci_device_read_cmd(bdf, &cmd) == PCI_ERR_OK) {
         pci_cmd_t after = 0;
         (void)pci_device_write_cmd(q->hdl,
-                                   (pci_cmd_t)(cmd | PCI_CMD_MEM | PCI_CMD_MASTER),
+                                   (pci_cmd_t)(cmd | PGW_PCI_CMD_MEM |
+                                               PGW_PCI_CMD_MASTER),
                                    &after);
     }
     qnx_map_bars(q);

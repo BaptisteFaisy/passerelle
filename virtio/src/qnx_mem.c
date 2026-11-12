@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sched.h>
 #include <sys/neutrino.h>
 
 #define PGW_QNX_PAGE 4096u
@@ -40,7 +41,7 @@ void *pgw_qnx_vq_alloc(pgw_vio_dev *dev, size_t bytes, size_t align,
     }
     off64_t phys = 0;
     size_t contig = 0;
-    if (mem_offset64(p, NOFD, &phys, &contig) != 0 || contig < len) {
+    if (mem_offset64(p, NOFD, len, &phys, &contig) != 0 || contig < len) {
         PGW_ERR("virtio: ring memory is not physically contiguous");
         munmap(p, len);
         return NULL;
@@ -65,7 +66,16 @@ int32_t pgw_qnx_irq_attach(int32_t irq, int32_t prio)
         PGW_ERR("virtio: ThreadCtl(_NTO_TCTL_IO) failed: %s", strerror(errno));
         return -1;
     }
-    int32_t id = InterruptAttachThread(irq, prio);
+    /* QNX 8: InterruptAttachThread() takes tracking flags, not a priority (the
+     * priority-free IST API arrived in the 8.0 SDK). The priority is set on
+     * the calling thread first, which becomes the interrupt thread. */
+    if (prio > 0) {
+        struct sched_param sp;
+        memset(&sp, 0, sizeof sp);
+        sp.sched_priority = prio;
+        (void)SchedSet(0, 0, SCHED_FIFO, &sp);
+    }
+    int32_t id = InterruptAttachThread(irq, 0);
     if (id < 0)
         PGW_ERR("virtio: InterruptAttachThread(%d) failed: %s", (int)irq,
                 strerror(errno));
