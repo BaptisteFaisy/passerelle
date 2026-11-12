@@ -41,13 +41,18 @@ typedef struct {
     size_t count;
 } tracecap_log;
 
+/* Prepare a log: no frame yet. A log must be initialized before it is
+ * used, and reset before it is used again. */
+void tracecap_log_init(tracecap_log *log);
+
 /* Forget every captured frame (the buffers themselves are freed). */
 void tracecap_log_reset(tracecap_log *log);
 
 /* Copy one message into the log. */
 pgw_err tracecap_log_add(tracecap_log *log, const void *data, size_t len, bool is_reply);
 
-/* Run the whole session against the reference server and capture it. */
+/* Run the whole session against the reference server and capture it.
+ * The log must have been initialized with tracecap_log_init() before. */
 pgw_err tracecap_capture(tracecap_log *log);
 
 #endif /* TRACECAP_H */

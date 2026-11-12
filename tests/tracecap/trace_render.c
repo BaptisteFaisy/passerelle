@@ -120,7 +120,7 @@ static uint64_t rd_u64(struct rdr *r)
 static void rd_str(struct rdr *r, char *out, size_t cap)
 {
     uint16_t n = rd_u16(r);
-    if (r->bad || (size_t)n > r->len - r->off) {
+    if (r->bad || r->off > r->len || (size_t)n > r->len - r->off) {
         r->bad = true;
         n = 0;
     }
