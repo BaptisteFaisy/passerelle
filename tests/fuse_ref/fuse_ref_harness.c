@@ -68,8 +68,8 @@ static void put_be32(uint8_t *p, uint32_t v)
 
 static uint32_t get_be32(const uint8_t *p)
 {
-    return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) |
-           ((uint32_t)p[2] << 8) | (uint32_t)p[3];
+    return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) |
+           (uint32_t)p[3];
 }
 
 static uint32_t get_le32(const uint8_t *p)
@@ -102,8 +102,7 @@ static pgw_err read_all(int fd, void *buf, size_t len)
         if (n < 0) {
             if (errno == EINTR)
                 continue;
-            return (errno == EAGAIN || errno == EWOULDBLOCK) ? PGW_ETIMEDOUT
-                                                             : PGW_EIO;
+            return (errno == EAGAIN || errno == EWOULDBLOCK) ? PGW_ETIMEDOUT : PGW_EIO;
         }
         if (n == 0)
             return PGW_EIO; /* the server closed the connection */
@@ -125,8 +124,8 @@ static void drain(int fd, size_t len)
 }
 
 pgw_err fuse_ref_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap,
-                     size_t *rx_len, bool hiprio, uint32_t prio,
-                     uint32_t timeout_ms, void *user)
+                     size_t *rx_len, bool hiprio, uint32_t prio, uint32_t timeout_ms,
+                     void *user)
 {
     fuse_ref_ctx *c = (fuse_ref_ctx *)user;
     (void)hiprio;
@@ -168,8 +167,7 @@ pgw_err fuse_ref_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap,
 
 /* --- the truth directory --------------------------------------------------- */
 
-static bool write_file(const char *path, const void *data, size_t len,
-                       mode_t mode)
+static bool write_file(const char *path, const void *data, size_t len, mode_t mode)
 {
     int fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, mode);
     if (fd < 0)
@@ -194,8 +192,7 @@ static bool seed_truth(const char *root)
     fuse_ref_join(root, FUSE_REF_DIR, path, sizeof(path));
     if (mkdir(path, 0755) != 0)
         return false;
-    fuse_ref_join(root, FUSE_REF_DIR "/" FUSE_REF_INNER_FILE, path,
-                  sizeof(path));
+    fuse_ref_join(root, FUSE_REF_DIR "/" FUSE_REF_INNER_FILE, path, sizeof(path));
     if (!write_file(path, "inner", 5, 0644))
         return false;
     fuse_ref_join(root, FUSE_REF_EMPTY_DIR, path, sizeof(path));
@@ -298,8 +295,7 @@ static int connect_unix(const char *path)
     return fd;
 }
 
-static void child_exec(char *root, char *sock, char *fault, char *minor,
-                       int ready_fd)
+static void child_exec(char *root, char *sock, char *fault, char *minor, int ready_fd)
 {
     char *argv[16];
     size_t n = 0;
@@ -333,8 +329,7 @@ static void child_exec(char *root, char *sock, char *fault, char *minor,
 }
 
 /* fork+exec the server; returns the connected socket, or -1. */
-static int spawn_server(char *root, char *sock, char *fault, char *minor,
-                        pid_t *out_pid)
+static int spawn_server(char *root, char *sock, char *fault, char *minor, pid_t *out_pid)
 {
     int fds[2];
     if (pipe(fds) != 0)

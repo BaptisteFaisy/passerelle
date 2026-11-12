@@ -38,8 +38,8 @@ uint16_t ref9p_o_u16(const uint8_t *p, size_t off)
 
 uint32_t ref9p_o_u32(const uint8_t *p, size_t off)
 {
-    return (uint32_t)p[off] | ((uint32_t)p[off + 1] << 8) |
-           ((uint32_t)p[off + 2] << 16) | ((uint32_t)p[off + 3] << 24);
+    return (uint32_t)p[off] | ((uint32_t)p[off + 1] << 8) | ((uint32_t)p[off + 2] << 16) |
+           ((uint32_t)p[off + 3] << 24);
 }
 
 uint64_t ref9p_o_u64(const uint8_t *p, size_t off)
@@ -84,8 +84,7 @@ size_t ref9p_o_seal(uint8_t *p, size_t len)
     return len;
 }
 
-void ref9p_expect_header(const uint8_t *msg, size_t len, uint8_t type,
-                         uint16_t tag)
+void ref9p_expect_header(const uint8_t *msg, size_t len, uint8_t type, uint16_t tag)
 {
     PGW_ASSERT_EQ_U(ref9p_o_u32(msg, 0), len);
     PGW_ASSERT_EQ_U(ref9p_o_u8(msg, 4), type);
@@ -95,8 +94,8 @@ void ref9p_expect_header(const uint8_t *msg, size_t len, uint8_t type,
 size_t ref9p_call(struct ref9p_server *srv, const void *tx, size_t tx_len)
 {
     size_t rx_len = 0;
-    PGW_ASSERT_EQ_I(ref9p_frame(ref9p_fd(srv), tx, tx_len, ref9p_rx,
-                                sizeof ref9p_rx, &rx_len, 5000u),
+    PGW_ASSERT_EQ_I(ref9p_frame(ref9p_fd(srv), tx, tx_len, ref9p_rx, sizeof ref9p_rx,
+                                &rx_len, 5000u),
                     PGW_OK);
     PGW_ASSERT(rx_len >= PGW_HEADER_SIZE);
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_rx, 0), rx_len);
@@ -120,8 +119,7 @@ struct ref9p_server *ref9p_fields_start(void)
     ref9p_o_put_u16(ref9p_tx, 5, REF9P_NOTAG);
     ref9p_o_put_u32(ref9p_tx, n, 8192u);
     n = ref9p_o_put_str(ref9p_tx, n + 4, "9P2000.L");
-    size_t len = ref9p_call(srv, ref9p_tx,
-                            ref9p_o_seal(ref9p_tx, n));
+    size_t len = ref9p_call(srv, ref9p_tx, ref9p_o_seal(ref9p_tx, n));
     ref9p_expect_header(ref9p_rx, len, PGW_P9_RVERSION, REF9P_NOTAG);
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_rx, 7), 8192u);
 
@@ -144,16 +142,16 @@ size_t ref9p_walk_to(struct ref9p_server *srv, uint32_t newfid, const char *name
 {
     const char *names[1];
     names[0] = name;
-    int32_t n = pgw_p9_enc_twalk(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 0u,
-                                  newfid, 1u, names);
+    int32_t n = pgw_p9_enc_twalk(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 0u, newfid,
+                                 1u, names);
     PGW_ASSERT(n > 0);
     return ref9p_call(srv, ref9p_tx, (size_t)n);
 }
 
 void ref9p_lopen(struct ref9p_server *srv, uint32_t fid, uint32_t linux_flags)
 {
-    int32_t n = pgw_p9_enc_tlopen(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG,
-                                   fid, linux_flags);
+    int32_t n = pgw_p9_enc_tlopen(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, fid,
+                                  linux_flags);
     PGW_ASSERT(n > 0);
     size_t len = ref9p_call(srv, ref9p_tx, (size_t)n);
     ref9p_expect_header(ref9p_rx, len, PGW_P9_RLOPEN, REF9P_FIELD_TAG);

@@ -25,15 +25,15 @@
 #include <string.h>
 
 /* One malformed answer per request, in this order. */
-#define FUSE_REF_FAULT_LIST                                                    \
+#define FUSE_REF_FAULT_LIST                                                              \
     "unknown-errno,bad-length,short-header,bad-unique,positive-error"
 #define FUSE_REF_FAULT_COUNT 5
 
 static void burn_faults(fuse_ref_ctx *c, pgw_fuse_entry *out)
 {
     for (int i = 0; i < FUSE_REF_FAULT_COUNT; i++) {
-        pgw_err rc = pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID,
-                                     FUSE_REF_SMALL_FILE, out, 0);
+        pgw_err rc = pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_SMALL_FILE,
+                                     out, 0);
         /* Every malformed reply is refused as an I/O error, and none of them
          * may leave a reference behind. */
         PGW_ASSERT_EQ_I(rc, PGW_EIO);
@@ -52,9 +52,9 @@ static void test_malformed_replies_are_refused(void)
 
     /* The session is still alive: the same lookup now succeeds, and what it
      * reports is still exactly what the disk says. */
-    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID,
-                                    FUSE_REF_SMALL_FILE, &e, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_SMALL_FILE, &e, 0),
+            PGW_OK);
     PGW_ASSERT_EQ_U(pgw_fuse_ref_count_nodes(c->session), 1);
     fuse_ref_assert_attr_matches(c, e.nodeid, FUSE_REF_SMALL_FILE);
     PGW_ASSERT_EQ_I(pgw_fuse_forget_node(c->session, e.nodeid), PGW_OK);
@@ -75,10 +75,8 @@ static void test_data_path_still_works_after_bad_replies(void)
     pgw_test_pattern(payload, sizeof(payload), 0xBEEFu, 7);
     pgw_fuse_entry created;
     uint64_t fh = 0;
-    PGW_ASSERT_EQ_I(pgw_fuse_create(c->session, PGW_FUSE_ROOT_ID,
-                                    "after-faults.bin",
-                                    PGW_O_CREAT | PGW_O_RDWR, 0644, &created,
-                                    &fh, 0),
+    PGW_ASSERT_EQ_I(pgw_fuse_create(c->session, PGW_FUSE_ROOT_ID, "after-faults.bin",
+                                    PGW_O_CREAT | PGW_O_RDWR, 0644, &created, &fh, 0),
                     PGW_OK);
     size_t written = 0;
     PGW_ASSERT_EQ_I(pgw_fuse_write(c->session, created.nodeid, fh, 0, payload,
@@ -88,21 +86,18 @@ static void test_data_path_still_works_after_bad_replies(void)
 
     uint8_t back[8192];
     size_t got = 0;
-    PGW_ASSERT(fuse_ref_disk_read(c, "after-faults.bin", back, sizeof(back),
-                                  &got));
+    PGW_ASSERT(fuse_ref_disk_read(c, "after-faults.bin", back, sizeof(back), &got));
     PGW_ASSERT_EQ_U(got, sizeof(payload));
     PGW_ASSERT_MEM_EQ(back, payload, sizeof(payload));
 
     uint8_t via_client[8192];
     size_t read_back = 0;
-    PGW_ASSERT_EQ_I(pgw_fuse_read(c->session, created.nodeid, fh, 0,
-                                  via_client, sizeof(via_client), &read_back,
-                                  0),
+    PGW_ASSERT_EQ_I(pgw_fuse_read(c->session, created.nodeid, fh, 0, via_client,
+                                  sizeof(via_client), &read_back, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_U(read_back, sizeof(payload));
     PGW_ASSERT_MEM_EQ(via_client, payload, sizeof(payload));
-    PGW_ASSERT_EQ_I(pgw_fuse_release(c->session, created.nodeid, fh, false, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_fuse_release(c->session, created.nodeid, fh, false, 0), PGW_OK);
     fuse_ref_ctx_stop(c);
 }
 

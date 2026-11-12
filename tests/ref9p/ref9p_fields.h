@@ -54,8 +54,7 @@ size_t ref9p_o_seal(uint8_t *p, size_t len);
 
 /* size[4] must equal the bytes received, and type/tag must be the expected
  * ones: the three fields every 9P message starts with. */
-void ref9p_expect_header(const uint8_t *msg, size_t len, uint8_t type,
-                         uint16_t tag);
+void ref9p_expect_header(const uint8_t *msg, size_t len, uint8_t type, uint16_t tag);
 
 /* Send one request built in ref9p_tx and receive the reply into ref9p_rx.
  * Returns the number of bytes received. */
@@ -67,8 +66,7 @@ size_t ref9p_call(struct ref9p_server *srv, const void *tx, size_t tx_len);
 struct ref9p_server *ref9p_fields_start(void);
 
 /* Walk fid 0 to `name` into `newfid`, and open a fid with Linux flags. */
-size_t ref9p_walk_to(struct ref9p_server *srv, uint32_t newfid,
-                     const char *name);
+size_t ref9p_walk_to(struct ref9p_server *srv, uint32_t newfid, const char *name);
 void ref9p_lopen(struct ref9p_server *srv, uint32_t fid, uint32_t linux_flags);
 
 #ifdef __cplusplus
