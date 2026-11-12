@@ -55,10 +55,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Working directory of the guest: everything the job downloads or writes
-  # stays under the runner's temporary directory, never in the checkout.
-  QNX_VM_DIR: ${{ runner.temp }}/qnx71-vm
-  QNX_PROBE_OUT: ${{ runner.temp }}/qnx71-probe
+  # The two paths that depend on the runner are NOT set here: the `runner`
+  # context is not available in a workflow-level `env`, and GitHub rejects the
+  # whole file ("workflow file issue", no job created at all). The first step
+  # exports them from $RUNNER_TEMP instead.
   QNX_GUEST_IMAGE: autosarai/qemu_qnx7_1:1.1.0
   # Ceilings, in seconds. Each one is far below the 35-minute job ceiling, and
   # each one that expires is a *skip* (the environment is not there) rather
@@ -83,8 +83,16 @@ jobs:
     # the per-command ceilings ~33 min, real run ~8 min).
     timeout-minutes: 35
     steps:
-      - name: Start clock
-        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Start clock and working directories
+        run: |
+          echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+          # The `runner` context is not available in a workflow-level or job-level
+          # `env:` block - only inside steps - so the two paths that depend on it
+          # are exported here from $RUNNER_TEMP. Everything the job downloads or
+          # writes stays under the runner's temporary directory, never in the
+          # checkout, and disappears with the ephemeral runner.
+          echo "QNX_VM_DIR=$RUNNER_TEMP/qnx71-vm" >> "$GITHUB_ENV"
+          echo "QNX_PROBE_OUT=$RUNNER_TEMP/qnx71-probe" >> "$GITHUB_ENV"
 
       - name: Checkout (shallow)
         uses: actions/checkout@v4
