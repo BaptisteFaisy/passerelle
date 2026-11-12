@@ -25,6 +25,7 @@ from vhost.transport import Transport
 from vhost.vring import SplitVirtqueue
 
 REGION_SIZE = 512 * 1024
+SOCKET_DIR_PREFIX = "pgw-vhost-test-"
 QUEUE_SIZE = 16
 TX_SIZE = 4096
 RX_SIZE = 32 * 1024
@@ -82,6 +83,18 @@ class FakeSession:
             self.mem.close()
             self.mem = None
         self.backend.stop()
+        self._remove_socket_dir()
+
+    def _remove_socket_dir(self) -> None:
+        """Drop the private directory ``temp_socket_path()`` made, if empty."""
+        parent = pathlib.Path(self.socket_path).parent
+        if not parent.name.startswith(SOCKET_DIR_PREFIX):
+            return
+        try:
+            if not any(parent.iterdir()):
+                parent.rmdir()
+        except OSError:
+            pass
 
     def __enter__(self) -> "FakeSession":
         return self.start()
@@ -90,8 +103,12 @@ class FakeSession:
         self.close()
 
 
-def temp_socket_path(prefix: str = "pgw-vhost-test-") -> pathlib.Path:
-    """A short socket path in a private temporary directory (sun_path is 108)."""
+def temp_socket_path(prefix: str = SOCKET_DIR_PREFIX) -> pathlib.Path:
+    """A short socket path in a private temporary directory (sun_path is 108).
+
+    ``FakeSession.close()`` removes that directory again, so a test run leaves
+    nothing behind in /tmp.
+    """
     directory = pathlib.Path(tempfile.mkdtemp(prefix=prefix))
     return directory / "vhost.sock"
 
