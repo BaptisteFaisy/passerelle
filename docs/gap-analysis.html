@@ -68,11 +68,13 @@
 <a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
 <a class="nav-item" data-title="release" href="release.html">Release</a>
 <a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+<a class="nav-item" data-title="vhost user front end" href="vhost-user-front-end.html">Vhost User Front End</a>
   </aside>
   <main class="content">
     <p class="crumb">Project</p>
     <h1 id="gap-analysis-what-is-still-missing">Gap analysis — what is still missing</h1>
-<p>&lt;strong&gt;Date: 11 November 2026, 21:00 CET.&lt;/strong&gt; The specification (<a href="spec-en.html">spec-en.md</a>) has &lt;strong&gt;77 distinct numbered requirements&lt;/strong&gt; (87 lines if the grouped ranges are counted line by line). This file lists &lt;strong&gt;100 concrete gaps&lt;/strong&gt;: the requirement lines that are not fully satisfied, and everything else a submission is judged on that is not a requirement line.</p>
+<p>&lt;strong&gt;Date: 11 November 2026, 21:00 CET. Updated 12 November 2026, 15:30 CET.&lt;/strong&gt; The specification (<a href="spec-en.html">spec-en.md</a>) has &lt;strong&gt;77 distinct numbered requirements&lt;/strong&gt; (87 lines if the grouped ranges are counted line by line). This file listed &lt;strong&gt;100 concrete gaps&lt;/strong&gt;: the requirement lines that are not fully satisfied, and everything else a submission is judged on that is not a requirement line.</p>
+<p>&lt;strong&gt;41 of those 100 are closed&lt;/strong&gt; and are marked inline (<code>Closed 11-12/11</code> for the night wave that delivered the reference servers, the publication pipeline, the quality gates, the QNX 7.1 guest in CI and the submission pack; <code>Closed 12/11</code> for the wave that delivered the faulty server, the directed cases of §7.4, the vhost-user front end driving the real <code>virtiofsd</code>, the shared configuration file, the Debian skeleton and the devcontainer). Rows are kept rather than deleted: the closure note says &lt;em&gt;what&lt;/em&gt; closed them, so a claim can be checked. What is left: 28 requirement gaps (24 of them blocked on the QNX SDP, 2 de-scoped X-tier, 2 doable here), and 31 non-requirement gaps.</p>
 <p>Where the 77 requirements stand:</p>
 <table>
 <thead>
@@ -209,7 +211,7 @@
 </tr>
 <tr>
 <td>20</td>
-<td>&lt;strong&gt;ROB-07&lt;/strong&gt; — a deliberately faulty server must not crash the client (X tier): no faulty server exists</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>tests/faulty/</code>: a faulty 9P server (9 message faults, 5 transport faults) driving the production client, plus <code>test_faulty.c</code> under ASan/UBSan. It found a real crash: a <code>close()</code> mid-frame killed the client with SIGPIPE (PR #33). &lt;strong&gt;ROB-07&lt;/strong&gt; — a deliberately faulty server must not crash the client (X tier): no faulty server exists</td>
 <td>&lt;strong&gt;[P]&lt;/strong&gt;</td>
 </tr>
 <tr>
@@ -271,31 +273,31 @@
 <tbody>
 <tr>
 <td>30</td>
-<td>No <code>CHANGELOG.md</code> — what changed, when, and against which requirement</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>CHANGELOG.md</code>, Keep a Changelog format, entries cite the requirement identifiers. No <code>CHANGELOG.md</code> — what changed, when, and against which requirement</td>
 </tr>
 <tr>
 <td>31</td>
-<td>No release notes for <code>v0.1.0</code>, the version a judge would point at</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - release notes for <code>v0.1.0</code> in <code>CHANGELOG.md</code> and <code>docs/release.md</code>. No release notes for <code>v0.1.0</code>, the version a judge would point at</td>
 </tr>
 <tr>
 <td>32</td>
-<td>No git tag, no source tarball, no SHA256 of that tarball</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>tools/release/</code> (tarball + SHA256) and <code>.github/workflows/release.yml</code>. No git tag, no source tarball, no SHA256 of that tarball</td>
 </tr>
 <tr>
 <td>33</td>
-<td>The Python tools are not installable as a package (<code>pip install</code> is never tested)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>release.yml</code> job <code>install-check</code>: <code>pip install ./host</code> in a venv. The Python tools are not installable as a package (<code>pip install</code> is never tested)</td>
 </tr>
 <tr>
 <td>34</td>
-<td>No <code>qshare --version</code></td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>qshare --version</code>, compared with the released tag by <code>release.yml</code>. No <code>qshare --version</code></td>
 </tr>
 <tr>
 <td>35</td>
-<td>The console entry points (<code>qshare</code>, <code>qrun</code>, <code>fsproof</code>, <code>pbench</code>) are declared but never installed and run in CI</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - the four console scripts are installed and run in <code>release.yml</code>. The console entry points (<code>qshare</code>, <code>qrun</code>, <code>fsproof</code>, <code>pbench</code>) are declared but never installed and run in CI</td>
 </tr>
 <tr>
 <td>36</td>
-<td>No root <code>Makefile</code>: <code>make check</code>, <code>make bench</code>, <code>make demo</code> do not exist</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - root <code>Makefile</code>, 13 idempotent targets (<code>make help</code> lists them). No root <code>Makefile</code>: <code>make check</code>, <code>make bench</code>, <code>make demo</code> do not exist</td>
 </tr>
 <tr>
 <td>37</td>
@@ -311,15 +313,15 @@
 </tr>
 <tr>
 <td>40</td>
-<td>No <code>SECURITY.md</code> — how to report a vulnerability in a driver</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>SECURITY.md</code>. No <code>SECURITY.md</code> — how to report a vulnerability in a driver</td>
 </tr>
 <tr>
 <td>41</td>
-<td>No <code>CONTRIBUTING.md</code>, no <code>CODE_OF_CONDUCT.md</code></td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>CONTRIBUTING.md</code> and <code>CODE_OF_CONDUCT.md</code>. No <code>CONTRIBUTING.md</code>, no <code>CODE_OF_CONDUCT.md</code></td>
 </tr>
 <tr>
 <td>42</td>
-<td>No <code>VERSION</code> file and no single source of truth for the version string</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>VERSION</code> is the single source of truth; <code>tools/release/test_version_sync.py</code> fails the build on any drift. No <code>VERSION</code> file and no single source of truth for the version string</td>
 </tr>
 </tbody>
 </table>
@@ -334,7 +336,7 @@
 <tbody>
 <tr>
 <td>43</td>
-<td>No coverage measurement (gcov/lcov) and no coverage report among the artifacts</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>quality.yml</code> job <code>coverage</code>, report uploaded as an artefact. No coverage measurement (gcov/lcov) and no coverage report among the artifacts</td>
 </tr>
 <tr>
 <td>44</td>
@@ -342,15 +344,15 @@
 </tr>
 <tr>
 <td>45</td>
-<td>No static analysis job (clang-tidy / cppcheck)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>quality.yml</code> job <code>static-analysis</code> (clang-tidy). No static analysis job (clang-tidy / cppcheck)</td>
 </tr>
 <tr>
 <td>46</td>
-<td>No nightly job: the long campaigns and the fuzzing should run every night</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>nightly.yml</code>: long differential campaign, long fuzzing, compiler matrix, libFuzzer. No nightly job: the long campaigns and the fuzzing should run every night</td>
 </tr>
 <tr>
 <td>47</td>
-<td>No continuous fuzzing (libFuzzer with a corpus)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>nightly.yml</code> job <code>libfuzzer</code> (<code>-DPGW_LIBFUZZER=ON</code>, bounded per harness). No continuous fuzzing (libFuzzer with a corpus)</td>
 </tr>
 <tr>
 <td>48</td>
@@ -358,11 +360,11 @@
 </tr>
 <tr>
 <td>49</td>
-<td>No CTest presets (<code>ctest --preset quick</code>, <code>--preset long</code>)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>CMakePresets.json</code>: <code>quick</code>, <code>ci</code>, <code>asan</code>, <code>long</code>, <code>coverage</code>, <code>fuzz</code>. No CTest presets (<code>ctest --preset quick</code>, <code>--preset long</code>)</td>
 </tr>
 <tr>
 <td>50</td>
-<td>No CI artifact upload (console logs, traces, bench reports)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>nightly.yml</code> and <code>qnx71-guest.yml</code> upload logs, traces and artefacts. No CI artifact upload (console logs, traces, bench reports)</td>
 </tr>
 <tr>
 <td>51</td>
@@ -370,15 +372,15 @@
 </tr>
 <tr>
 <td>52</td>
-<td>The QNX 7.1 guest job is not in CI — today it is only run by hand</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>.github/workflows/qnx71-guest.yml</code> boots a real QNX 7.1 guest on a hosted runner (~2 min) and cross-checks <code>image/pci_hw.cfg</code> against what QEMU assigns. The QNX 7.1 guest job is not in CI — today it is only run by hand</td>
 </tr>
 <tr>
 <td>53</td>
-<td>The CI matrix covers one compiler only (gcc), not clang</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>nightly.yml</code> job <code>compilers</code>: gcc and clang; since 12/11 gcc in <code>Debug</code> with <code>-Werror</code> as well (PR #35). The CI matrix covers one compiler only (gcc), not clang</td>
 </tr>
 <tr>
 <td>54</td>
-<td>CI does not run on tags</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>release.yml</code> runs on tags. CI does not run on tags</td>
 </tr>
 <tr>
 <td>55</td>
@@ -386,7 +388,7 @@
 </tr>
 <tr>
 <td>56</td>
-<td>No formatting gate (<code>clang-format</code> + <code>.editorconfig</code> not enforced)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>quality.yml</code> job <code>format</code> with a ratchet baseline (<code>tools/quality/format-baseline.txt</code>), clang-format pinned to 23.1.5. No formatting gate (<code>clang-format</code> + <code>.editorconfig</code> not enforced)</td>
 </tr>
 </tbody>
 </table>
@@ -401,11 +403,11 @@
 <tbody>
 <tr>
 <td>57</td>
-<td>&lt;strong&gt;No reference 9P server&lt;/strong&gt;: the client is only tested against an in-memory fake, never against a real server implementation</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>tests/ref9p/</code>: an independent Python 9P2000.L server, and C benches driving our client against it over a socket. &lt;strong&gt;No reference 9P server&lt;/strong&gt;: the client is only tested against an in-memory fake, never against a real server implementation</td>
 </tr>
 <tr>
 <td>58</td>
-<td>&lt;strong&gt;No reference FUSE backend&lt;/strong&gt;: the virtiofs client is only tested against a fake</td>
+<td>&lt;strong&gt;Closed 11-12/11, and further on 12/11&lt;/strong&gt; - <code>tests/fuse_ref/</code> is the independent FUSE backend; <code>host/vhost/</code> now drives the &lt;em&gt;real&lt;/em&gt; <code>virtiofsd</code> over a vhost-user socket (memfd memory table, split virtqueue, eventfd kick/call), so the virtiofs path is no longer tested only against our own code (PR #36). &lt;strong&gt;No reference FUSE backend&lt;/strong&gt;: the virtiofs client is only tested against a fake</td>
 </tr>
 <tr>
 <td>59</td>
@@ -425,23 +427,23 @@
 </tr>
 <tr>
 <td>63</td>
-<td>No load test: mount under a continuous workload</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>tests/cas/test_cas_load.c</code>: a mount under a continuous workload, with a bounded priority read (PR #38). No load test: mount under a continuous workload</td>
 </tr>
 <tr>
 <td>64</td>
-<td>The 5 GiB file case of the directed suite is not implemented</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>tests/cas/test_cas_big_file.c</code>: the 5 GiB case, sparse, with a scaled variant in the PR gate and the full size as a <code>DISABLED</code> long test (PR #38). The 5 GiB file case of the directed suite is not implemented</td>
 </tr>
 <tr>
 <td>65</td>
-<td>The 100 000-entry directory case is not implemented</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>tests/cas/test_cas_big_dir.c</code>: 100 000 entries, paged. It exposed a silent 4 096-entry truncation in the truth backend, fixed in the same PR (#38). The 100 000-entry directory case is not implemented</td>
 </tr>
 <tr>
 <td>66</td>
-<td>The maximum path length case is not implemented</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>tests/cas/test_cas_path_len.c</code>: PATH_MAX and NAME_MAX on both sides, compared with the kernel (PR #38). The maximum path length case is not implemented</td>
 </tr>
 <tr>
 <td>67</td>
-<td>Exotic names (UTF-8, combining marks, emoji) are only partly covered</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>tests/cas/test_cas_exotic.c</code>: UTF-8, combining marks, emoji, hostile punctuation. It exposed a <code>strstr(relpath, "..")</code> guard that refused valid names, fixed in the same PR (#38). Exotic names (UTF-8, combining marks, emoji) are only partly covered</td>
 </tr>
 <tr>
 <td>68</td>
@@ -449,7 +451,7 @@
 </tr>
 <tr>
 <td>69</td>
-<td><code>fsync</code> durability is not checked against a real disk (only against the host cache)</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>tests/cas/test_cas_fsync.c</code>: <code>fsync</code> proven to reach the backend and to survive a cache drop. Durability on a real platter is &lt;em&gt;not&lt;/em&gt; claimed (PR #38). <code>fsync</code> durability is not checked against a real disk (only against the host cache)</td>
 </tr>
 </tbody>
 </table>
@@ -464,7 +466,7 @@
 <tbody>
 <tr>
 <td>70</td>
-<td>The guest's <code>pci_hw.cfg</code> routes no interrupt for our device: there is no INTx entry for <code>B0:D05:F0</code></td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>image/pci_hw.cfg</code> carries the INTx entry for <code>B0:D5:F0</code>, cross-checked in CI against what QEMU really assigns. The guest's <code>pci_hw.cfg</code> routes no interrupt for our device: there is no INTx entry for <code>B0:D05:F0</code></td>
 </tr>
 <tr>
 <td>71</td>
@@ -476,7 +478,7 @@
 </tr>
 <tr>
 <td>73</td>
-<td>No automation: booting the guest and capturing its PCI view is a manual command sequence</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>qnx71-guest.yml</code> automates the boot, the SSH session, <code>pci-tool</code> and the artefact. No automation: booting the guest and capturing its PCI view is a manual command sequence</td>
 </tr>
 <tr>
 <td>74</td>
@@ -496,7 +498,7 @@
 </tr>
 <tr>
 <td>78</td>
-<td>No <code>pci_hw.cfg</code> fragment for our device in <code>image/</code></td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>image/pci_hw.cfg</code>. No <code>pci_hw.cfg</code> fragment for our device in <code>image/</code></td>
 </tr>
 <tr>
 <td>79</td>
@@ -515,15 +517,15 @@
 <tbody>
 <tr>
 <td>80</td>
-<td>No Devpost submission text (the form wants a description, a video link, a repository link)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>docs/submission/devpost.md</code>. No Devpost submission text (the form wants a description, a video link, a repository link)</td>
 </tr>
 <tr>
 <td>81</td>
-<td>No 60-second "read this first" summary at the top of the repository</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>docs/submission/readme-summary.md</code>, the 60-second read. No 60-second "read this first" summary at the top of the repository</td>
 </tr>
 <tr>
 <td>82</td>
-<td>No submission checklist (dates, licence, video, repository, demo command, prior-art disclosure)</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>docs/submission/checklist.md</code>. No submission checklist (dates, licence, video, repository, demo command, prior-art disclosure)</td>
 </tr>
 <tr>
 <td>83</td>
@@ -531,7 +533,7 @@
 </tr>
 <tr>
 <td>84</td>
-<td>No poster or one-pager for the judges</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>docs/submission/one-pager.md</code>. No poster or one-pager for the judges</td>
 </tr>
 <tr>
 <td>85</td>
@@ -551,15 +553,15 @@
 </tr>
 <tr>
 <td>89</td>
-<td>No <code>docs/adr/</code> — the decisions live in prose, not as records</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>docs/adr/</code>, five decision records. No <code>docs/adr/</code> — the decisions live in prose, not as records</td>
 </tr>
 <tr>
 <td>90</td>
-<td>No "what we tried that failed" note, which judges appreciate</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>docs/submission/what-did-not-work.md</code>. No "what we tried that failed" note, which judges appreciate</td>
 </tr>
 <tr>
 <td>91</td>
-<td>The requirement traceability matrix is hand-written; it should be generated from the specification and the code</td>
+<td>&lt;strong&gt;Closed 11-12/11&lt;/strong&gt; - <code>tools/traceability.py</code> with <code>tools/traceability-map.yml</code> generates the matrix from the specification and the code. The requirement traceability matrix is hand-written; it should be generated from the specification and the code</td>
 </tr>
 </tbody>
 </table>
@@ -590,7 +592,7 @@
 </tr>
 <tr>
 <td>96</td>
-<td>No packaging of the tools for <code>pipx</code> or <code>apt</code></td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>packaging/</code>: a Debian skeleton validated by pytest against <code>VERSION</code>, plus the pipx path already covered by the release install check (PR #37). No packaging of the tools for <code>pipx</code> or <code>apt</code></td>
 </tr>
 <tr>
 <td>97</td>
@@ -606,7 +608,7 @@
 </tr>
 <tr>
 <td>100</td>
-<td>No <code>.devcontainer</code> or Dockerfile reproducing the development environment in one command</td>
+<td>&lt;strong&gt;Closed 12/11&lt;/strong&gt; - <code>.devcontainer/</code>: one environment definition shared with the root <code>Dockerfile</code>, validated statically (PR #37). No <code>.devcontainer</code> or Dockerfile reproducing the development environment in one command</td>
 </tr>
 </tbody>
 </table>
@@ -625,61 +627,61 @@
 <tbody>
 <tr>
 <td>1</td>
-<td>&lt;strong&gt;Reference 9P server + cross-check&lt;/strong&gt; (57, 59, 60)</td>
+<td>&lt;strong&gt;Reference 9P server + cross-check&lt;/strong&gt; (57, 59, 60) - delivered 11-12/11 (<code>tests/ref9p/</code>)</td>
 <td>the client is only tested against a fake today; against a real server, PERF-01 becomes a measurement and P9-01…P9-10 stop being self-referential</td>
 <td>2 days</td>
 </tr>
 <tr>
 <td>2</td>
-<td>&lt;strong&gt;Reference FUSE backend + cross-check&lt;/strong&gt; (58, 25)</td>
+<td>&lt;strong&gt;Reference FUSE backend + cross-check&lt;/strong&gt; (58, 25) - delivered 11-12/11 (<code>tests/fuse_ref/</code>)</td>
 <td>same for virtiofs: VFS-01…VFS-07 and the VFS-05 bench through the adapter become real</td>
 <td>2 days</td>
 </tr>
 <tr>
 <td>3</td>
-<td>&lt;strong&gt;Host-side vhost-user backend&lt;/strong&gt; (58, 75)</td>
+<td>&lt;strong&gt;Host-side vhost-user backend&lt;/strong&gt; (58, 75) - &lt;strong&gt;delivered 12/11&lt;/strong&gt; (<code>host/vhost/</code>, PR #36)</td>
 <td>drive the real <code>virtiofsd</code> from our own mock transport: the first end-to-end proof of the virtiofs path, and it needs no QNX</td>
 <td>3 days</td>
 </tr>
 <tr>
 <td>4</td>
-<td>&lt;strong&gt;Submission pack&lt;/strong&gt; (80, 81, 82, 84, 90, 91)</td>
+<td>&lt;strong&gt;Submission pack&lt;/strong&gt; (80, 81, 82, 84, 90, 91) - delivered 11-12/11 (<code>docs/submission/</code>, <code>docs/adr/</code>, generated traceability)</td>
 <td>the deadline is 15 December; a judge must read, run and understand the project in five minutes, and the traceability matrix must be generated, not hand-written</td>
 <td>1 day</td>
 </tr>
 <tr>
 <td>5</td>
-<td>&lt;strong&gt;Automate the QNX 7.1 guest&lt;/strong&gt; (52, 70, 73, 78)</td>
+<td>&lt;strong&gt;Automate the QNX 7.1 guest&lt;/strong&gt; (52, 70, 73, 78) - delivered 11-12/11 (<code>qnx71-guest.yml</code>, <code>image/pci_hw.cfg</code>)</td>
 <td>what we discovered by hand today becomes a CI job, and the INTx entry for our device lands in <code>image/</code></td>
 <td>1 day</td>
 </tr>
 <tr>
 <td>6</td>
-<td>&lt;strong&gt;Publication pipeline&lt;/strong&gt; (30, 31, 32, 33, 34, 35, 36, 39)</td>
+<td>&lt;strong&gt;Publication pipeline&lt;/strong&gt; (30, 31, 32, 33, 34, 35, 36, 39) - delivered 11-12/11 (<code>VERSION</code>, <code>CHANGELOG.md</code>, <code>Makefile</code>, <code>tools/release/</code>, <code>release.yml</code>)</td>
 <td>a tagged, checksummed, installable release is what "open source project" means to a judge</td>
 <td>1 day</td>
 </tr>
 <tr>
 <td>7</td>
-<td>&lt;strong&gt;Quality gates&lt;/strong&gt; (43, 44, 45, 46, 47, 48, 49, 50, 53, 56)</td>
+<td>&lt;strong&gt;Quality gates&lt;/strong&gt; (43, 44, 45, 46, 47, 48, 49, 50, 53, 56) - delivered 11-12/11 (coverage, clang-tidy, nightly, presets, format ratchet)</td>
 <td>coverage, static analysis, nightly fuzzing, formatting: the difference between "it works" and "it is maintained"</td>
 <td>2 days</td>
 </tr>
 <tr>
 <td>8</td>
-<td>&lt;strong&gt;Verification depth&lt;/strong&gt; (20, 61, 62, 63, 64, 65, 66, 67, 69)</td>
+<td>&lt;strong&gt;Verification depth&lt;/strong&gt; (20, 61, 62, 63, 64, 65, 66, 67, 69) - &lt;strong&gt;mostly delivered 12/11&lt;/strong&gt; (<code>tests/faulty/</code>, <code>tests/cas/</code>); property tests and the persisted corpus are in flight</td>
 <td>property-based tests, the faulty server, the load test and the missing directed cases — this is where the remaining crashes hide</td>
 <td>3 days</td>
 </tr>
 <tr>
 <td>9</td>
-<td>&lt;strong&gt;Documentation quality&lt;/strong&gt; (7, 8, 9, 87, 88, 89, 91)</td>
+<td>&lt;strong&gt;Documentation quality&lt;/strong&gt; (7, 8, 9, 87, 88, 89, 91) - delivered 11-12/11 (5 ADRs, generated traceability, release and QNX docs)</td>
 <td>Doxygen for the C API, decision records, diagrams, glossary: a repository is read as much as it is run</td>
 <td>2 days</td>
 </tr>
 <tr>
 <td>10</td>
-<td>&lt;strong&gt;Everyday tooling&lt;/strong&gt; (92, 93, 94, 95, 96, 98, 99, 100)</td>
+<td>&lt;strong&gt;Everyday tooling&lt;/strong&gt; (92, 93, 94, 95, 96, 98, 99, 100) - &lt;strong&gt;partly delivered 12/11&lt;/strong&gt; (shared configuration file, <code>packaging/</code>, <code>.devcontainer/</code>); <code>doctor</code> / <code>init</code> / <code>smoke</code>, the man pages and the examples in CI are in flight</td>
 <td><code>qshare doctor</code>, <code>qshare init</code>, <code>qshare smoke</code>, one command to reproduce the whole environment</td>
 <td>2 days</td>
 </tr>

@@ -68,6 +68,7 @@
 <a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
 <a class="nav-item" data-title="release" href="release.html">Release</a>
 <a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+<a class="nav-item" data-title="vhost user front end" href="vhost-user-front-end.html">Vhost User Front End</a>
   </aside>
   <main class="content">
     <p class="crumb">Project</p>
@@ -225,6 +226,56 @@ ctest --test-dir build --output-on-failure      # 2/2 tests passed</code></pre>
 <td>Coverage-guided fuzzing</td>
 <td>&lt;strong&gt;Optional&lt;/strong&gt;</td>
 <td><code>-DPGW_LIBFUZZER=ON</code> builds <code>fuzz_p9_lf</code>; never required, the deterministic campaigns run everywhere</td>
+</tr>
+<tr>
+<td>ROB-07 a deliberately faulty server must not crash the client</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R faulty</code> (<code>tests/faulty/</code>): 9 message faults + 5 transport faults served by a real 9P server that breaks one rule per run; the client must answer the right error, within a 300 ms deadline, with exactly one fid left open. Under ASan/UBSan (<code>sanitize</code>) an out-of-bounds read or a leak fails the job. Found and fixed a real SIGPIPE kill on <code>close()</code> mid-frame</td>
+</tr>
+<tr>
+<td>Directed case: the 5 GiB file (§7.4)</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_cas_big_file</code> — sparse file, reads across a hole, at the boundary, past the end; the full 5 GiB variant is a <code>DISABLED</code> long test, the gate runs a scaled one. Real disk use stays in the megabytes</td>
+</tr>
+<tr>
+<td>Directed case: the 100 000-entry directory (§7.4)</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_cas_big_dir</code> — paged listing compared with the truth; exposed a silent 4 096-entry truncation in the truth backend, now fixed</td>
+</tr>
+<tr>
+<td>Directed case: maximum path length (§7.4)</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_cas_path_len</code> — PATH_MAX / NAME_MAX on both sides, at the limit and one byte over, compared with the kernel</td>
+</tr>
+<tr>
+<td>Directed case: exotic names (§7.4)</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_cas_exotic</code> — UTF-8, combining marks (NFC ≠ NFD, never normalised), emoji, spaces, newlines, quotes, a 255-byte component; the bytes must survive the whole chain. Exposed a <code>strstr(.., "..")</code> guard that refused valid names, now fixed</td>
+</tr>
+<tr>
+<td>ROB-03 / PERF-05 a mount under a continuous workload</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_cas_load</code> — concurrent metadata traffic during a bulk copy, a bounded priority read, <code>diff_verify_tree</code> at the end, no deadlock and no fd growth. PC-side only: the QNX end-to-end latency of gap 15 is still not measured</td>
+</tr>
+<tr>
+<td>FS-10 / FS-13 what <code>fsync</code> proves</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R test_cas_fsync</code> — propagation to the backend (counting decorator), no cache shortcut, survival of a page-cache drop and of a re-read through a fresh handle, write ordering. &lt;strong&gt;Durability on a real platter is not claimed and cannot be&lt;/strong&gt;</td>
+</tr>
+<tr>
+<td>virtiofs over a real vhost-user socket</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>python3 -m pytest host/tests/test_vhost_virtiofsd.py -q</code> — <code>host/vhost/</code> drives the real <code>virtiofsd</code> 1.10.0 through a memfd-backed split virtqueue: 5 checks in ~1 s, skipped with an explicit reason when the daemon is absent. No QEMU, no guest, no virtio PCI/MMIO device: transport and FUSE only</td>
+</tr>
+<tr>
+<td>vhost-user front end, protocol and virtqueue</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>python3 -m pytest host/tests/test_vhost_protocol.py host/tests/test_vhost_vring.py host/tests/test_vhost_fuse_client.py -q</code> against a Python vhost-user backend, so the tests need no <code>virtiofsd</code></td>
+</tr>
+<tr>
+<td>One environment definition, one package</td>
+<td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
+<td><code>.devcontainer/devcontainer.json</code> validated statically by pytest; <code>packaging/debian/</code> validated against <code>VERSION</code> and the real file list; <code>pip install ./host</code> + the four console scripts are exercised by <code>release.yml</code></td>
 </tr>
 </tbody>
 </table>
