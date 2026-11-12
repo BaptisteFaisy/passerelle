@@ -57,6 +57,33 @@ static uint32_t rnd(void)
     return x;
 }
 
+/* Damage a well-formed message in place, one of five ways. */
+static void damage(uint8_t *buf, size_t *len)
+{
+    switch (rnd() % 5u) {
+    case 0:
+        *len = (size_t)(rnd() % (uint32_t)(*len + 1u));
+        break;
+    case 1: /* corrupt the length word */
+        if (*len >= 4)
+            buf[rnd() % 4u] = (uint8_t)rnd();
+        break;
+    case 2: /* corrupt the error word (bytes 4..7 of the out header) */
+        if (*len >= 8)
+            buf[4 + rnd() % 4u] = (uint8_t)rnd();
+        break;
+    case 3: /* corrupt the unique id */
+        if (*len >= 16)
+            buf[8 + rnd() % 8u] = (uint8_t)rnd();
+        break;
+    default: /* flip a body byte */
+        if (*len > FUSE_HDR_MIN)
+            buf[FUSE_HDR_MIN + rnd() % (uint32_t)(*len - FUSE_HDR_MIN)] ^=
+                    (uint8_t)(1u << (rnd() % 8u));
+        break;
+    }
+}
+
 static size_t make_mutated(uint8_t *buf, size_t cap, uint64_t unique, const char **family)
 {
     int32_t n = 0;
@@ -85,28 +112,7 @@ static size_t make_mutated(uint8_t *buf, size_t cap, uint64_t unique, const char
     if (n <= 0)
         return 0;
     size_t len = (size_t)n;
-    switch (rnd() % 5u) {
-    case 0:
-        len = (size_t)(rnd() % (uint32_t)(len + 1u));
-        break;
-    case 1: /* corrupt the length word */
-        if (len >= 4)
-            buf[rnd() % 4u] = (uint8_t)rnd();
-        break;
-    case 2: /* corrupt the error word (bytes 4..7 of the out header) */
-        if (len >= 8)
-            buf[4 + rnd() % 4u] = (uint8_t)rnd();
-        break;
-    case 3: /* corrupt the unique id */
-        if (len >= 16)
-            buf[8 + rnd() % 8u] = (uint8_t)rnd();
-        break;
-    default: /* flip a body byte */
-        if (len > FUSE_HDR_MIN)
-            buf[FUSE_HDR_MIN + rnd() % (uint32_t)(len - FUSE_HDR_MIN)] ^=
-                    (uint8_t)(1u << (rnd() % 8u));
-        break;
-    }
+    damage(buf, &len);
     return len;
 }
 
