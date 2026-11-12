@@ -102,11 +102,19 @@ def collect_pages() -> list[tuple[str, str, str, str]]:
     """(title, source, section, slug) for every page that exists."""
     pages: list[tuple[str, str, str, str]] = []
     seen: set[str] = set()
+    slugs: dict[str, str] = {}
     for title, source, section in PAGES + discover_extra():
         if not (REPO / source).is_file() or source in seen:
             continue
         seen.add(source)
-        pages.append((title, source, section, page_slug(source)))
+        slug = page_slug(source)
+        if slug in slugs:
+            raise SystemExit(
+                f"two documents map to the page '{slug}': "
+                f"{slugs[slug]} and {source}"
+            )
+        slugs[slug] = source
+        pages.append((title, source, section, slug))
     return pages
 
 
@@ -170,8 +178,8 @@ def page_html(title: str, body: str, nav: str, section: str, toc: list[str],
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)} - Passerelle</title>
 <meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
-<link rel="stylesheet" href="assets/style.css">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="_assets/style.css">
+<link rel="icon" href="_assets/favicon.svg" type="image/svg+xml">
 </head>
 <body>
 <header class="topbar">
@@ -202,14 +210,15 @@ def page_html(title: str, body: str, nav: str, section: str, toc: list[str],
     </footer>
   </main>
 </div>
-<script src="assets/search.js"></script>
+<script src="_assets/search.js"></script>
 </body>
 </html>
 """
 
 
 def write_assets(out: pathlib.Path) -> None:
-    assets = out / "assets"
+    """Copy the static assets next to the generated pages."""
+    assets = out / "_assets"
     assets.mkdir(parents=True, exist_ok=True)
     for name in ("style.css", "search.js", "favicon.svg"):
         source = HERE / "assets" / name
@@ -217,18 +226,88 @@ def write_assets(out: pathlib.Path) -> None:
             shutil.copy2(source, assets / name)
 
 
+def clean_generated(out: pathlib.Path) -> None:
+    """Remove what a previous build produced, and nothing else.
+
+    The generated pages live next to their Markdown sources (GitHub Pages only
+    serves the repository root or ``/docs``), so the cleaner must be precise: it
+    removes the generated HTML, the asset directory and the two index files, and
+    never touches a ``.md``.
+    """
+    for path in out.glob("*.html"):
+        path.unlink()
+    for name in ("index.json", "sitemap.txt"):
+        candidate = out / name
+        if candidate.exists():
+            candidate.unlink()
+    assets = out / "_assets"
+    if assets.is_dir():
+        shutil.rmtree(assets)
+
+
+def check_against_committed(out: pathlib.Path) -> int:
+    """Regenerate in a scratch directory and compare with what is committed.
+
+    Used by the CI job: a pull request that edits the documentation without
+    regenerating the site must fail instead of shipping a stale website.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        scratch = pathlib.Path(tmp) / "docs"
+        scratch.mkdir(parents=True, exist_ok=True)
+        clean_generated(scratch)
+        saved = sys.argv
+        sys.argv = [saved[0], "--out", str(scratch)]
+        try:
+            if main() != 0:
+                return 1
+        finally:
+            sys.argv = saved
+        drift: list[str] = []
+        generated = sorted(p.name for p in scratch.glob("*.html"))
+        committed = sorted(p.name for p in out.glob("*.html"))
+        for name in set(generated) | set(committed):
+            a, b = scratch / name, out / name
+            if not a.exists():
+                drift.append(f"stale page: {name}")
+            elif not b.exists():
+                drift.append(f"missing page: {name}")
+            elif a.read_bytes() != b.read_bytes():
+                drift.append(f"outdated page: {name}")
+        gen_assets = scratch / "_assets"
+        com_assets = out / "_assets"
+        if not com_assets.is_dir() or any(
+            (gen_assets / f).read_bytes() != (com_assets / f).read_bytes()
+            for f in [p.name for p in gen_assets.iterdir()]
+            if (com_assets / f).exists()
+        ):
+            drift.append("assets differ")
+    for item in drift:
+        print(f"::error::site drift: {item}", file=sys.stderr)
+    if drift:
+        print("regenerate with: python3 tools/site/build_site.py", file=sys.stderr)
+        return 1
+    print("site is up to date")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--out", default=str(REPO / "site"))
+    parser.add_argument("--out", default=str(REPO / "docs"))
     parser.add_argument("--strict-links", action="store_true", default=True)
+    parser.add_argument("--check", action="store_true",
+                        help="regenerate in a scratch directory and report any "
+                             "drift with the committed site")
     args = parser.parse_args()
 
     out = pathlib.Path(args.out).resolve()
-    # The output is fully generated: clean it so stale pages never linger after
-    # a document is renamed or removed.
-    if out.exists():
-        shutil.rmtree(out)
+    if args.check:
+        return check_against_committed(out)
     out.mkdir(parents=True, exist_ok=True)
+    # Only what a previous build produced is removed: the Markdown sources live
+    # next to the generated pages and must survive.
+    clean_generated(out)
     pages = collect_pages()
     if not pages:
         print("no page found", file=sys.stderr)
@@ -257,7 +336,7 @@ def main() -> int:
         })
 
     write_assets(out)
-    (out / "assets" / "index.json").write_text(
+    (out / "_assets" / "index.json").write_text(
         json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8"
     )
     print(f"{len(pages)} pages written to {out}")
