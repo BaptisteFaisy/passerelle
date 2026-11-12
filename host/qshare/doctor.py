@@ -217,7 +217,8 @@ def probe_disk() -> Probe:
     try:
         stat = os.statvfs(target)
     except OSError as err:
-        return Probe("disk", WARN, f"cannot read the free space of {target}: {err}", blocks=BLOCKS_E5)
+        return Probe("disk", WARN, f"cannot read the free space of {target}: {err}",
+                     blocks=BLOCKS_E5)
     free = stat.f_bavail * stat.f_frsize / (1024 ** 3)
     if free < MIN_DISK_GIB:
         return Probe(
@@ -356,8 +357,10 @@ def collect(arch: str) -> list[Probe]:
 
 def _summary(probes: list[Probe]) -> str:
     """One sentence: what this machine can do, and what it cannot."""
-    blocking = [probe for probe in probes if probe.blocks == BLOCKS_E5 and probe.verdict == MISSING]
-    building = [probe for probe in probes if probe.blocks == BLOCKS_BUILD and probe.verdict == MISSING]
+    blocking = [probe for probe in probes
+                if probe.blocks == BLOCKS_E5 and probe.verdict == MISSING]
+    building = [probe for probe in probes
+                if probe.blocks == BLOCKS_BUILD and probe.verdict == MISSING]
     warnings = [probe.name for probe in probes if probe.verdict == WARN]
     if blocking:
         reasons = "; ".join(f"{probe.name}: {probe.fix or probe.detail}" for probe in blocking)
