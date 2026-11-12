@@ -59,7 +59,12 @@ env:
   # context is not available in a workflow-level `env`, and GitHub rejects the
   # whole file ("workflow file issue", no job created at all). The first step
   # exports them from $RUNNER_TEMP instead.
-  QNX_GUEST_IMAGE: autosarai/qemu_qnx7_1:1.1.0
+  #
+  # The guest image itself is NOT named here: its source and its checksum are
+  # pinned in tools/qnx-image/qnx71-image.manifest.json, and
+  # tests/qemu/qnx71/ci/fetch_image.sh pulls that digest and verifies the
+  # extracted disk against it (gap 74). A name in this file would be a second
+  # source of truth, and a mutable one.
   # Ceilings, in seconds. Each one is far below the 35-minute job ceiling, and
   # each one that expires is a *skip* (the environment is not there) rather
   # than a red build - except the SSH wait and the probe, which are the test.
@@ -100,6 +105,28 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Restore the guest disk from the cache (gap 51)
+        uses: actions/cache@v4
+        # A cache service failure must not turn the job red: the disk is then
+        # downloaded, which is what happened before this step existed.
+        continue-on-error: true
+        with:
+          # The key carries the hash of the pinned manifest, so it changes with
+          # the pinned version and the pinned checksum: a new pin never reuses
+          # the disk of the old one, and the checksum check below stays the
+          # last word anyway.
+          path: ${{ runner.temp }}/qnx71-vm/qnx71-fs.img
+          key: qnx71-guest-disk-${{ runner.os }}-${{ hashFiles('tools/qnx-image/qnx71-image.manifest.json') }}
+
+      - name: Say whether the 6.1 GiB download is needed
+        run: |
+          set -uo pipefail
+          if [ -f "$QNX_VM_DIR/qnx71-fs.img" ]; then
+            echo "::notice::qnx71-guest: the guest disk came from the cache - no 6.1 GiB download"
+          else
+            echo "::notice::qnx71-guest: cache miss - the guest disk will be downloaded (6.1 GiB, a few minutes)"
+          fi
+
       - name: Install QEMU and the SSH client
         run: |
           set -uo pipefail
@@ -118,13 +145,15 @@ jobs:
           # snapshot mode. The ceiling below is generous for a loaded runner.
           ls -l /dev/kvm 2>/dev/null || echo "no /dev/kvm: QEMU runs the guest under TCG"
 
-      - name: Fetch the QNX guest disk (community container)
+      - name: Fetch the QNX guest disk (pinned, checksummed)
         if: env.QNX_SKIP != '1'
         run: |
           set -uo pipefail
           # The disk is QNX software and is not in this repository: it is
           # extracted from the public container, as tests/qemu/qnx71/README.md
           # documents. Exit 2 = prerequisite missing -> explicit skip, green.
+          # Exit 1 = the disk does not match the pinned manifest -> red: a
+          # checksum mismatch must never boot.
           rc=0
           timeout 660 tests/qemu/qnx71/ci/fetch_image.sh || rc=$?
           if [ "$rc" -eq 2 ]; then
@@ -134,6 +163,19 @@ jobs:
             echo "::error::qnx71-guest: the guest image was fetched but is unusable (code $rc)"
             exit "$rc"
           fi
+
+      - name: Publish the verification of the disk that was used
+        if: env.QNX_SKIP != '1'
+        run: |
+          set -uo pipefail
+          # The artefact carries the proof that the disk was the pinned one:
+          # the checksum the manifest pins and the one the file has.
+          mkdir -p "$QNX_PROBE_OUT"
+          cp "$QNX_VM_DIR/disk-verify.txt" "$QNX_PROBE_OUT/disk-verify.txt" 2>/dev/null || true
+          cp "$QNX_VM_DIR/disk.sha256" "$QNX_PROBE_OUT/disk.sha256" 2>/dev/null || true
+          echo "--- the disk that was used ---"
+          cat "$QNX_PROBE_OUT/disk-verify.txt" 2>/dev/null || echo "(no verification record)"
+          cat "$QNX_PROBE_OUT/disk.sha256" 2>/dev/null || true
 
       - name: Boot the guest on the qshare options
         if: env.QNX_SKIP != '1'
