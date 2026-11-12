@@ -2,6 +2,10 @@
 
 This document details the internal design of **Passerelle**, a high-performance host-guest shared filesystem driver for **QNX® Neutrino® 8.0** under QEMU. It covers the three-layer architectural model, the lifecycle of an I/O request, the resolution of delicate kernel and protocol challenges, and the source file mapping across the repository.
 
+![Passerelle architecture: the three layers inside the QNX guest, the QEMU device, and the host side with the shared directory and the host tools](_assets/architecture.svg)
+
+**Reading the picture.** The one thing to keep in mind is that the guest and the host never talk to each other directly: they talk through layers. Inside the QNX guest, an application's `read()` becomes an IPC message handled by the resource manager (`rmfs/`), which speaks one of the two wire protocols (`proto9p/` for 9P2000.L, `protofuse/` for virtiofs); both hand raw buffers to the virtio transport (`virtio/`), which is the only layer that knows about PCI, MMIO, MSI-X and virtqueues. QEMU is a single band underneath — `virtio-9p-pci` or `vhost-user-fs-pci` — and the host side is a single directory, served either by QEMU itself or by `virtiofsd`. Everything drawn to the side of the guest — `qshare`, `qrun`, `fsproof`, `pbench`, and the reference servers of `tests/ref9p` and `tests/fuse_ref` — is host tooling that drives the *same* client, which is why the stack can be exercised on the PC with no QNX and no SDP. The ASCII diagram in §1 is the same picture in text.
+
 ---
 
 ## 1. Architectural Overview: Three Layers
