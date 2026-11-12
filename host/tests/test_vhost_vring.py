@@ -90,7 +90,9 @@ def test_post_publishes_one_chain_on_the_available_ring():
             addr, length, flags, nxt = struct.unpack_from("<QIHH", vq._buf, vq.desc_off)
             assert (length, flags, nxt) == (40, DESC_F_NEXT, 1)
             assert addr == mem.gpa_of(vq.tx_offset(0)), "descriptors carry guest addresses"
-            addr2, length2, flags2, _ = struct.unpack_from("<QIHH", vq._buf, vq.desc_off + DESC_SIZE)
+            addr2, length2, flags2, _ = struct.unpack_from(
+                "<QIHH", vq._buf, vq.desc_off + DESC_SIZE
+            )
             assert (length2, flags2) == (64, DESC_F_WRITE)
             assert addr2 == mem.gpa_of(vq.rx_offset(0))
             assert vq.avail_idx == 1

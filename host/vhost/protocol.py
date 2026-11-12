@@ -172,7 +172,9 @@ def decode_vring_state(payload: bytes) -> tuple[int, int]:
     return _VRING_STATE.unpack(payload)
 
 
-def encode_vring_addr(index: int, flags: int, desc: int, used: int, avail: int, log: int = 0) -> bytes:
+def encode_vring_addr(
+    index: int, flags: int, desc: int, used: int, avail: int, log: int = 0
+) -> bytes:
     """SET_VRING_ADDR payload; addresses are front-end virtual addresses."""
     return _VRING_ADDR.pack(index, flags, desc, used, avail, log)
 

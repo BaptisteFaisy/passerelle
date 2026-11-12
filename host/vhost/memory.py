@@ -82,7 +82,8 @@ class SharedMemory:
     def _check(self, offset: int, length: int) -> None:
         if offset < 0 or length < 0 or offset + length > self.size:
             raise ProtocolError(
-                "range [%d, %d) is outside the %d-byte region" % (offset, offset + length, self.size)
+                "range [%d, %d) is outside the %d-byte region"
+                % (offset, offset + length, self.size)
             )
 
     # --- protocol ----------------------------------------------------------

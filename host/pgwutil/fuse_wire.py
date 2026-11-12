@@ -125,7 +125,10 @@ def parse_request(msg):
     if len(msg) < IN_HDR:
         raise FrameError("short request header: %d bytes" % len(msg))
     if u32_at(msg, 0) != len(msg):
-        raise FrameError("length field %d does not match the %d bytes received" % (u32_at(msg, 0), len(msg)))
+        raise FrameError(
+            "length field %d does not match the %d bytes received"
+            % (u32_at(msg, 0), len(msg))
+        )
     return u32_at(msg, 4), u64_at(msg, 8), u64_at(msg, 16)
 
 
