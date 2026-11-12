@@ -24,7 +24,7 @@ import sys
 
 MAX_MINUTES = 5
 WORKFLOWS = ".github/workflows"
-SKIP_FILES = {"qemu-e2e.yml"}  # job long hors PR (justifie dans le YAML)
+SKIP_FILES = {"qemu-e2e.yml", "qnx71-guest.yml"}  # jobs longs hors PR (justifiés dans le YAML)
 
 TOP_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*:")
 JOB_KEY = re.compile(r"^  ([A-Za-z0-9_.-]+):\s*(#.*)?$")

@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# .clang-format - formatting rules of the passerelle C tree.
+#
+# Derived from the dominant style of the existing sources (measured on the
+# 194 .c/.h files of the portable stack): 4-space indentation, no tab, the
+# opening brace of a function on its own line, `case` labels flush with the
+# `switch`, pointers attached to the name (`char *p`) and continuation lines
+# indented by 8.
+#
+# ColumnLimit is 90, the width agreed for the project. It is an upper bound:
+# the tree currently wraps almost everything below 80 columns, and
+# tools/quality/check_format.py enforces a hard 100-column limit that needs no
+# dependency (so it also runs where clang-format is not installed).
+#
+# ReflowComments is off: the comments are hand-wrapped and reflowing them
+# would rewrite every file without changing a single line of code.
+#
+# Used by:
+#   clang-format -i <file>                       (local, on purpose)
+#   python3 tools/quality/check_format.py        (CI gate, see that script)
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# Indentation and tabs
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 8
+IndentCaseLabels: false
+IndentPPDirectives: None
+NamespaceIndentation: None
+
+# Line width
+ColumnLimit: 90
+ReflowComments: false
+
+# Braces: Linux style - a function body opens on the next line, a control
+# statement opens on the same line.
+BreakBeforeBraces: Linux
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: false
+
+# Declarations and pointers
+PointerAlignment: Right
+DerivePointerAlignment: false
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: true
+SpaceAfterCStyleCast: false
+
+# Short statements are always broken out: the code is read in review, and a
+# one-line `if (x) return y;` hides the failure path.
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: None
+
+# Includes are grouped by hand (project headers, then pgw/*, then libc) and
+# that order carries information; clang-format must not re-sort them.
+SortIncludes: false
+
+MaxEmptyLinesToKeep: 1
+SpaceBeforeParens: ControlStatements
+...

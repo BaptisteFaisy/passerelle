@@ -27,6 +27,26 @@ from qshare.options import (
 from qshare.runner import QemuInstance, build_qemu_cmd, share_backend
 
 
+def _version_string() -> str:
+    """Version of the installed package, else the repository's VERSION file.
+
+    The package metadata is authoritative once installed; when running straight
+    from a checkout there is no metadata, so the VERSION file at the repository
+    root answers instead. Both must agree - `tools/release/test_version_sync.py`
+    is what enforces it.
+    """
+    try:
+        from importlib.metadata import version
+
+        return version("passerelle-host")
+    except Exception:  # noqa: BLE001 - not installed as a package
+        pass
+    candidate = pathlib.Path(__file__).resolve().parents[2] / "VERSION"
+    if candidate.is_file():
+        return candidate.read_text(encoding="utf-8").strip()
+    return "0.0.0"
+
+
 def _add_share_options(parser: argparse.ArgumentParser) -> None:
     """Register the share-definition options (directory, tag, protocol, model)."""
     parser.add_argument("directory", nargs="?", help="host directory to share")
@@ -113,6 +133,12 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="qshare",
         description="Share a host directory with a QNX guest under QEMU (DX-01)",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"qshare {_version_string()}",
+        help="print the version and exit",
     )
     _add_share_options(parser)
     _add_action_options(parser)

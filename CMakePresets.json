@@ -1,0 +1,242 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "pgw-base",
+            "hidden": true,
+            "displayName": "passerelle base settings",
+            "description": "Shared cache entries of every preset: the full module list of the portable stack and a compilation database for clang-tidy. binaryDir is set by each concrete preset so that it always resolves to build/<preset>.",
+            "cacheVariables": {
+                "PGW_MODULES": "common;virtio;proto9p;protofuse;rmfs;drivers;tests",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "quick",
+            "inherits": "pgw-base",
+            "binaryDir": "${sourceDir}/build/quick",
+            "displayName": "quick (RelWithDebInfo)",
+            "description": "Everyday preset: optimised build with debug info, warnings as errors, then `ctest --preset quick`. Configured/built/tested in well under a minute on a workstation.",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "PGW_WERROR": "ON"
+            }
+        },
+        {
+            "name": "ci",
+            "inherits": "quick",
+            "binaryDir": "${sourceDir}/build/ci",
+            "displayName": "ci (pull-request pipeline)",
+            "description": "Exactly the pull-request pipeline of .github/workflows/ci.yml: the same flags as `quick`, the full module list, its own build tree so a local run never clobbers a CI cache.",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "PGW_WERROR": "ON",
+                "PGW_SANITIZERS": "OFF"
+            }
+        },
+        {
+            "name": "asan",
+            "inherits": "pgw-base",
+            "binaryDir": "${sourceDir}/build/asan",
+            "displayName": "asan (ASan + UBSan)",
+            "description": "PGW_SANITIZERS=ON: AddressSanitizer + UndefinedBehaviorSanitizer, no recovery (ROB-06). Run `ctest --preset asan` so the runtime options are the CI ones.",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "PGW_WERROR": "ON",
+                "PGW_SANITIZERS": "ON"
+            }
+        },
+        {
+            "name": "long",
+            "inherits": "pgw-base",
+            "binaryDir": "${sourceDir}/build/long",
+            "displayName": "long campaigns (spec 7.6)",
+            "description": "Optimised build for the long campaigns: `ctest --preset long` exports PGW_DIFF_OPS=1000000 and PGW_FUZZ_ITERS=5000000 and raises the per-test timeout to 1800 s. Note that the tests registered with the `long` label are DISABLED in tests/CMakeLists.txt (they must never run on a pull request), so ctest skips them; the same campaign sizes are picked up by the enabled test_diff/fuzz_p9/fuzz_fuse binaries through those environment variables. Never a pull-request preset: see .github/workflows/nightly.yml.",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "PGW_WERROR": "ON"
+            }
+        },
+        {
+            "name": "coverage",
+            "inherits": "pgw-base",
+            "binaryDir": "${sourceDir}/build/coverage",
+            "displayName": "coverage (gcov)",
+            "description": "Instrumented build: -fprofile-arcs -ftest-coverage at -Og so line numbers stay meaningful, --coverage at link time. PGW_WERROR=OFF here on purpose: the warning gate is ci.yml, and -Wformat-truncation fires at -Og on code that is clean at -O2 (measured). Drive it with tools/quality/run_coverage.py, which writes summary.txt, badge.svg, coverage.xml and index.html into build/coverage.",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "PGW_WERROR": "OFF",
+                "CMAKE_C_FLAGS": "-Og -g -fprofile-arcs -ftest-coverage -fprofile-abs-path",
+                "CMAKE_EXE_LINKER_FLAGS": "--coverage"
+            }
+        },
+        {
+            "name": "fuzz",
+            "inherits": "pgw-base",
+            "binaryDir": "${sourceDir}/build/fuzz",
+            "displayName": "fuzz (sanitised harnesses)",
+            "description": "The randomized-input harnesses (ROB-06, P9-09) built with ASan+UBSan so an out-of-bounds read is a hard failure. `ctest --preset fuzz` runs the short deterministic campaigns; the long ones come from nightly.yml.",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "PGW_WERROR": "ON",
+                "PGW_FUZZ": "ON",
+                "PGW_SANITIZERS": "ON"
+            }
+        },
+        {
+            "name": "fuzz-libfuzzer",
+            "inherits": "fuzz",
+            "binaryDir": "${sourceDir}/build/fuzz-libfuzzer",
+            "displayName": "fuzz (libFuzzer, clang only)",
+            "description": "Coverage-guided fuzzing: PGW_LIBFUZZER=ON builds fuzz_p9_lf with -fsanitize=fuzzer,address,undefined, which needs clang. Bounded runs only, e.g. `./build/fuzz-libfuzzer/tests/fuzz_p9_lf -max_total_time=180 -artifact_prefix=/tmp/pgw-crash-`.",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "PGW_LIBFUZZER": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "quick",
+            "configurePreset": "quick",
+            "displayName": "build quick"
+        },
+        {
+            "name": "ci",
+            "configurePreset": "ci",
+            "displayName": "build ci"
+        },
+        {
+            "name": "asan",
+            "configurePreset": "asan",
+            "displayName": "build asan"
+        },
+        {
+            "name": "long",
+            "configurePreset": "long",
+            "displayName": "build long"
+        },
+        {
+            "name": "coverage",
+            "configurePreset": "coverage",
+            "displayName": "build coverage"
+        },
+        {
+            "name": "fuzz",
+            "configurePreset": "fuzz",
+            "displayName": "build fuzz"
+        },
+        {
+            "name": "fuzz-libfuzzer",
+            "configurePreset": "fuzz-libfuzzer",
+            "displayName": "build fuzz-libfuzzer"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "quick",
+            "configurePreset": "quick",
+            "displayName": "test quick",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false,
+                "timeout": 120
+            }
+        },
+        {
+            "name": "ci",
+            "configurePreset": "ci",
+            "displayName": "test ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false,
+                "timeout": 120
+            }
+        },
+        {
+            "name": "asan",
+            "configurePreset": "asan",
+            "displayName": "test asan",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false,
+                "timeout": 240
+            },
+            "environment": {
+                "ASAN_OPTIONS": "detect_leaks=1:detect_stack_use_after_return=1:print_stacktrace=1",
+                "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+            }
+        },
+        {
+            "name": "long",
+            "configurePreset": "long",
+            "displayName": "test long (1M differential ops, 5M fuzz iterations)",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false,
+                "timeout": 1800
+            },
+            "environment": {
+                "PGW_DIFF_OPS": "1000000",
+                "PGW_FUZZ_ITERS": "5000000"
+            }
+        },
+        {
+            "name": "coverage",
+            "configurePreset": "coverage",
+            "displayName": "test coverage",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false,
+                "timeout": 600
+            },
+            "filter": {
+                "label": {
+                    "exclude": "rules"
+                }
+            }
+        },
+        {
+            "name": "fuzz",
+            "configurePreset": "fuzz",
+            "displayName": "test fuzz (sanitised)",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false,
+                "timeout": 240
+            },
+            "filter": {
+                "label": {
+                    "include": "fuzz"
+                }
+            },
+            "environment": {
+                "ASAN_OPTIONS": "detect_leaks=1:detect_stack_use_after_return=1:print_stacktrace=1",
+                "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+            }
+        }
+    ]
+}

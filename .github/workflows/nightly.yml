@@ -1,0 +1,375 @@
+name: nightly (campagnes longues, hors PR)
+
+# Campagnes longues de la spec 7.6 et fuzzing prolongé (ROB-06, P9-09).
+#
+# Hors pull request, toujours : ce workflow ne se déclenche que sur `schedule`
+# et `workflow_dispatch`, comme qemu-e2e.yml. La règle CI (user 2026-10-24,
+# ~/Bureau/CI-BUDGET-5MIN.md) veut un verdict de PR en 5 min ; ici chaque job
+# déclare `timeout-minutes: 5` — le plafond que le garde-fou
+# .github/ci-budget/check_timeouts.py accepte pour un workflow non exempt —
+# et le travail est découpé en jobs parallèles pour tenir dedans :
+#
+#   long-diff    campagne différentielle, PGW_DIFF_OPS=1 000 000 par graine
+#                (3 graines) : mesurée à 55-112 s sur un poste 12 coeurs
+#                (froid/chaud), étape bornée à 270 s ;
+#   long-fuzz    5 000 000 itérations par famille de décodeurs, sous ASan+UBSan
+#                (preset `fuzz`) : mesurées à 32 s (p9) et 20 s (fuse) ;
+#   compilers    matrice gcc/clang : build + ctest, ~15 s de compilation ;
+#   libfuzzer    fuzzing guidé par la couverture, borné à 180 s par harnais.
+#
+# Runners : hébergés GitHub (gratuits, le dépôt est public). Le R630 sert
+# d'autres projets et ses 4 workers sont saturés par ci.yml ; l'heure du cron
+# (04:23 UTC = 05:23 Europe/Paris en hiver) évite en plus toute pointe, au cas
+# où un job serait un jour rebasculé sur un worker self-hosted.
+#
+# Les tests étiquetés `long` sont enregistrés DISABLED dans
+# tests/CMakeLists.txt (ils ne doivent jamais tourner sur une PR) et ctest ne
+# lance jamais un test désactivé (vérifié : `ctest -L long -N` les liste,
+# `ctest -L long --rerun-failed` non plus). Les campagnes sont donc jouées en
+# appelant les binaires avec les variables d'environnement qui les dimensionnent
+# — exactement la méthode de qemu-e2e.yml — et le preset `long` de
+# CMakePresets.json fournit les mêmes variables pour un run local
+# (`ctest --preset long`).
+#
+# Jamais de faux vert : une campagne absente, un binaire manquant ou un outil
+# introuvable produit un `::error::`/`::notice::` explicite et fait échouer le
+# job concerné.
+
+on:
+  schedule:
+    # 04:23 UTC, hors pointe (le cron GitHub est en UTC).
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+    inputs:
+      diff_ops:
+        description: 'Operations differentielles par graine (spec 7.6 : 1000000)'
+        required: false
+        default: '1000000'
+      fuzz_iters:
+        description: 'Iterations aleatoires par famille de decodeurs (ROB-06 : 5000000)'
+        required: false
+        default: '5000000'
+      libfuzzer_seconds:
+        description: 'Secondes de fuzzing guide par harnais'
+        required: false
+        default: '180'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_BUILD_JOBS: 4
+  PGW_MODULES: common;virtio;proto9p;protofuse;rmfs;drivers;tests
+  LOG_DIR: nightly-logs
+
+jobs:
+  # Campagne différentielle de la spec 7.6 : 1 000 000 opérations par graine,
+  # 3 graines, rejouées contre le backend POSIX de vérité après chaque
+  # opération. timeout-minutes: 5 = plafond du garde-fou CI ; mesurée à
+  # 55-112 s localement, l'étape est bornée à 270 s (marge ~2,5x sur un
+  # runner hébergé 4 vCPU).
+  long-diff:
+    name: long-diff
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Toolchain (cmake)
+        run: |
+          set -euo pipefail
+          cmake --version | head -1
+          ctest --version | head -1
+          mkdir -p "$LOG_DIR"
+
+      - name: Configure + build (preset long)
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 120 cmake --preset long 2>&1 | tee "$LOG_DIR/long-diff-configure.log" || rc=$?
+          [ "$rc" -eq 0 ] || exit "$rc"
+          timeout 200 cmake --build --preset long -j"$CMAKE_BUILD_JOBS" 2>&1 \
+            | tee "$LOG_DIR/long-diff-build.log" || rc=$?
+          exit "$rc"
+
+      - name: Traceability (tests inscrits avec l'etiquette long)
+        run: |
+          set -uo pipefail
+          timeout 60 ctest --preset long -LE rules -N | tee "$LOG_DIR/long-tests.txt"
+
+      - name: Campagne differentielle (PGW_DIFF_OPS)
+        env:
+          DIFF_OPS: ${{ github.event.inputs.diff_ops || '1000000' }}
+        run: |
+          set -uo pipefail
+          echo "::notice::campagne differentielle : $DIFF_OPS operations par graine (3 graines)"
+          if [ ! -x ./build/long/tests/test_diff ]; then
+            echo "::error::binaire test_diff absent de build/long/tests : campagne impossible"
+            exit 1
+          fi
+          rc=0
+          PGW_DIFF_OPS="$DIFF_OPS" timeout 270 ./build/long/tests/test_diff 2>&1 \
+            | tee "$LOG_DIR/long-diff.log" || rc=$?
+          exit "$rc"
+
+      - name: Artefacts (journaux de la campagne)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-long-diff
+          path: nightly-logs/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::long-diff: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  # Fuzzing prolongé sous ASan+UBSan (preset `fuzz`) : toute lecture hors
+  # limites devient une erreur dure. Mesuré : 32 s (p9) et 20 s (fuse) pour
+  # 5 000 000 itérations sur un poste 12 coeurs.
+  long-fuzz:
+    name: long-fuzz
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        harness: [fuzz_p9, fuzz_fuse]
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Toolchain (cmake)
+        run: |
+          set -euo pipefail
+          cmake --version | head -1
+          mkdir -p "$LOG_DIR"
+
+      - name: Configure + build (preset fuzz, ASan+UBSan)
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 120 cmake --preset fuzz 2>&1 | tee "$LOG_DIR/${HARNESS}-configure.log" || rc=$?
+          [ "$rc" -eq 0 ] || exit "$rc"
+          timeout 200 cmake --build --preset fuzz -j"$CMAKE_BUILD_JOBS" 2>&1 \
+            | tee "$LOG_DIR/${HARNESS}-build.log" || rc=$?
+          exit "$rc"
+        env:
+          HARNESS: ${{ matrix.harness }}
+
+      - name: Campagne aleatoire (PGW_FUZZ_ITERS, sous sanitizers)
+        env:
+          HARNESS: ${{ matrix.harness }}
+          FUZZ_ITERS: ${{ github.event.inputs.fuzz_iters || '5000000' }}
+          ASAN_OPTIONS: detect_leaks=1:detect_stack_use_after_return=1:print_stacktrace=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: |
+          set -uo pipefail
+          echo "::notice::$HARNESS : $FUZZ_ITERS iterations sous ASan+UBSan"
+          if [ ! -x "./build/fuzz/tests/$HARNESS" ]; then
+            echo "::error::binaire $HARNESS absent de build/fuzz/tests : campagne impossible"
+            exit 1
+          fi
+          rc=0
+          PGW_FUZZ_ITERS="$FUZZ_ITERS" timeout 250 "./build/fuzz/tests/$HARNESS" 2>&1 \
+            | tee "$LOG_DIR/$HARNESS.log" || rc=$?
+          exit "$rc"
+
+      - name: Artefacts (journaux de fuzzing)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-long-fuzz-${{ matrix.harness }}
+          path: nightly-logs/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::long-fuzz-${{ matrix.harness }}: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  # Matrice de compilateurs : le même arbre doit compiler et passer les tests
+  # avec gcc (l'outil de référence de la PR, -Werror actif) et avec clang
+  # (portabilité ; -Werror désactivé car le jeu d'avertissements de clang
+  # diffère — les avertissements sont comptés et publiés, jamais masqués).
+  compilers:
+    name: compilers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc
+            cc: cc
+            werror: 'ON'
+          - compiler: clang
+            cc: clang
+            werror: 'OFF'
+    env:
+      CC_NAME: ${{ matrix.cc }}
+      WERROR: ${{ matrix.werror }}
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Toolchain (compilateurs)
+        run: |
+          set -uo pipefail
+          mkdir -p "$LOG_DIR"
+          cc --version | head -1
+          if command -v "$CC_NAME" >/dev/null 2>&1; then
+            "$CC_NAME" --version | head -1
+          else
+            echo "::error::compilateur $CC_NAME absent du runner : matrice impossible"
+            exit 1
+          fi
+
+      - name: Configure + build (preset ci, ${{ matrix.compiler }})
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 120 cmake --preset ci -DCMAKE_C_COMPILER="$CC_NAME" \
+            -DPGW_WERROR="$WERROR" 2>&1 \
+            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-configure.log" || rc=$?
+          [ "$rc" -eq 0 ] || exit "$rc"
+          timeout 200 cmake --build --preset ci -j"$CMAKE_BUILD_JOBS" 2>&1 \
+            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-build.log" || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            exit "$rc"
+          fi
+          warnings=$(grep -c "warning:" "$LOG_DIR/compilers-${{ matrix.compiler }}-build.log" || true)
+          echo "::notice::${{ matrix.compiler }} : build vert, $warnings avertissement(s) (WERROR=$WERROR)"
+
+      - name: ctest (preset ci, hors garde `rules` deja jouee par ci.yml)
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 200 ctest --preset ci -LE rules --timeout 120 2>&1 \
+            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-ctest.log" || rc=$?
+          exit "$rc"
+
+      - name: Artefacts (journaux de compilation et de tests)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-compilers-${{ matrix.compiler }}
+          path: nightly-logs/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::compilers-${{ matrix.compiler }}: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  # Fuzzing guidé par la couverture (libFuzzer, clang uniquement, preset
+  # `fuzz-libfuzzer`). Borné dans le temps : -max_total_time plus un `timeout`
+  # externe, donc aucune campagne ne peut déborder le plafond du job. La
+  # détection de fuites est désactivée ici (ASan sans libFuzzer la couvre dans
+  # ci.yml et le job sanitize) : en mode fuzzing elle ralentit et noie le
+  # signal des vrais planteurs.
+  libfuzzer:
+    name: libfuzzer
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FUZZ_SECONDS: ${{ github.event.inputs.libfuzzer_seconds || '180' }}
+      ASAN_OPTIONS: detect_leaks=0:print_stacktrace=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Toolchain (clang + cmake)
+        run: |
+          set -uo pipefail
+          mkdir -p "$LOG_DIR" crashes
+          cmake --version | head -1
+          if ! command -v clang >/dev/null 2>&1; then
+            echo "::error::clang absent du runner : le fuzzing guide par la couverture est impossible (saut explicite, pas un faux vert)"
+            exit 1
+          fi
+          clang --version | head -1
+
+      - name: Configure + build (preset fuzz-libfuzzer)
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 120 cmake --preset fuzz-libfuzzer 2>&1 \
+            | tee "$LOG_DIR/libfuzzer-configure.log" || rc=$?
+          [ "$rc" -eq 0 ] || exit "$rc"
+          timeout 200 cmake --build --preset fuzz-libfuzzer -j"$CMAKE_BUILD_JOBS" \
+            --target fuzz_p9_lf 2>&1 | tee "$LOG_DIR/libfuzzer-build.log" || rc=$?
+          exit "$rc"
+
+      - name: Campagne guidee (fuzz_p9_lf, ${{ github.event.inputs.libfuzzer_seconds || '180' }} s)
+        run: |
+          set -uo pipefail
+          if [ ! -x ./build/fuzz-libfuzzer/tests/fuzz_p9_lf ]; then
+            echo "::error::fuzz_p9_lf absent : la cible libFuzzer n'a pas ete construite"
+            exit 1
+          fi
+          # fuzz_fuse_lf n'existe pas dans tests/CMakeLists.txt (seul fuzz_p9_lf
+          # y est declare) : signalé explicitement plutôt que passé sous silence.
+          if [ ! -x ./build/fuzz-libfuzzer/tests/fuzz_fuse_lf ]; then
+            echo "::notice::pas de cible fuzz_fuse_lf dans tests/CMakeLists.txt : seul le décodeur 9P est fuzzé ici"
+          fi
+          rc=0
+          # timeout externe = budget libFuzzer + 30 s pour la sortie propre.
+          timeout "$(( FUZZ_SECONDS + 30 ))" ./build/fuzz-libfuzzer/tests/fuzz_p9_lf \
+            -max_total_time="$FUZZ_SECONDS" -artifact_prefix=crashes/ \
+            -print_final_stats=1 2>&1 | tee "$LOG_DIR/libfuzzer.log" || rc=$?
+          if ls crashes/* >/dev/null 2>&1; then
+            echo "::error::libFuzzer a produit un planteur (voir l'artefact nightly-libfuzzer)"
+            rc=1
+          fi
+          exit "$rc"
+
+      - name: Artefacts (journal + planteurs eventuels)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-libfuzzer
+          path: |
+            nightly-logs/
+            crashes/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::libfuzzer: $(( $(date +%s) - JOB_START ))s (budget 300s)"

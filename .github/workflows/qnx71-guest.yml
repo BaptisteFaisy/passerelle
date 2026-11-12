@@ -1,0 +1,194 @@
+name: qnx71-guest (hors PR)
+
+# What this workflow does: it boots the real QNX Neutrino 7.1.0 guest of
+# tests/qemu/qnx71/ on a CI runner, asks *QNX itself* what it sees of our
+# virtio-9p device, and keeps the answers as an artifact. It is the automated
+# form of the manual session recorded in tests/qemu/qnx71/EVIDENCE.md.
+# See docs/qnx71-guest.md for what it proves - and what it does not.
+#
+# This workflow NEVER runs on a pull request: it is triggered by
+# `workflow_dispatch` or by a push on `main` only, like qemu-e2e.yml. The
+# 5-minute budget of the PR pipeline does not apply here (see
+# ~/Bureau/CI-BUDGET-5MIN.md, "sortir des PR"), but the ceiling stays explicit
+# and justified:
+#
+#   timeout-minutes: 35
+#   -> 35 min: pull of a 622 MB Docker image (11 layers, measured from the
+#      registry manifest and confirmed by Docker Hub) + extraction of a 6.1 GiB
+#      QNX disk + boot of a full QNX 7.1 guest under QEMU (TCG on a hosted
+#      runner, no KVM) + SSH collection, out of pull requests (CI 5-min rule).
+#      The number is the sum of the per-command ceilings (180 + 660 + 90 + 600 +
+#      420 + 30 s ~ 33 min), so no step can be cut off by the job ceiling; a
+#      real run measures around 8 minutes (SSH banner between 19 s and 110 s).
+#
+# The ceiling is a bound, not a target: every step below carries its own
+# `timeout`, and the whole sequence measured 70 s on the development PC with the
+# disk already present (boot included).
+#
+# Never a false green: a missing prerequisite (no docker, unreachable daemon,
+# failed pull, not enough disk) is reported as `::notice::` and the job stays
+# green *because it says so*; a guest that boots and does not report our device
+# 1af4/1009 is a device-discovery regression and fails the job.
+#
+# NOTE (integration): the budget guard .github/ci-budget/check_timeouts.py
+# enforces the 5-minute rule per filename, and this workflow is out of pull
+# requests, so "qnx71-guest.yml" belongs in its SKIP_FILES set exactly like
+# "qemu-e2e.yml" already does - one line, outside the scope of this file:
+#     SKIP_FILES = {"qemu-e2e.yml", "qnx71-guest.yml"}
+# Without it, `ci-budget` reports this job as over budget.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ssh_timeout:
+        description: 'Ceiling of the SSH banner wait, in seconds'
+        required: false
+        default: '540'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qnx71-guest-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Working directory of the guest: everything the job downloads or writes
+  # stays under the runner's temporary directory, never in the checkout.
+  QNX_VM_DIR: ${{ runner.temp }}/qnx71-vm
+  QNX_PROBE_OUT: ${{ runner.temp }}/qnx71-probe
+  QNX_GUEST_IMAGE: autosarai/qemu_qnx7_1:1.1.0
+  # Ceilings, in seconds. Each one is far below the 35-minute job ceiling, and
+  # each one that expires is a *skip* (the environment is not there) rather
+  # than a red build - except the SSH wait and the probe, which are the test.
+  QNX_PULL_TIMEOUT: 300     # 622 MB of layers: 300 s means >= 2.1 MB/s
+  QNX_COPY_TIMEOUT: 240     # 6.1 GiB out of the container: >= 26 MB/s
+  QNX_REQUIRED_KB: 9000000  # ~8.6 GiB free, or skip before filling the disk
+  QNX_GUEST_TIMEOUT: 45     # one SSH command in the guest
+  QNX_CI_CLEANUP: 1         # ephemeral runner: give the disk back afterwards
+
+jobs:
+  qnx71-guest:
+    name: qnx71-guest
+    # Hosted runner: the self-hosted passerelle workers have no QEMU (see
+    # qemu-e2e.yml), and this job needs docker + qemu only. No KVM there, so
+    # QEMU runs the guest under TCG - measured on this project's PC: the SSH
+    # banner arrives 19 s after QEMU starts under TCG, 60-110 s under KVM with
+    # a disk in snapshot mode, i.e. the boot is dominated by the guest's DHCP
+    # wait, not by the CPU. The SSH ceiling below stays generous regardless.
+    runs-on: ubuntu-24.04
+    # 35 min: see the justification at the top of this file (out of PR, sum of
+    # the per-command ceilings ~33 min, real run ~8 min).
+    timeout-minutes: 35
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Install QEMU and the SSH client
+        run: |
+          set -uo pipefail
+          if ! timeout 90 sudo apt-get update -qq \
+            || ! timeout 180 sudo apt-get install -y --no-install-recommends \
+                 qemu-system-x86 openssh-client; then
+            echo "::notice::qnx71-guest skipped: QEMU could not be installed on this runner"
+            echo "QNX_SKIP=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          qemu-system-x86_64 --version | head -1
+          ssh -V 2>&1 | head -1
+          # Diagnostic only: the boot of this guest is dominated by its own
+          # DHCP wait, not by the CPU - measured to the SSH banner: 19 s and
+          # 30 s under TCG, 60 s under KVM, 110 s under KVM with the disk in
+          # snapshot mode. The ceiling below is generous for a loaded runner.
+          ls -l /dev/kvm 2>/dev/null || echo "no /dev/kvm: QEMU runs the guest under TCG"
+
+      - name: Fetch the QNX guest disk (community container)
+        if: env.QNX_SKIP != '1'
+        run: |
+          set -uo pipefail
+          # The disk is QNX software and is not in this repository: it is
+          # extracted from the public container, as tests/qemu/qnx71/README.md
+          # documents. Exit 2 = prerequisite missing -> explicit skip, green.
+          rc=0
+          timeout 660 tests/qemu/qnx71/ci/fetch_image.sh || rc=$?
+          if [ "$rc" -eq 2 ]; then
+            echo "::notice::qnx71-guest skipped: the guest image is unavailable on this runner (docker, network or disk space)"
+            echo "QNX_SKIP=1" >> "$GITHUB_ENV"
+          elif [ "$rc" -ne 0 ]; then
+            echo "::error::qnx71-guest: the guest image was fetched but is unusable (code $rc)"
+            exit "$rc"
+          fi
+
+      - name: Boot the guest on the qshare options
+        if: env.QNX_SKIP != '1'
+        run: |
+          set -euo pipefail
+          timeout 90 tests/qemu/qnx71/qnx-vm.sh start
+          timeout 30 tests/qemu/qnx71/qnx-vm.sh status
+
+      - name: Wait for the SSH banner (bounded, no fixed sleep)
+        if: env.QNX_SKIP != '1'
+        run: |
+          set -uo pipefail
+          # Bounded poll of the four forwarded ports (the image has been seen
+          # on four DHCP addresses): one answers with a banner, 19 s to 110 s
+          # after QEMU starts in every measurement made so far.
+          rc=0
+          timeout 600 python3 tests/qemu/qnx71/ci/wait_ssh.py \
+            --vm-dir "$QNX_VM_DIR" \
+            --timeout "${{ github.event.inputs.ssh_timeout || 540 }}" \
+            --port-file "$RUNNER_TEMP/qnx-ssh-port" || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::qnx71-guest: the guest never answered on SSH (code $rc)"
+            echo "--- $QNX_VM_DIR/qemu.out ---"
+            tail -40 "$QNX_VM_DIR/qemu.out" 2>/dev/null || true
+            echo "--- $QNX_VM_DIR/serial.log ---"
+            tail -20 "$QNX_VM_DIR/serial.log" 2>/dev/null || true
+            exit "$rc"
+          fi
+          echo "QNX_SSH_PORT=$(cat "$RUNNER_TEMP/qnx-ssh-port")" >> "$GITHUB_ENV"
+
+      - name: Ask QNX what it sees (pci-tool, /proc/boot, QEMU monitor)
+        if: env.QNX_SKIP != '1'
+        run: |
+          set -uo pipefail
+          # Exit 1 = the guest does not report vid/did 1af4/1009: a device
+          # discovery regression, and this job must be red.
+          rc=0
+          timeout 420 tests/qemu/qnx71/ci/guest_probe.sh \
+            --out "$QNX_PROBE_OUT" --vm-dir "$QNX_VM_DIR" \
+            --port "$QNX_SSH_PORT" || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::qnx71-guest: the QNX guest does not report our virtio-9p device 1af4/1009 (code $rc)"
+            exit "$rc"
+          fi
+
+      - name: Stop the guest
+        if: always()
+        run: |
+          set -uo pipefail
+          timeout 30 tests/qemu/qnx71/qnx-vm.sh stop || echo "stop returned $?"
+
+      - name: Upload what the guest answered
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qnx71-guest-probe
+          path: ${{ runner.temp }}/qnx71-probe/
+          if-no-files-found: ignore
+          retention-days: 14
+          # Text only, on purpose: the QNX disk image is QNX software under
+          # non-commercial terms and must never leave the runner.
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::qnx71-guest: $(( $(date +%s) - JOB_START ))s (ceiling 2100s)"
