@@ -7,8 +7,19 @@
 # never has to touch this file.
 cmake_minimum_required(VERSION 3.16)
 
+# The version has a single source of truth: the VERSION file at the root.
+# It is read before project() so that the project version, the pkg-config
+# file and the exported CMake package all carry the same string (the copies
+# are checked by tools/release/test_version_sync.py).
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PGW_VERSION_RAW)
+string(STRIP "${PGW_VERSION_RAW}" PGW_VERSION)
+if(NOT PGW_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+")
+    message(FATAL_ERROR
+        "VERSION file: '${PGW_VERSION}' is not a MAJOR.MINOR.PATCH version")
+endif()
+
 project(passerelle
-    VERSION 0.1.0
+    VERSION ${PGW_VERSION}
     DESCRIPTION "Shared folder for QNX 8.0 guests under QEMU: 9P2000.L and virtiofs"
     LANGUAGES C
 )
@@ -45,6 +56,14 @@ foreach(mod IN LISTS PGW_MODULES)
         message(STATUS "module '${mod}' not present yet - skipped")
     endif()
 endforeach()
+
+# Install and export (gap 37): the libraries, the public headers, the
+# pkg-config file and the exported CMake package. PGW_INSTALL is ON by
+# default and never changes the build itself.
+include(passerelle-install)
+if(PGW_INSTALL)
+    pgw_install_package()
+endif()
 
 # Project rules (AGENTS.md): every source file under 500 lines, every function
 # under 50 lines. Enforced as a test so `ctest` and CI both catch a violation.

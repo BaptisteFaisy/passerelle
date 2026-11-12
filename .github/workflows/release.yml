@@ -55,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --quiet --disable-pip-version-check pytest
-          python3 -m pytest tools/release -q
+          python3 -m pytest tools/release tools/sbom -q
 
   tarball:
     name: source tarball + SHA256
@@ -73,6 +73,15 @@ jobs:
           # checks out that commit rebuilds the same bytes and the same SHA256.
           echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
           python3 tools/release/make_tarball.py --output-dir dist
+      - name: Generate the SBOM and the build provenance
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          # The SBOM walks the real inputs of the tag (sources, version,
+          # toolchain, commit) and the validator refuses an invalid document.
+          python3 tools/sbom/generate_sbom.py --source-dir . --check \
+            --output "dist/passerelle-${version}.sbom.json" \
+            --provenance "dist/passerelle-${version}.provenance.json"
       - name: Record the checksum in the job summary
         run: |
           set -euo pipefail
@@ -85,6 +94,11 @@ jobs:
             echo '```'
             echo
             echo "Members: $(tar tzf "dist/passerelle-${version}.tar.gz" | wc -l)"
+            echo
+            echo "## SBOM and provenance"
+            echo
+            echo "SBOM: \`passerelle-${version}.sbom.json\` (CycloneDX 1.5)"
+            echo "Provenance: \`passerelle-${version}.provenance.json\`"
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
@@ -92,6 +106,8 @@ jobs:
           path: |
             dist/passerelle-*.tar.gz
             dist/passerelle-*.tar.gz.sha256
+            dist/passerelle-*.sbom.json
+            dist/passerelle-*.provenance.json
           if-no-files-found: error
 
   install-check:
@@ -123,7 +139,7 @@ jobs:
         run: |
           set -euo pipefail
           /tmp/pgw-venv/bin/pip install --quiet --disable-pip-version-check pytest
-          /tmp/pgw-venv/bin/python -m pytest host/tests tools/release -q
+          /tmp/pgw-venv/bin/python -m pytest host/tests tools/release tools/sbom -q
 
   pypi-token:
     name: PyPI token check
@@ -176,6 +192,8 @@ jobs:
             echo "| File | SHA256 |"
             echo "| --- | --- |"
             echo "| \`${tarball}\` | \`${checksum}\` |"
+            echo "| \`passerelle-${version}.sbom.json\` | CycloneDX 1.5 SBOM |"
+            echo "| \`passerelle-${version}.provenance.json\` | build provenance |"
             echo
             echo "Verify the download:"
             echo
@@ -192,15 +210,18 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat VERSION)"
+          tarball="passerelle-${version}.tar.gz"
+          sbom="passerelle-${version}.sbom.json"
+          provenance="passerelle-${version}.provenance.json"
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" > /dev/null 2>&1; then
             echo "::notice::Release ${RELEASE_TAG} already exists - uploading the artefacts only."
             gh release upload "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --clobber \
-              "dist/passerelle-${version}.tar.gz" "dist/passerelle-${version}.tar.gz.sha256"
+              "dist/${tarball}" "dist/${tarball}.sha256" "dist/${sbom}" "dist/${provenance}"
             exit 0
           fi
           gh release create "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" \
             --title "Passerelle ${version}" --notes-file notes.md \
-            "dist/passerelle-${version}.tar.gz" "dist/passerelle-${version}.tar.gz.sha256"
+            "dist/${tarball}" "dist/${tarball}.sha256" "dist/${sbom}" "dist/${provenance}"
 
   publish-pypi:
     name: publish to PyPI (only with PYPI_API_TOKEN)
