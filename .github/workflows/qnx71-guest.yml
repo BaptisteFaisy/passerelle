@@ -105,18 +105,28 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Read the pin (the cache key follows it)
+        id: pin
+        run: |
+          set -euo pipefail
+          # One source of truth: the manifest. The cache key follows the pinned
+          # source digest, so a new pin never reuses the disk of the old one.
+          digest=$(python3 tools/qnx-image/image_manifest.py show \
+            --manifest tools/qnx-image/qnx71-image.manifest.json --field digest)
+          echo "digest=${digest#sha256:}" >> "$GITHUB_OUTPUT"
+          echo "::notice::qnx71-guest: the guest image is pinned on $digest"
+
       - name: Restore the guest disk from the cache (gap 51)
         uses: actions/cache@v4
         # A cache service failure must not turn the job red: the disk is then
         # downloaded, which is what happened before this step existed.
         continue-on-error: true
         with:
-          # The key carries the hash of the pinned manifest, so it changes with
-          # the pinned version and the pinned checksum: a new pin never reuses
-          # the disk of the old one, and the checksum check below stays the
-          # last word anyway.
+          # The key carries the digest the manifest pins, so the pinned version
+          # and the pinned checksum invalidate the cache together. The checksum
+          # check of the disk itself stays the last word anyway.
           path: ${{ runner.temp }}/qnx71-vm/qnx71-fs.img
-          key: qnx71-guest-disk-${{ runner.os }}-${{ hashFiles('tools/qnx-image/qnx71-image.manifest.json') }}
+          key: qnx71-guest-disk-${{ runner.os }}-${{ steps.pin.outputs.digest }}
 
       - name: Say whether the 6.1 GiB download is needed
         run: |
