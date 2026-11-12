@@ -60,6 +60,12 @@ static uint64_t fake_clock(void *user)
 
 /* --- the captured log ------------------------------------------------------ */
 
+void tracecap_log_init(tracecap_log *log)
+{
+    if (log != NULL)
+        memset(log, 0, sizeof *log);
+}
+
 void tracecap_log_reset(tracecap_log *log)
 {
     if (log == NULL)

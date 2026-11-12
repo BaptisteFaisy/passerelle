@@ -27,6 +27,7 @@
 static char *render_capture(size_t *out_len)
 {
     tracecap_log log;
+    tracecap_log_init(&log);
     if (tracecap_capture(&log) != PGW_OK) {
         fprintf(stderr, "tracecap: the capture failed\n");
         return NULL;
