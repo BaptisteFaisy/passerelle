@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# interop - our 9P2000.L client against a third-party 9P server (gap 59).
+#
+# The benches of tests/ref9p/ prove that the client talks to a second
+# implementation, but that implementation was written by us too: both sides
+# share the same assumptions. This job closes that hole where the dependency
+# can be installed: a GitHub-hosted runner has passwordless sudo, so diod
+# (a 9P2000.L file server we did not write) is installed with apt and the
+# production client of proto9p/ is driven against it.
+#
+# The bench skips with an explicit reason when diod is missing, so the same
+# test can run on a machine without the package - it never passes silently.
+#
+# Budget: install + build + a short sequence + teardown, well inside the
+# 5 minutes every job of this repository is allowed (see
+# ~/Bureau/CI-BUDGET-5MIN.md).
+
+name: interop (≤ 5 min)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: interop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diod:
+    name: diod (third-party 9P server)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install diod (the third-party server)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends diod
+          diod --help 2>&1 | head -3 || true
+          command -v diod
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          cmake -B build \
+            "-DPGW_MODULES=common;virtio;proto9p;protofuse;rmfs;drivers;tests"
+          cmake --build build -j4
+
+      - name: Interoperability bench (client against diod)
+        run: |
+          set -euo pipefail
+          cd build
+          ctest -R interop --output-on-failure -V
