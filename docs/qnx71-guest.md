@@ -267,6 +267,15 @@ The rule is simple: **a mismatch fails loudly and the job goes red.** A tag
 that was re-pushed, a truncated extraction or a disk from another build never
 reaches the guest.
 
+One trap worth telling, because the cache found it: **the guest writes into
+the disk it boots from.** The first cached copy was therefore the disk *after*
+the boot (`f9293ec7…`), not the pinned one, and the verification refused it —
+the job went red instead of booting a modified image. The fix is on the
+guest side: `QNX_VM_SNAPSHOT=1` boots QEMU in snapshot mode, the guest's
+writes go to a temporary overlay, and the image on disk stays byte-for-byte
+the pinned one. The CI job sets it; the workstation procedure keeps its
+default.
+
 ```bash
 # what CI does, by hand
 python3 tools/qnx-image/image_manifest.py show \
@@ -302,12 +311,26 @@ damaged is refused, not booted.
 
 The honest statement about the budget: **the uncached run does not fit in five
 minutes.** It pulls 652 MB of layers and extracts 6.1 GiB, then boots a full
-QNX guest under TCG on a hosted runner (no KVM): ~8 minutes measured, and up to
-33 minutes in the worst case the per-command ceilings allow. That is why the
-job stays out of pull requests, with the `timeout-minutes: 35` ceiling the CI
-budget guard exempts by name (`SKIP_FILES` in
-`.github/ci-budget/check_timeouts.py`). The cache is what makes the *recurring*
-run cheap: with a hit, the fetch step only hashes the disk it already has.
+QNX guest under TCG on a hosted runner (no KVM): ~8 minutes measured on the
+development PC with the disk already there, and up to 33 minutes in the worst
+case the per-command ceilings allow. That is why the job stays out of pull
+requests, with the `timeout-minutes: 35` ceiling the CI budget guard exempts
+by name (`SKIP_FILES` in `.github/ci-budget/check_timeouts.py`). The cache is
+what makes the *recurring* run cheap: with a hit, the fetch step only hashes
+the disk it already has.
+
+**Measured on 12 November 2026** (runs 43240906509 and 43241416176, same
+branch, same runner kind):
+
+| | cache miss | cache hit |
+|---|---|---|
+| the whole job | **148 s** | **88 s** |
+| the fetch step | 101 s (pull 652 MB, extract 6.1 GiB, hash it) | 31 s (hash the restored disk only) |
+| the 6.1 GiB download | yes | **no** |
+
+The hit is not a shortcut around the verification: the restored disk is hashed
+and compared with the pin exactly like a freshly fetched one — that is how the
+first cache save was caught storing a disk the guest had written to (§7).
 
 ## 9. The kernel-side trace this guest can give (gap 79)
 
