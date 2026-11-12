@@ -1,0 +1,72 @@
+non UEFI or UEFI+CSM boot
+ACPI table not found (0x4746434d)
+overriding mask for controller 2, vector_base 0
+---> Starting slogger2
+---> Starting PCI Services
+---> Starting fsevmgr
+# ---> Starting devb
+---> Mounting file systems
+Path=0 - Intel 82371SB
+ target=0 lun=0     Direct-Access(0) -          QEMU HARDDISK    Rev: 2.5+
+Path=1 - Intel 82371SB
+ target=0 lun=0            CD-ROM(5) - QEMU     QEMU DVD-ROM     Rev: 2.5+
+---> Mounting file systems
+---> Starting Networking
+---> Starting sshd
+/usr/libexec/sshd-auth does not exist or is not executable
+
+---> Starting misc
+
+To exit QEMU, type <ctrl>a x
+
+Process count:21
+Startup complete
+QNX noname 8.0.0 2026/06/05-16:26:03EDT x86pc x86_64
+pci-tool -v
+
+Partition: pci
+
+Managing Server ID: 1, pid: 28676, running
+B000:D00:F00 @ idx 0
+	vid/did: 8086/1237
+		<vendor id - unknown>, <device id - unknown>
+	class/subclass/reg: 06/00/00
+		Host-to-PCI Bridge Device
+
+B000:D01:F00 @ idx 1
+	vid/did: 8086/7000
+		<vendor id - unknown>, <device id - unknown>
+	class/subclass/reg: 06/01/00
+		PCI-to-ISA Bridge Device
+
+B000:D01:F01 @ idx 2
+	vid/did: 8086/7010
+		<vendor id - unknown>, <device id - unknown>
+	class/subclass/reg: 01/01/80
+		IDE Controller (ANSI INCITS370-2004)
+
+B000:D01:F03 @ idx 3
+	vid/did: 8086/7113
+		<vendor id - unknown>, <device id - unknown>
+	class/subclass/reg: 06/80/00
+		Other Bridge Device
+
+B000:D02:F00 @ idx 4
+	vid/did: 1234/1111
+		<vendor id - unknown>, <device id - unknown>
+	class/subclass/reg: 03/00/00
+		PC Compatible VGA Display Controller
+
+B000:D03:F00 @ idx 5
+	vid/did: 1af4/1000
+		<vendor id - unknown>, <device id - unknown>
+	class/subclass/reg: 02/00/00
+		Ethernet Network Controller
+
+B000:D05:F00 @ idx 6
+	vid/did: 1af4/1009
+		<vendor id - unknown>, <device id - unknown>
+	class/subclass/reg: 00/02/00
+		<Classcode is undefined>
+
+# 
