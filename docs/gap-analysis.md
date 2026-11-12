@@ -11,15 +11,15 @@ file listed **100 concrete gaps**: the requirement lines that are not fully
 satisfied, and everything else a submission is judged on that is not a
 requirement line.
 
-**41 of those 100 are closed** and are marked inline (`Closed 11-12/11` for the
+**43 of those 100 are closed** and are marked inline (`Closed 11-12/11` for the
 night wave that delivered the reference servers, the publication pipeline, the
 quality gates, the QNX 7.1 guest in CI and the submission pack; `Closed 12/11`
 for the wave that delivered the faulty server, the directed cases of §7.4, the
 vhost-user front end driving the real `virtiofsd`, the shared configuration
-file, the Debian skeleton and the devcontainer). Rows are kept rather than
+file, the Debian skeleton, the devcontainer, the generated man pages and the examples built in CI). Rows are kept rather than
 deleted: the closure note says *what* closed them, so a claim can be checked.
 What is left: 28 requirement gaps (24 of them blocked on the QNX SDP, 2
-de-scoped X-tier, 2 doable here), and 31 non-requirement gaps.
+de-scoped X-tier, 2 doable here), and 29 non-requirement gaps.
 
 Where the 77 requirements stand:
 
@@ -165,10 +165,10 @@ purpose.
 | 92 | No `qshare doctor`: one command saying what is missing here (QEMU, virtiofsd, SDP, kernel) |
 | 93 | No `qshare init`: scaffolding a guest project ready to be shared |
 | 94 | No `qshare smoke`: one command proving the whole chain works on this machine |
-| 95 | The CMake and Rust examples (`qshare --example`) are written but never executed by CI |
+| 95 | **Closed 12/11** - `.github/workflows/examples.yml` scaffolds both examples with the real `qshare --example all`, builds the CMake one and runs its ctest, and builds the Rust one only when `cargo` is already present - an explicit `::notice::` skip otherwise, never a toolchain install (PR #43). The CMake and Rust examples (`qshare --example`) are written but never executed by CI |
 | 96 | **Closed 12/11** - `packaging/`: a Debian skeleton validated by pytest against `VERSION`, plus the pipx path already covered by the release install check (PR #37). No packaging of the tools for `pipx` or `apt` |
 | 97 | The `host/fsproof` guest agent has no way to run inside a guest yet (needs a cross-compiler) |
-| 98 | No man pages for the four commands |
+| 98 | **Closed 12/11** - `man/qshare.1`, `qrun.1`, `fsproof.1`, `pbench.1`, generated from the CLI definitions by `tools/man/build_man.py`; the date is pinned (`tools/man/PAGE_DATE`) and a pytest fails on any drift (PR #43). No man pages for the four commands |
 | 99 | The tools do not share one configuration file; each re-reads its own options |
 | 100 | **Closed 12/11** - `.devcontainer/`: one environment definition shared with the root `Dockerfile`, validated statically (PR #37). No `.devcontainer` or Dockerfile reproducing the development environment in one command |
 
