@@ -85,3 +85,18 @@ pgw_test(test_cas_fsync
     SRCS test_cas_fsync.c ${CAS_MAIN} ${CAS_9P_SRCS}
     DEPS pgw_diff pgw_proto9p
     LABELS "directed;conformance")
+
+pgw_test(test_cas_load
+    SRCS test_cas_load.c ${CAS_MAIN}
+    DEPS pgw_diff
+    LABELS "directed;conformance")
+target_link_libraries(test_cas_load PRIVATE Threads::Threads)
+
+# The long campaign of gap 63: more clients, more time, out of the pull-request
+# gate (CI budget, 5 minutes per job).
+add_test(NAME cas-load-long COMMAND test_cas_load)
+set_tests_properties(cas-load-long PROPERTIES
+    DISABLED TRUE
+    LABELS "long;directed"
+    TIMEOUT 900
+    ENVIRONMENT "PGW_CAS_LOAD_THREADS=8;PGW_CAS_LOAD_SECONDS=30")
