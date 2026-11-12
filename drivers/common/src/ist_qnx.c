@@ -30,20 +30,11 @@
 #include <pthread.h>
 #include <stddef.h>
 #include <string.h>
-#include <time.h>
 
 /* -2: the attach has not happened yet (pgw_ist_stop() waits for it). */
 #define IST_PENDING (-2)
 
 #define IST_STACK 8192u
-
-/* Wait 1 ms. delay() is a QNX extension gated behind _QNX_SOURCE; nanosleep()
- * is POSIX and is available on both the target and the host build. */
-static void ist_yield(void)
-{
-    struct timespec ts = { 0, 1000000L };
-    (void)nanosleep(&ts, NULL);
-}
 
 static void *ist_main(void *arg)
 {
@@ -104,7 +95,7 @@ pgw_err pgw_ist_start(pgw_ist *ist, int irq, void (*on_irq)(void *user),
     /* Wait for the attach so a caller that mounts and immediately unmounts
      * never detaches an interrupt that does not exist yet. */
     for (unsigned i = 0; i < 1000u && ist->id == IST_PENDING; i++)
-        ist_yield();
+        pgw_relax_ms(1);
     if (ist->id == IST_PENDING || !ist->running)
         return PGW_EIO;
     return PGW_OK;

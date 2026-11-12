@@ -86,7 +86,7 @@ static pgw_err wait_completion(fsfuse_xport *x, pgw_virtq *vq, void *cookie,
             return PGW_ETIMEDOUT;
         }
         if (x->irqs == seen)
-            (void)delay(1);
+            pgw_relax_ms(1);
         seen = x->irqs;
     }
 }
