@@ -62,6 +62,27 @@ static void *shutdown_main(void *arg)
     return NULL; /* not reached */
 }
 
+/* Start the detached thread that waits for a signal and unmounts. Returns 0
+ * on success, the pthread error code otherwise. QNX 8 has no ThreadCreate()
+ * with the signature the PC stub used to declare (that signature exists in no
+ * QNX version); a detached pthread with an explicit stack size says the same. */
+static int start_shutdown_thread(sigset_t *sigs)
+{
+    pthread_attr_t tattr;
+    pthread_t tid;
+    int rc = pthread_attr_init(&tattr);
+    if (rc == 0)
+        rc = pthread_attr_setstacksize(&tattr, 8192u);
+    if (rc == 0)
+        rc = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+    if (rc == 0)
+        rc = pthread_create(&tid, &tattr, shutdown_main, sigs);
+    (void)pthread_attr_destroy(&tattr);
+    if (rc != 0)
+        PGW_ERR("fsfuse: cannot create the shutdown thread");
+    return rc;
+}
+
 int main(int argc, char *argv[])
 {
     pgw_mount_opts opts;
@@ -93,26 +114,11 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    /* The shutdown thread waits for a signal, then unmounts.
-     *
-     * QNX 8 has no ThreadCreate() with that signature: the one the PC stub
-     * declared (entry, arg, stack size) exists in no QNX version, so the call
-     * survived every compile until the first real one. A detached pthread with
-     * an explicit stack size says the same thing. */
-    pthread_attr_t tattr;
-    pthread_t shutdown_tid;
-    int rc = pthread_attr_init(&tattr);
-    if (rc == 0)
-        rc = pthread_attr_setstacksize(&tattr, 8192u);
-    if (rc == 0)
-        rc = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
-    if (rc == 0)
-        rc = pthread_create(&shutdown_tid, &tattr, shutdown_main, &sigs);
-    (void)pthread_attr_destroy(&tattr);
-    if (rc != 0) {
-        PGW_ERR("fsfuse: cannot create the shutdown thread");
+    /* The shutdown thread waits for a signal, then unmounts (see
+     * start_shutdown_thread() for why it is a pthread and not a
+     * ThreadCreate()). */
+    if (start_shutdown_thread(&sigs) != 0)
         return EXIT_FAILURE;
-    }
 
     e = fsfuse_mount_and_serve(&opts, mount_point); /* QNX-06 happens inside */
     PGW_ERR("fsfuse: %s: %s", mount_point, pgw_err_name(e));
