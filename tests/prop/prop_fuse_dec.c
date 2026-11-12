@@ -32,9 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FU_ITERS   4000u
+#define FU_ITERS 4000u
 #define FU_MAX_ENT 4u
-#define FU_HDR     PGW_FUSE_OUT_HDR_SZ
+#define FU_HDR PGW_FUSE_OUT_HDR_SZ
 
 enum {
     D_HDR = 0,
@@ -85,16 +85,13 @@ static void decode_all(const uint8_t *m, size_t len, fuse_snap *s)
     s->e[D_INIT] = pgw_fuse_dec_init(m, len, g_unique, &s->init);
     s->e[D_ENTRY] = pgw_fuse_dec_entry(m, len, g_unique, &s->entry);
     s->e[D_ATTR] = pgw_fuse_dec_attr(m, len, g_unique, &s->attr);
-    s->e[D_OPEN] =
-        pgw_fuse_dec_open(m, len, g_unique, &s->fh, &s->open_flags);
-    s->e[D_CREATE] =
-        pgw_fuse_dec_create(m, len, g_unique, &s->centry, &s->cfh);
+    s->e[D_OPEN] = pgw_fuse_dec_open(m, len, g_unique, &s->fh, &s->open_flags);
+    s->e[D_CREATE] = pgw_fuse_dec_create(m, len, g_unique, &s->centry, &s->cfh);
     s->e[D_READ] = pgw_fuse_dec_read(m, len, g_unique, &data, &s->data_len);
     s->e[D_WRITE] = pgw_fuse_dec_write(m, len, g_unique, &s->wsize);
-    s->e[D_READDIR] = pgw_fuse_dec_readdir(m, len, g_unique, s->ents,
-                                           FU_MAX_ENT, &s->ndirents);
-    s->e[D_READLINK] =
-        pgw_fuse_dec_readlink(m, len, g_unique, s->str, sizeof(s->str));
+    s->e[D_READDIR] =
+            pgw_fuse_dec_readdir(m, len, g_unique, s->ents, FU_MAX_ENT, &s->ndirents);
+    s->e[D_READLINK] = pgw_fuse_dec_readlink(m, len, g_unique, s->str, sizeof(s->str));
     s->e[D_STATFS] = pgw_fuse_dec_statfs(m, len, g_unique, &s->sfs);
     s->e[D_EMPTY] = pgw_fuse_dec_empty(m, len, g_unique);
     if (s->e[D_READ] == PGW_OK && data != NULL)
@@ -187,9 +184,8 @@ static bool pred_hostile(const prop_case *c)
 
 static void test_fuse_prop_hostile_bytes_stay_in_bounds(void)
 {
-    prop_forall("fuse decoders never leave the message", gen_hostile,
-                pred_hostile, prop_iters("PGW_PROP_ITERS", FU_ITERS),
-                0x85EBCA6BULL);
+    prop_forall("fuse decoders never leave the message", gen_hostile, pred_hostile,
+                prop_iters("PGW_PROP_ITERS", FU_ITERS), 0x85EBCA6BULL);
 }
 PGW_TEST(test_fuse_prop_hostile_bytes_stay_in_bounds);
 
@@ -227,20 +223,24 @@ static void gen_reply(prop_rng *r, prop_case *c)
     snprintf(c->tag, sizeof(c->tag), "reply %u", c->a % 4u);
 }
 
-static bool pred_reply(const prop_case *c)
+static void case_attr(const prop_case *c, pgw_fuse_attr *a)
 {
-    msg reply;
+    memset(a, 0, sizeof(*a));
+    a->ino = c->value;
+    a->size = c->a;
+    a->mode = c->b | 0100000u;
+    a->nlink = 1u;
+    a->blksize = 4096u;
+}
+
+/* Build the reply of the kind the case asks for, with the same cursors a
+ * server writes with (protofuse/tests/codec_util.h). */
+static size_t build_case_reply(const prop_case *c, uint64_t unique, msg *out,
+                               const pgw_fuse_attr *a)
+{
     pgw_out w;
-    uint64_t unique = c->value;
-    pgw_fuse_attr a;
-    memset(&reply, 0, sizeof(reply));
-    memset(&a, 0, sizeof(a));
-    a.ino = c->value;
-    a.size = c->a;
-    a.mode = c->b | 0100000u;
-    a.nlink = 1u;
-    a.blksize = 4096u;
-    pgw_out_init(&w, reply.buf, sizeof(reply.buf));
+    memset(out, 0, sizeof(*out));
+    pgw_out_init(&w, out->buf, sizeof(out->buf));
     put_hdr(&w, unique, 0);
     switch (c->a % 4u) {
     case 0: /* entry_out: nodeid, generation, validities, then fuse_attr */
@@ -250,7 +250,7 @@ static bool pred_reply(const prop_case *c)
         pgw_put_u64(&w, 2u);
         pgw_put_u32(&w, c->a);
         pgw_put_u32(&w, c->b);
-        put_attr_from(&w, &a, 0u);
+        put_attr_from(&w, a, 0u);
         break;
     case 1: /* open_out: fh, open_flags, padding */
         pgw_put_u64(&w, c->value);
@@ -265,39 +265,51 @@ static bool pred_reply(const prop_case *c)
         pgw_put_u64(&w, c->value);
         pgw_put_u32(&w, c->a);
         pgw_put_u32(&w, 0u);
-        put_attr_from(&w, &a, 0u);
+        put_attr_from(&w, a, 0u);
         break;
     }
-    reply.len = (int32_t)finish(&w);
+    return finish(&w);
+}
+
+static bool verify_case_reply(const prop_case *c, uint64_t unique, const msg *m,
+                              size_t len, const pgw_fuse_attr *a)
+{
     switch (c->a % 4u) {
     case 0: {
         pgw_fuse_entry e;
         memset(&e, 0, sizeof(e));
-        return pgw_fuse_dec_entry(reply.buf, (size_t)reply.len, unique, &e) == PGW_OK &&
-               e.nodeid == c->value && e.generation == c->b &&
-               e.attr.ino == c->value && e.attr.size == c->a &&
-               e.attr.mode == a.mode;
+        return pgw_fuse_dec_entry(m->buf, len, unique, &e) == PGW_OK &&
+               e.nodeid == c->value && e.generation == c->b && e.attr.ino == a->ino &&
+               e.attr.size == a->size && e.attr.mode == a->mode;
     }
     case 1: {
         uint64_t fh = 0;
         uint32_t flags = 0;
-        return pgw_fuse_dec_open(reply.buf, (size_t)reply.len, unique, &fh, &flags) ==
-                   PGW_OK &&
+        return pgw_fuse_dec_open(m->buf, len, unique, &fh, &flags) == PGW_OK &&
                fh == c->value && flags == c->a;
     }
     case 2: {
         uint32_t size = 0;
-        return pgw_fuse_dec_write(reply.buf, (size_t)reply.len, unique, &size) ==
-                   PGW_OK &&
-               size == c->a;
+        return pgw_fuse_dec_write(m->buf, len, unique, &size) == PGW_OK && size == c->a;
     }
     default: {
         pgw_fuse_attr got;
         memset(&got, 0, sizeof(got));
-        return pgw_fuse_dec_attr(reply.buf, (size_t)reply.len, unique, &got) == PGW_OK &&
-               memcmp(&got, &a, sizeof(a)) == 0;
+        return pgw_fuse_dec_attr(m->buf, len, unique, &got) == PGW_OK &&
+               memcmp(&got, a, sizeof(*a)) == 0;
     }
     }
+}
+
+static bool pred_reply(const prop_case *c)
+{
+    msg reply;
+    pgw_fuse_attr a;
+    uint64_t unique = c->value;
+    case_attr(c, &a);
+    size_t len = build_case_reply(c, unique, &reply, &a);
+    reply.len = (int32_t)len;
+    return verify_case_reply(c, unique, &reply, len, &a);
 }
 
 static void test_fuse_prop_reply_round_trip(void)

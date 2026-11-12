@@ -23,9 +23,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define P9_BUF   2048u
+#define P9_BUF 2048u
 #define P9_ITERS 2000u
-#define P9_QIDS  PGW_MAXWELEM
+#define P9_QIDS PGW_MAXWELEM
 #define P9_DATA_MAX 512u
 
 static uint8_t g_msg[P9_BUF];
@@ -49,10 +49,9 @@ enum {
 };
 
 static const uint8_t g_reply_type[RP_KINDS] = {
-    PGW_P9_RLERROR,  PGW_P9_RVERSION,   PGW_P9_RATTACH,  PGW_P9_RMKDIR,
-    PGW_P9_RLOPEN,   PGW_P9_RREAD,      PGW_P9_RWRITE,   PGW_P9_RWALK,
-    PGW_P9_RGETATTR, PGW_P9_RSTATFS,    PGW_P9_RREADLINK, PGW_P9_RCLUNK
-};
+        PGW_P9_RLERROR,  PGW_P9_RVERSION, PGW_P9_RATTACH,   PGW_P9_RMKDIR,
+        PGW_P9_RLOPEN,   PGW_P9_RREAD,    PGW_P9_RWRITE,    PGW_P9_RWALK,
+        PGW_P9_RGETATTR, PGW_P9_RSTATFS,  PGW_P9_RREADLINK, PGW_P9_RCLUNK};
 
 /* The values a reply carries, drawn from the case alone so that the generator
  * and the predicate always agree - and so that shrinking a knob shrinks the
@@ -154,15 +153,15 @@ static size_t build_fixed(uint32_t kind, const reply_vals *v)
     case RP_GETATTR:
         pgw_put_u64(&w, PGW_P9_GETATTR_BASIC);
         reply_qid(&w, v, 0u);
-        pgw_put_u32(&w, v->num);   /* mode */
-        pgw_put_u32(&w, v->msize); /* uid */
-        pgw_put_u32(&w, v->qt);    /* gid */
+        pgw_put_u32(&w, v->num);           /* mode */
+        pgw_put_u32(&w, v->msize);         /* uid */
+        pgw_put_u32(&w, v->qt);            /* gid */
         for (uint32_t i = 0; i < 15u; i++) /* nlink .. data_version */
             pgw_put_u64(&w, v->path + i);
         break;
     case RP_STATFS:
-        pgw_put_u32(&w, v->num);   /* type */
-        pgw_put_u32(&w, v->msize); /* bsize */
+        pgw_put_u32(&w, v->num);          /* type */
+        pgw_put_u32(&w, v->msize);        /* bsize */
         for (uint32_t i = 0; i < 6u; i++) /* blocks .. fsid */
             pgw_put_u64(&w, v->path + i);
         pgw_put_u32(&w, v->qt); /* namelen */
@@ -192,8 +191,7 @@ static size_t build_reply(uint32_t kind, const reply_vals *v)
 
 static bool same_qid(const pgw_p9_qid *q, const reply_vals *v, uint32_t step)
 {
-    return q->type == v->qt && q->version == v->ver + step &&
-           q->path == v->path + step;
+    return q->type == v->qt && q->version == v->ver + step && q->path == v->path + step;
 }
 
 static bool verify_var(uint32_t kind, size_t len, const reply_vals *v)
@@ -208,19 +206,16 @@ static bool verify_var(uint32_t kind, size_t len, const reply_vals *v)
     str[0] = '\0';
     switch (kind) {
     case RP_LERROR:
-        return pgw_p9_dec_rlerror(g_msg, len, g_tag, &n32) == PGW_OK &&
-               n32 == v->num;
+        return pgw_p9_dec_rlerror(g_msg, len, g_tag, &n32) == PGW_OK && n32 == v->num;
     case RP_VERSION:
-        return pgw_p9_dec_rversion(g_msg, len, g_tag, &msize, str,
-                                   sizeof(str)) == PGW_OK &&
+        return pgw_p9_dec_rversion(g_msg, len, g_tag, &msize, str, sizeof(str)) ==
+                       PGW_OK &&
                msize == v->msize && strcmp(str, v->str) == 0;
     case RP_READ:
         return pgw_p9_dec_rread(g_msg, len, g_tag, &n32, &data) == PGW_OK &&
-               n32 == v->data_len &&
-               (n32 == 0u || memcmp(data, v->data, n32) == 0);
+               n32 == v->data_len && (n32 == 0u || memcmp(data, v->data, n32) == 0);
     case RP_WRITE:
-        return pgw_p9_dec_rwrite(g_msg, len, g_tag, &n32) == PGW_OK &&
-               n32 == v->num;
+        return pgw_p9_dec_rwrite(g_msg, len, g_tag, &n32) == PGW_OK && n32 == v->num;
     case RP_WALK:
         if (pgw_p9_dec_rwalk(g_msg, len, g_tag, &nw, wq, P9_QIDS) != PGW_OK)
             return false;
@@ -232,8 +227,7 @@ static bool verify_var(uint32_t kind, size_t len, const reply_vals *v)
         }
         return true;
     default: /* RP_READLINK */
-        return pgw_p9_dec_rreadlink(g_msg, len, g_tag, str, sizeof(str)) ==
-                   PGW_OK &&
+        return pgw_p9_dec_rreadlink(g_msg, len, g_tag, str, sizeof(str)) == PGW_OK &&
                strcmp(str, v->str) == 0;
     }
 }
@@ -249,11 +243,9 @@ static bool verify_fixed(uint32_t kind, size_t len, const reply_vals *v)
     memset(&s, 0, sizeof(s));
     switch (kind) {
     case RP_ATTACH:
-        return pgw_p9_dec_rattach(g_msg, len, g_tag, &q) == PGW_OK &&
-               same_qid(&q, v, 0u);
+        return pgw_p9_dec_rattach(g_msg, len, g_tag, &q) == PGW_OK && same_qid(&q, v, 0u);
     case RP_MKDIR:
-        return pgw_p9_dec_rmkdir(g_msg, len, g_tag, &q) == PGW_OK &&
-               same_qid(&q, v, 0u);
+        return pgw_p9_dec_rmkdir(g_msg, len, g_tag, &q) == PGW_OK && same_qid(&q, v, 0u);
     case RP_LOPEN:
         return pgw_p9_dec_rlopen(g_msg, len, g_tag, &q, &iounit) == PGW_OK &&
                same_qid(&q, v, 0u) && iounit == v->num;
@@ -293,9 +285,9 @@ static bool pred_reply(const prop_case *c)
     g_tag = (uint16_t)c->b;
     size_t len = build_reply(kind, &v);
     bool ok = (kind == RP_ATTACH || kind == RP_MKDIR || kind == RP_LOPEN ||
-               kind == RP_GETATTR || kind == RP_STATFS || kind == RP_CLUNK)
-                  ? verify_fixed(kind, len, &v)
-                  : verify_var(kind, len, &v);
+               kind == RP_GETATTR || kind == RP_STATFS || kind == RP_CLUNK) ?
+                      verify_fixed(kind, len, &v) :
+                      verify_var(kind, len, &v);
     /* The framing of a reply we just built must always be readable. */
     pgw_p9_hdr h;
     memset(&h, 0, sizeof(h));
@@ -309,8 +301,8 @@ static void test_p9_prop_reply_round_trip(void)
 {
     uint32_t iters = prop_iters("PGW_PROP_ITERS", P9_ITERS);
     for (uint32_t k = 0; k < RP_KINDS; k++) {
-        prop_forall("9p reply build -> decode round trip", gen_reply, pred_reply,
-                    iters, 0x14057B7EF767814FULL ^ k);
+        prop_forall("9p reply build -> decode round trip", gen_reply, pred_reply, iters,
+                    0x14057B7EF767814FULL ^ k);
     }
 }
 PGW_TEST(test_p9_prop_reply_round_trip);

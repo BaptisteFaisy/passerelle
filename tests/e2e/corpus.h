@@ -38,10 +38,10 @@
 #include <string.h>
 
 #define PGW_CORPUS_VERSION 1u
-#define PGW_CORPUS_ENV     "PGW_CORPUS_SAVE"
-#define PGW_CORPUS_EXT     ".pgwcase"
-#define PGW_CORPUS_DETAIL  PGW_DIFF_MSG /* the bench message, whole */
-#define PGW_CORPUS_PATH    512u
+#define PGW_CORPUS_ENV "PGW_CORPUS_SAVE"
+#define PGW_CORPUS_EXT ".pgwcase"
+#define PGW_CORPUS_DETAIL PGW_DIFF_MSG /* the bench message, whole */
+#define PGW_CORPUS_PATH 512u
 
 typedef struct pgw_corpus_case {
     uint32_t suite_seed;
@@ -70,14 +70,14 @@ static inline uint64_t pgw_corpus_digest(const diff_op *ops, size_t n)
 
 /* Write `c` into `dir`. `path` (optional) receives the file that was written.
  * Returns 0 on success. */
-static inline int pgw_corpus_save(const char *dir, const pgw_corpus_case *c,
-                                  char *path, size_t path_cap)
+static inline int pgw_corpus_save(const char *dir, const pgw_corpus_case *c, char *path,
+                                  size_t path_cap)
 {
     char local[PGW_CORPUS_PATH];
     char *out = (path != NULL) ? path : local;
     size_t cap = (path != NULL) ? path_cap : sizeof(local);
-    int n = snprintf(out, cap, "%s/diff-%08X-%zu%s", dir, c->suite_seed,
-                     c->n_ops, PGW_CORPUS_EXT);
+    int n = snprintf(out, cap, "%s/diff-%08X-%zu%s", dir, c->suite_seed, c->n_ops,
+                     PGW_CORPUS_EXT);
     if (n <= 0 || (size_t)n >= cap)
         return -1;
     FILE *f = fopen(out, "w");
@@ -97,8 +97,7 @@ static inline int pgw_corpus_save(const char *dir, const pgw_corpus_case *c,
     return (fclose(f) == 0) ? 0 : -1;
 }
 
-static inline bool pgw_corpus_field(const char *line, const char *key,
-                                    const char **val)
+static inline bool pgw_corpus_field(const char *line, const char *key, const char **val)
 {
     size_t n = strlen(key);
     if (strncmp(line, key, n) != 0 || line[n] != ':')

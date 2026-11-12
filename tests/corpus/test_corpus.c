@@ -74,14 +74,13 @@ static int replay_one(const char *path)
         return -1;
     }
     if (c.n_ops > (size_t)PGW_DIFF_MAX_OPS) {
-        pgw_fail(__FILE__, __LINE__, "%s: %zu operations is not plausible",
-                 path, c.n_ops);
+        pgw_fail(__FILE__, __LINE__, "%s: %zu operations is not plausible", path,
+                 c.n_ops);
         return -1;
     }
     diff_op *ops = calloc(c.n_ops, sizeof(*ops));
     if (ops == NULL) {
-        pgw_fail(__FILE__, __LINE__, "%s: cannot allocate %zu operations", path,
-                 c.n_ops);
+        pgw_fail(__FILE__, __LINE__, "%s: cannot allocate %zu operations", path, c.n_ops);
         return -1;
     }
     diff_gen(ops, c.n_ops, c.suite_seed);
@@ -91,21 +90,19 @@ static int replay_one(const char *path)
         pgw_fail(__FILE__, __LINE__,
                  "%s: the stored operations no longer match the generator "
                  "(digest %016llX, stored %016llX) - regenerate the case",
-                 path, (unsigned long long)digest,
-                 (unsigned long long)c.ops_digest);
+                 path, (unsigned long long)digest, (unsigned long long)c.ops_digest);
         return -1;
     }
     char err[PGW_DIFF_MSG];
     long bad = diff_run(ops, c.n_ops, c.suite_seed, err, sizeof(err));
     free(ops);
     if (bad >= 0) {
-        pgw_fail(__FILE__, __LINE__,
-                 "%s: the stored divergence is back at op %ld (%s)", path, bad,
-                 err);
+        pgw_fail(__FILE__, __LINE__, "%s: the stored divergence is back at op %ld (%s)",
+                 path, bad, err);
         return -1;
     }
-    fprintf(stdout, "# corpus: %s replayed clean (%zu ops, seed %u)\n", path,
-            c.n_ops, c.suite_seed);
+    fprintf(stdout, "# corpus: %s replayed clean (%zu ops, seed %u)\n", path, c.n_ops,
+            c.suite_seed);
     return 0;
 }
 

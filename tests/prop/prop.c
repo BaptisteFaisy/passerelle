@@ -23,11 +23,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PROP_MIX     0x9E3779B97F4A7C15ULL
-#define PROP_MIX_A   0xBF58476D1CE4E5B9ULL
-#define PROP_MIX_B   0x94D049BB133111EBULL
-#define PROP_DUMP    24u   /* bytes shown in a failure report */
-#define PROP_MSG     768u  /* report buffer */
+#define PROP_MIX 0x9E3779B97F4A7C15ULL
+#define PROP_MIX_A 0xBF58476D1CE4E5B9ULL
+#define PROP_MIX_B 0x94D049BB133111EBULL
+#define PROP_DUMP 24u      /* bytes shown in a failure report */
+#define PROP_MSG 768u      /* report buffer */
 #define PROP_NAME_CH 0x61u /* 'a': names stay printable in a report */
 
 /* --- the generator -------------------------------------------------------- */
@@ -118,14 +118,9 @@ static bool knob_still_fails(prop_pred pred, prop_case *c)
 
 static void shrink_one_u64(prop_pred pred, prop_case *c, uint64_t *knob)
 {
-    static const uint64_t masks[] = { 0x0ULL,
-                                      0xFULL,
-                                      0xFFULL,
-                                      0xFFFFULL,
-                                      0xFFFFFFULL,
-                                      0xFFFFFFFFULL,
-                                      0xFFFFFFFFFFULL,
-                                      0xFFFFFFFFFFFFULL };
+    static const uint64_t masks[] = {0x0ULL,          0xFULL,           0xFFULL,
+                                     0xFFFFULL,       0xFFFFFFULL,      0xFFFFFFFFULL,
+                                     0xFFFFFFFFFFULL, 0xFFFFFFFFFFFFULL};
     uint64_t orig = *knob;
     for (size_t i = 0; i < sizeof(masks) / sizeof(masks[0]); i++) {
         *knob = orig & masks[i];
@@ -158,19 +153,16 @@ static void dump_hex(char *out, size_t cap, const uint8_t *b, size_t n)
         off += (size_t)snprintf(out + off, cap - off, "%02x", b[i]);
 }
 
-static void report(const char *name, uint64_t seed, uint32_t iter,
-                   const prop_case *c)
+static void report(const char *name, uint64_t seed, uint32_t iter, const prop_case *c)
 {
     char hex[PROP_DUMP * 2u + 8u];
     char msg[PROP_MSG];
-    dump_hex(hex, sizeof(hex), c->bytes,
-             (c->len < PROP_DUMP) ? c->len : PROP_DUMP);
+    dump_hex(hex, sizeof(hex), c->bytes, (c->len < PROP_DUMP) ? c->len : PROP_DUMP);
     snprintf(msg, sizeof(msg),
              "property \"%s\" failed: seed %llu iteration %u, shrunk to len "
              "%zu value 0x%llx a %u b %u tag \"%s\" bytes %s%s",
-             name, (unsigned long long)seed, iter, c->len,
-             (unsigned long long)c->value, c->a, c->b, c->tag, hex,
-             (c->len > PROP_DUMP) ? "..." : "");
+             name, (unsigned long long)seed, iter, c->len, (unsigned long long)c->value,
+             c->a, c->b, c->tag, hex, (c->len > PROP_DUMP) ? "..." : "");
     pgw_fail(__FILE__, __LINE__, "%s", msg);
 }
 
