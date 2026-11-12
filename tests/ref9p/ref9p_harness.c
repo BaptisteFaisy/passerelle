@@ -311,12 +311,17 @@ static pgw_err io_error(void)
                                                      : PGW_EIO;
 }
 
+/* MSG_NOSIGNAL: a server that closes the connection mid-frame must not kill
+ * the client with SIGPIPE while it is still writing (ROB-07). Without it the
+ * closing clunk of pgw_p9_session_close() raised SIGPIPE and the whole process
+ * died with exit status 141 instead of reporting PGW_EIO - found by
+ * tests/faulty/ (--fault close-mid-frame). */
 static pgw_err send_all(int fd, const void *buf, size_t len)
 {
     const uint8_t *p = (const uint8_t *)buf;
     size_t sent = 0;
     while (sent < len) {
-        ssize_t n = send(fd, p + sent, len - sent, 0);
+        ssize_t n = send(fd, p + sent, len - sent, MSG_NOSIGNAL);
         if (n <= 0) {
             if (n < 0 && errno == EINTR)
                 continue;
