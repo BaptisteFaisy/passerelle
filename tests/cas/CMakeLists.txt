@@ -70,3 +70,8 @@ set_tests_properties(cas-big-dir-100k PROPERTIES
     LABELS "long;directed"
     TIMEOUT 1800
     ENVIRONMENT "PGW_CAS_DIR_ENTRIES=100000")
+
+pgw_test(test_cas_path_len
+    SRCS test_cas_path_len.c ${CAS_MAIN} ${CAS_9P_SRCS}
+    DEPS pgw_diff pgw_proto9p
+    LABELS "directed;conformance")

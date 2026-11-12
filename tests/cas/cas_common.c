@@ -269,7 +269,7 @@ uint64_t cas_env_u64(const char *name, uint64_t def)
 
 static bool cas_truth_stat(const char *root, const char *rel, struct stat *st)
 {
-    char path[512];
+    char path[CAS_PATH_MAX];
     cas_path_join(path, sizeof(path), root, rel);
     return lstat(path, st) == 0;
 }
@@ -298,7 +298,7 @@ uint64_t cas_truth_blocks(const char *root, const char *rel)
 
 size_t cas_truth_count(const char *root, const char *rel)
 {
-    char path[512];
+    char path[CAS_PATH_MAX];
     cas_path_join(path, sizeof(path), root, rel);
     DIR *d = opendir(path);
     if (d == NULL)
@@ -317,7 +317,7 @@ size_t cas_truth_count(const char *root, const char *rel)
 bool cas_truth_read(const char *root, const char *rel, void *buf, size_t cap,
                     size_t *out_len)
 {
-    char path[512];
+    char path[CAS_PATH_MAX];
     cas_path_join(path, sizeof(path), root, rel);
     FILE *f = fopen(path, "rb");
     if (f == NULL)
@@ -325,6 +325,36 @@ bool cas_truth_read(const char *root, const char *rel, void *buf, size_t cap,
     *out_len = fread(buf, 1, cap, f);
     fclose(f);
     return true;
+}
+
+int cas_truth_mkdir_errno(const char *root, const char *rel, uint32_t mode)
+{
+    char path[CAS_PATH_MAX];
+    cas_path_join(path, sizeof(path), root, rel);
+    if (mkdir(path, (mode_t)mode) == 0)
+        return 0;
+    return errno;
+}
+
+int cas_truth_stat_errno(const char *root, const char *rel)
+{
+    struct stat st;
+    char path[CAS_PATH_MAX];
+    cas_path_join(path, sizeof(path), root, rel);
+    if (lstat(path, &st) == 0)
+        return 0;
+    return errno;
+}
+
+int cas_truth_create_errno(const char *root, const char *rel)
+{
+    char path[CAS_PATH_MAX];
+    cas_path_join(path, sizeof(path), root, rel);
+    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0)
+        return errno;
+    close(fd);
+    return 0;
 }
 
 /* --- host helpers --------------------------------------------------------- */
