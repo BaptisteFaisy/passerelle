@@ -57,6 +57,56 @@ a hostile or a larger-than-expected peer, not by reading it.
 - `.devcontainer/`: one development-environment definition, shared with the
   root `Dockerfile` and validated statically (PR #37).
 - `docs/vhost-user-front-end.md`: what that proof covers, and what it does not.
+- `tests/prop/`: a property harness on both codec boundaries — seeded per
+  iteration, shrinking to a minimal failing case, bounded so a hang is caught
+  by the test timeout. Round trip, capacity bounds, extremes and stability over
+  the 20 `proto9p` encoders, the 12 reply kinds, the 19 `protofuse` encoders
+  and the 12 decoders. No `hypothesis` dependency (P9-09, VFS-03, ROB-06).
+- `tests/corpus/`: a reduced divergence can be persisted as a regression case
+  (`PGW_CORPUS_SAVE=<dir>`, `tools/corpus-save.sh`) and is replayed by
+  `test_corpus` in the normal suite; the fuzzing campaigns keep the inputs
+  worth keeping under `tests/corpus/fuzz/` and the nightly run uploads them as
+  an artefact. The corpus is empty today, and that is honest: the differential
+  bench is clean (P9-09, ROB-06).
+- `tests/cas/`: a file replaced on the PC while it is open keeps its old
+  inode under the descriptor opened before, and the new file under the one
+  opened after; hard links keep one inode behind every name; the **existing**
+  differential bench now runs through the FUSE adapter against the same truth,
+  through a mount provider instead of a copy of the bench (ROB-04, VFS-05,
+  FS-15).
+- `tests/tracecap/` and `tools/regen-fixtures.py`: a real 9P exchange is
+  captured and rendered as a trace, the committed fixtures are regenerated
+  byte-identical run after run, and a check fails when they drift (P9-09).
+- `tests/interop/`: our production client against **`diod`**, a third-party 9P
+  server we did not write, in a CI job where the dependency exists; the local
+  run skips with the reason written out (P9-01 … P9-10).
+- `host/pgwutil/config.py`: one configuration module for the four tools —
+  command line > environment > configuration file > built-in default, with
+  `--show-config` (DX-01).
+- `qshare doctor`, `qshare init`, `qshare smoke`: what is missing on this
+  machine and the fix for each line; a guest project ready to be shared; one
+  command that proves the chain works here, skipping with the reason whatever
+  cannot run (DX-01).
+- An install and export story: `cmake --install` rules, a generated
+  `passerelle.pc`, an exported CMake package (`find_package(Passerelle)`), and
+  an out-of-tree check that installs to a throwaway prefix and compiles a
+  downstream consumer against it.
+- A generated SBOM and a build-provenance record (compiler, flags, build type,
+  commit), produced by a standard-library-only generator under `tools/`.
+- A coverage badge generated from the measured number and gated by a `--check`
+  mode: a stale badge fails CI instead of lying.
+- `docs/_assets/architecture.svg`: the architecture as a picture (hand-written
+  SVG, valid XML, no external font or image), and `docs/glossary.md`: the
+  English glossary.
+- `host/fsproof/agent.sh`: the guest-side entry point, with the interface
+  documented for a native C agent or a CPython port.
+- The QNX 7.1 guest disk is pinned by version and SHA256 in a committed
+  manifest, fetched by a script that verifies the checksum, booted in snapshot
+  mode so the pinned disk stays pristine, and cached in CI; the guest job
+  captures the kernel-side trace the image can give, and says plainly that it
+  is not the SDP's `traceprinter`.
+- `docs/adr/ADR-0006-*.md`: MSI-X first, INTx as the fallback, with the
+  measurements we have and what would make us revisit the decision.
 
 ### Fixed
 
@@ -83,6 +133,22 @@ a hostile or a larger-than-expected peer, not by reading it.
   buffer; with `-Werror=format-truncation` the `Debug` build did not compile at
   all. Fixed, and `nightly.yml` now builds `gcc + Debug + -Werror` so it cannot
   rot again (PR #31, #35).
+- **`pgw_rmfs_link()` left a stale link count**: only the entry of the new
+  name was invalidated, so the existing name kept serving the count it had
+  before the link (1 instead of 2) until its entry expired (FS-15).
+- **The FUSE adapter reported the two pseudo entries of a listing** (`.` and
+  `..`), which the 9P adapter and the POSIX truth do not: the two adapters
+  disagreed with each other (FS-03).
+- **The QEMU-dependent tests took the first `qemu-system-x86_64` on PATH** and
+  asserted on its error message. On the self-hosted runner a broken QEMU build
+  installed in `~/.local/bin` shadowed the working one and died on its
+  accelerator module, so `main` was red for a reason that had nothing to do
+  with the code. Every candidate is now probed — the probe asks for a device
+  that does not exist, so a working QEMU loads the machine and its accelerator
+  and then refuses the device — and the first one that starts is used; when
+  none does, the tests skip with the reason written out.
+- **The capture log was used before it was initialised** in the new trace
+  capture (P9-09).
 
 
 

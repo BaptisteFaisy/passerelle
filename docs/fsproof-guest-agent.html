@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fsproof Guest Agent - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="_assets/style.css">
+<link rel="icon" href="_assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 0006 msix primary intx fallback" href="adr-ADR-0006-msix-primary-intx-fallback.html">Adr 0006 Msix Primary Intx Fallback</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="fsproof guest agent" href="fsproof-guest-agent.html">Fsproof Guest Agent</a>
+<a class="nav-item" data-title="glossary" href="glossary.html">Glossary</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+<a class="nav-item" data-title="vhost user front end" href="vhost-user-front-end.html">Vhost User Front End</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="running-the-fsproof-guest-agent-inside-a-guest">Running the fsproof guest agent inside a guest</h1>
+<p>&lt;strong&gt;Gap 97&lt;/strong&gt; — "the <code>host/fsproof</code> guest agent has no way to run inside a guest yet (needs a cross-compiler)". This page establishes what the agent really needs, and ships the part that can be shipped today.</p>
+<h2 id="1-what-the-agent-is">1. What the agent is</h2>
+<p><code>host/fsproof/guest_agent.py</code> is a &lt;strong&gt;single Python 3 file&lt;/strong&gt; that uses only the standard library and imports nothing from the rest of the repository: it can be copied to the guest on its own. It reads a JSON &lt;em&gt;sequence&lt;/em&gt; of operations, replays them in a work directory, and writes a JSON &lt;em&gt;snapshot&lt;/em&gt; of the tree it sees.</p>
+<p>The host side is <code>GuestReplayer</code> in <code>host/fsproof/diff.py</code>: it writes the sequence next to the work directory and appends three options to the guest command:</p>
+<pre><code>&lt;guest command&gt; --work &lt;dir&gt; --sequence &lt;file&gt; --snapshot &lt;file&gt;</code></pre>
+<p>So the guest command must be a program that accepts exactly these three options. That is the whole interface, and it is now fixed.</p>
+<h2 id="2-what-it-really-needs-an-interpreter-not-a-cross-compiler">2. What it really needs: an interpreter, not a cross-compiler</h2>
+<p>The gap text says the agent "needs a cross-compiler". That is the wrong diagnosis: &lt;strong&gt;the agent is not compiled&lt;/strong&gt;. It needs a <code>python3</code> (3.9 or later) &lt;em&gt;inside the guest&lt;/em&gt;, and:</p>
+<ul>
+<li>QNX Neutrino 8.0 ships no Python interpreter, and QNX publishes no CPython port for Neutrino;</li>
+<li>the QNX 7.1.0 guest used by our CI has no toolchain at all — see [qnx71-guest.md](qnx71-guest.md) §2 — so it has no interpreter either.</li>
+</ul>
+<p>&lt;strong&gt;Verdict.&lt;/strong&gt; With today's guest images the agent cannot run inside a QNX guest, and the blocker is &lt;em&gt;an interpreter in the guest&lt;/em&gt;, not a cross-compiler. A cross-compiler is only needed for the second option below.</p>
+<h2 id="3-the-stable-interface-ready-to-run-today">3. The stable interface, ready to run today</h2>
+<p><code>host/fsproof/agent.sh</code> is the guest-side entry point. It takes the three options above and resolves, in order: <code>PGW_AGENT_BIN</code> (a native agent built for the guest), <code>PGW_PYTHON</code>, <code>python3</code>, <code>python</code> — the last three driving <code>guest_agent.py</code>, which sits next to it. When nothing can run the bench it exits 3 and says what is missing.</p>
+<pre><code class="language-bash"># Once per share: put the entry point and the agent in the share.
+cp host/fsproof/agent.sh host/fsproof/guest_agent.py "$SHARE"/
+
+# In the guest (the share is /host in the default image):
+sh /host/agent.sh --work /host/.fsproof-work \
+                   --sequence /host/seq.json \
+                   --snapshot /host/snap.json
+
+# On the host: the bench appends the three options itself.
+python3 -m fsproof diff --seed 7 --count 200 \
+    --guest-cmd "qrun --console /tmp/qnx-console.sock /host/agent.sh"</code></pre>
+<p>The sequence and the snapshot must live &lt;strong&gt;inside the share&lt;/strong&gt;: the bench writes them next to the work directory and reads the snapshot back from the same place, and the guest and the PC then look at one and the same directory — that is what makes the PC folder the truth.</p>
+<h2 id="4-the-two-ways-to-get-an-interpreter-into-the-guest">4. The two ways to get an interpreter into the guest</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>What it needs</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;strong&gt;(a) A Python 3.9+ interpreter in the image&lt;/strong&gt;</td>
+<td>A cross-build of CPython for the guest target: SDP 8.0, <code>qcc -V gcc_ntox86_64</code> (x86_64 guest) or <code>qcc -V gcc_ntoaarch64le</code> (ARM64 guest). CPython has no official Neutrino support, so this is a port, not a build.</td>
+<td>Not done: no SDP on this machine, and no public Neutrino port to reuse.</td>
+</tr>
+<tr>
+<td>&lt;strong&gt;(b) A native agent written in C&lt;/strong&gt;</td>
+<td>The SDP 8.0 toolchain for the guest target, and a C implementation of the same three options and the same JSON snapshot format.</td>
+<td>Not done: the C source does not exist yet. The interface above is fixed precisely so that it can be dropped in unchanged.</td>
+</tr>
+</tbody>
+</table>
+<p>Either way, <code>PGW_AGENT_BIN</code> (or <code>PGW_PYTHON</code>) is the switch that tells the entry point what to run, and the host side of the bench does not change.</p>
+<h2 id="5-what-is-proven-here-and-what-is-not">5. What is proven here, and what is not</h2>
+<p>&lt;strong&gt;Proven on this PC&lt;/strong&gt; — <code>host/tests/test_fsproof_guest_agent.py</code>:</p>
+<ul>
+<li>the entry point runs the real agent and produces the expected snapshot;</li>
+<li>it forwards the three options the differential test appends;</li>
+<li>it works whatever the working directory is (the guest runs it from the share);</li>
+<li>`PGW_AGENT_BIN` is honoured, which is the slot a native agent takes;</li>
+<li>with no interpreter and no native agent it exits 3 with a diagnosis instead of failing silently.</li>
+</ul>
+<p>&lt;strong&gt;Not proven:&lt;/strong&gt;</p>
+<ul>
+<li>that the agent runs *inside* a QNX guest — no QNX guest with an interpreter exists on this machine, and none exists in CI;</li>
+<li>that the QNX 7.1.0 CI guest can run the bench: it has no Python at all;</li>
+<li>the native C agent: it does not exist, and it cannot be written and built here without an SDP (option (b) above).</li>
+</ul>
+<p>The bench itself, on the PC, is already covered by the differential test of <a href="verification-status.html">docs/verification-status.md</a>; what is missing is only the last hop — an interpreter inside the guest.</p>
+    <nav class="pager">
+      <a class="prev" href="adr-ADR-005-mergify-queue-strict-false.html">Previous</a>
+      <a class="next" href="glossary.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="_assets/search.js"></script>
+</body>
+</html>

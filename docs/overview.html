@@ -59,11 +59,14 @@
 <a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
 <a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
 <a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 0006 msix primary intx fallback" href="adr-ADR-0006-msix-primary-intx-fallback.html">Adr 0006 Msix Primary Intx Fallback</a>
 <a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
 <a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
 <a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
 <a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
 <a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="fsproof guest agent" href="fsproof-guest-agent.html">Fsproof Guest Agent</a>
+<a class="nav-item" data-title="glossary" href="glossary.html">Glossary</a>
 <a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
 <a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
 <a class="nav-item" data-title="release" href="release.html">Release</a>
@@ -73,6 +76,7 @@
   <main class="content">
     <p class="crumb">Start</p>
     <h1 id="passerelle">Passerelle</h1>
+<p><img src="https://github.com/BaptisteFaisy/passerelle/blob/main/docs/_assets/coverage.svg" alt="coverage"></p>
 <p>&lt;strong&gt;Passerelle&lt;/strong&gt; is a high-performance host-guest shared filesystem driver for &lt;strong&gt;QNX® Neutrino® 8.0&lt;/strong&gt; virtual machines under QEMU, providing seamless directory sharing via &lt;strong&gt;9P2000.L&lt;/strong&gt; and &lt;strong&gt;virtiofs&lt;/strong&gt; over modern virtio-PCI and virtio-MMIO.</p>
 <p>Submitted to the &lt;strong&gt;QNX Global Hackathon 2026&lt;/strong&gt; under the <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/LICENSE">Apache-2.0</a> license.</p>
 <hr>
@@ -177,6 +181,8 @@
         │
    Host Workstation Directory</code></pre>
 <p>See <a href="architecture.html">docs/architecture.md</a> for full design documentation.</p>
+<p><img src="docs/_assets/architecture.svg" alt="Passerelle architecture: the three layers inside the QNX guest, the QEMU device, and the host side with the shared directory and the host tools"></p>
+<p>The picture is the README version of the design: three layers inside the guest (resource manager <code>rmfs/</code>, wire protocols <code>proto9p/</code> and <code>protofuse/</code>, virtio transport <code>virtio/</code>), one QEMU device band underneath, and the host directory on the other side — plus the host tools (<code>qshare</code>, <code>qrun</code>, <code>fsproof</code>, <code>pbench</code>) and the reference servers that drive the same client without QNX.</p>
 <hr>
 <h2 id="one-command-demo">One-Command Demo</h2>
 <p>On the host workstation (tooling status: see <a href="verification-status.html">verification-status.md</a>):</p>
@@ -220,6 +226,24 @@ cmake -B build-qnx-arm \
       -DCMAKE_SYSTEM_PROCESSOR=aarch64le
 cmake --build build-qnx-arm -j8</code></pre>
 <p>Detailed step-by-step instructions and test level runner commands are available in <a href="building.html">docs/building.md</a>.</p>
+<h3 id="3-install-the-package-use-it-from-another-project">3. Install the package, use it from another project</h3>
+<p>The portable stack can be installed into a prefix and consumed by another CMake project or by any build that speaks <code>pkg-config</code>:</p>
+<pre><code class="language-bash">cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local
+cmake --build build -j8
+cmake --install build
+
+# downstream, with CMake
+find_package(Passerelle REQUIRED)
+target_link_libraries(my_app PRIVATE Passerelle::pgw_common)
+
+# downstream, with pkg-config
+cc $(pkg-config --cflags passerelle) app.c $(pkg-config --libs passerelle)</code></pre>
+<p><code>tests/install</code> proves it end to end on every build: the tree is installed into a throwaway prefix, then a small consumer is built from that prefix with <code>pkg-config</code> and with <code>find_package(Passerelle)</code>, and runs.</p>
+<h3 id="4-supply-chain-sbom-provenance-coverage-badge">4. Supply chain: SBOM, provenance, coverage badge</h3>
+<ul>
+<li>**SBOM** — `python3 tools/sbom/generate_sbom.py --output passerelle.sbom.json` writes a CycloneDX 1.5 document listing the real inputs (the C sources with their SHA-256, the version, the toolchain, the git commit) and states explicitly that the shipped artefact depends on no third-party library. The build provenance (compiler, flags, build type, commit, dirty state) goes to the companion file.</li>
+<li>**Coverage badge** — the badge at the top of this file is written by the `coverage` job of [`.github/workflows/quality.yml`](.github/workflows/quality.yml) from the gcov measurement of the production C code, and committed with its record (`docs/_assets/coverage.json`). `tools/quality/coverage_badge.py --check` fails the build when the badge does not match its record or when the measurement is too old: a badge that lies is worse than no badge.</li>
+</ul>
 <hr>
 <h2 id="honest-verification-status">Honest Verification Status</h2>
 <p>Every requirement is tracked against automated testing, and this README only claims what a command in this repository actually proves. What still needs a QNX SDP or a QNX guest is said so explicitly.</p>
@@ -239,6 +263,7 @@ cmake --build build-qnx-arm -j8</code></pre>
 <ul>
 <li>[docs/spec-en.md](docs/spec-en.md) — Complete English Specification (Requirements VIO, P9, FS, QNX, PERF, ROB, SEC, DX, VFS, SRV)</li>
 <li>[docs/spec-fr.md](docs/spec-fr.md) — Original French Specification (authoritative text)</li>
+<li>[docs/glossary.md](docs/glossary.md) — English glossary of every term (9P, virtio, FUSE, QNX, host tools), with the French equivalent and the source of each term</li>
 <li>[docs/architecture.md](docs/architecture.md) — Detailed Three-Layer Design &amp; Tricky Issues Resolution</li>
 <li>[docs/user-guide.md](docs/user-guide.md) — User Guide, Mounting Options, CMake and Rust Workflows</li>
 <li>[docs/state-of-the-art.md](docs/state-of-the-art.md) — Comprehensive Analysis of Existing Projects</li>

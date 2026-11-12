@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="_assets/style.css">
+<link rel="icon" href="_assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 0006 msix primary intx fallback" href="adr-ADR-0006-msix-primary-intx-fallback.html">Adr 0006 Msix Primary Intx Fallback</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="fsproof guest agent" href="fsproof-guest-agent.html">Fsproof Guest Agent</a>
+<a class="nav-item" data-title="glossary" href="glossary.html">Glossary</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+<a class="nav-item" data-title="vhost user front end" href="vhost-user-front-end.html">Vhost User Front End</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="glossary">Glossary</h1>
+<p>Every term this repository uses, with a one-line definition, the French equivalent when the project's own French documentation has one, and where the term comes from. The glossary is the English companion of <a href="spec-en.html">docs/spec-en.md</a> §15, which lists only the terms the specification needs in passing; this page covers the vocabulary of the code as well.</p>
+<p>Nothing here is invented: each entry points at the specification, the protocol document or the source file that uses the term. The French specification <a href="spec-fr.html">docs/spec-fr.md</a> remains the authoritative text.</p>
+<h2 id="1-sharing-a-directory-9p2000l">1. Sharing a directory: 9P2000.L</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+<th>French</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9P / 9P2000.L</td>
+<td>Remote filesystem protocol from Plan 9; the Linux variant carries errno, uid/gid and POSIX mode semantics.</td>
+<td>9P2000.L</td>
+<td>9P2000.L protocol description (diod), spec §1.2</td>
+</tr>
+<tr>
+<td><code>Tversion</code> / <code>Rversion</code></td>
+<td>First exchange of a session: the client proposes a version and an <code>msize</code>, the server answers with what it accepts.</td>
+<td>—</td>
+<td><code>proto9p/include/pgw/p9.h</code> (<code>PGW_P9_TVERSION</code>)</td>
+</tr>
+<tr>
+<td><code>Tattach</code> / <code>Rattach</code></td>
+<td>Binds a fid to the root of a share, with the credentials the client presents.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TATTACH</code>)</td>
+</tr>
+<tr>
+<td><code>Twalk</code> / <code>Rwalk</code></td>
+<td>Moves along a path one element at a time and returns the qid of every element visited.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TWALK</code>)</td>
+</tr>
+<tr>
+<td><code>Tclunk</code> / <code>Rclunk</code></td>
+<td>Releases a fid; the client will not use it again.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TCLUNK</code>)</td>
+</tr>
+<tr>
+<td><code>Tlerror</code> / <code>Rlerror</code></td>
+<td>The error reply: a Linux errno value, the only answer a server sends for a failed request.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TLERROR</code>)</td>
+</tr>
+<tr>
+<td><code>Tread</code> / <code>Twrite</code></td>
+<td>Transfer bytes at an offset on an open fid (<code>Rread</code>, <code>Rwrite</code> answer them).</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TREAD</code>)</td>
+</tr>
+<tr>
+<td><code>Tlopen</code> / <code>Tlcreate</code></td>
+<td>Open an existing fid, or create and open a file; both return the IO unit size.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TLOPEN</code>)</td>
+</tr>
+<tr>
+<td><code>Tgetattr</code> / <code>Tsetattr</code></td>
+<td>Read or write the metadata of a fid, field by field, through a request mask.</td>
+<td>—</td>
+<td>same, masks <code>PGW_P9_GETATTR_*</code></td>
+</tr>
+<tr>
+<td><code>Treaddir</code></td>
+<td>List a directory: a sequence of entries, each carrying its own qid.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TREADDIR</code>)</td>
+</tr>
+<tr>
+<td><code>Tstatfs</code></td>
+<td>Filesystem statistics of the share: size, free space, maximum name length.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TSTATFS</code>)</td>
+</tr>
+<tr>
+<td><code>Tfsync</code></td>
+<td>Ask the server to flush the pending writes of a fid to the host storage.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TFSYNC</code>)</td>
+</tr>
+<tr>
+<td><code>Tlock</code> / <code>Tgetlock</code></td>
+<td>Advisory byte-range locking over the wire (FS-14).</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TLOCK</code>)</td>
+</tr>
+<tr>
+<td><code>Tmkdir</code> <code>Tlink</code> <code>Tsymlink</code> <code>Tmknod</code> <code>Trename</code> <code>Trenameat</code> <code>Tunlinkat</code> <code>Tremove</code></td>
+<td>The namespace operations of 9P2000.L: directory, hard link, symlink, device node, rename, unlink, remove.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TMKDIR</code> … <code>PGW_P9_TREMOVE</code>)</td>
+</tr>
+<tr>
+<td><code>Treadlink</code></td>
+<td>Read the target of a symbolic link.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TREADLINK</code>)</td>
+</tr>
+<tr>
+<td><code>Tauth</code></td>
+<td>Optional authentication exchange before an attach; not used by this client today.</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TAUTH</code>)</td>
+</tr>
+<tr>
+<td><code>Tflush</code></td>
+<td>Ask the server to abandon a request the client no longer waits for (signal interruption).</td>
+<td>—</td>
+<td>same (<code>PGW_P9_TFLUSH</code>)</td>
+</tr>
+<tr>
+<td>fid</td>
+<td>The 32-bit handle a client uses to refer to a file across requests.</td>
+<td>fid</td>
+<td>9P2000.L protocol</td>
+</tr>
+<tr>
+<td>qid</td>
+<td>The 128-bit identity of a file: type, version and path (or inode).</td>
+<td>qid</td>
+<td>9P2000.L; <code>pgw_p9_qid</code></td>
+</tr>
+<tr>
+<td><code>msize</code></td>
+<td>Maximum size of one 9P message; this project negotiates 128 KiB by default.</td>
+<td>taille maximale de message</td>
+<td><code>common/include/pgw/limits.h</code> (<code>PGW_MSIZE_DEFAULT</code>)</td>
+</tr>
+<tr>
+<td>round trip</td>
+<td>One request and its reply; the unit of cost of a shared filesystem.</td>
+<td>aller-retour</td>
+<td>spec §7.5, <code>host/bench/roundtrips.py</code></td>
+</tr>
+<tr>
+<td>mount tag</td>
+<td>The string configured on the QEMU command line and matched by the guest to find its share.</td>
+<td>étiquette de montage</td>
+<td>virtio-9p device (<code>PGW_VIO_9P_F_MOUNT_TAG</code>)</td>
+</tr>
+<tr>
+<td>security model</td>
+<td>How QEMU maps guest ownership onto the host directory: <code>passthrough</code>, <code>mapped-xattr</code>, <code>mapped-file</code>.</td>
+<td>modèle de sécurité</td>
+<td>QEMU 9P documentation, spec §5.3.7</td>
+</tr>
+<tr>
+<td><code>multidevs=remap</code></td>
+<td>QEMU option that remaps inode numbers when one share spans several host filesystems.</td>
+<td>—</td>
+<td>QEMU 9P documentation, spec §5.3.8</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-sharing-a-directory-fuse-and-virtiofs">2. Sharing a directory: FUSE and virtiofs</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+<th>French</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FUSE</td>
+<td>The Linux protocol between the kernel and a userspace filesystem server.</td>
+<td>FUSE</td>
+<td>Linux kernel / libfuse</td>
+</tr>
+<tr>
+<td>FUSE opcode</td>
+<td>The numeric type of a FUSE request (<code>LOOKUP</code> = 1, <code>FORGET</code> = 2, <code>GETATTR</code> = 3 …).</td>
+<td>code d'opération</td>
+<td><code>protofuse/include/pgw/fusep.h</code></td>
+</tr>
+<tr>
+<td><code>LOOKUP</code> / <code>FORGET</code></td>
+<td>The pair that holds the reference count of an inode in a virtiofs session.</td>
+<td>—</td>
+<td>same (<code>PGW_FUSE_LOOKUP</code>, <code>PGW_FUSE_FORGET</code>)</td>
+</tr>
+<tr>
+<td><code>BATCH_FORGET</code></td>
+<td>One request that drops several inode references at once.</td>
+<td>—</td>
+<td>same (<code>PGW_FUSE_BATCH_FORGET</code>)</td>
+</tr>
+<tr>
+<td><code>INTERRUPT</code></td>
+<td>Control request asking the server to abandon a request still in flight.</td>
+<td>—</td>
+<td>same (<code>PGW_FUSE_INTERRUPT</code>)</td>
+</tr>
+<tr>
+<td>virtiofs</td>
+<td>Shared filesystem for virtual machines: FUSE transported over virtio.</td>
+<td>virtiofs</td>
+<td>virtio-fs project, spec §1.2</td>
+</tr>
+<tr>
+<td>vhost-user</td>
+<td>The protocol by which a hypervisor hands a virtqueue over to a userspace device process.</td>
+<td>—</td>
+<td>vhost-user specification, <code>docs/vhost-user-front-end.md</code></td>
+</tr>
+<tr>
+<td><code>virtiofsd</code></td>
+<td>The reference virtiofs daemon: the userspace device that serves a directory to QEMU.</td>
+<td>—</td>
+<td>virtio-fs project</td>
+</tr>
+<tr>
+<td>inode</td>
+<td>The unique identity of a file in a POSIX filesystem; virtiofs counts references to it.</td>
+<td>inode</td>
+<td>POSIX</td>
+</tr>
+<tr>
+<td>hiprio queue</td>
+<td>The virtqueue that carries the priority FUSE requests (<code>INTERRUPT</code>, <code>FORGET</code>).</td>
+<td>file de haute priorité</td>
+<td>spec §6.9 (VFS-02)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-the-virtio-transport">3. The virtio transport</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+<th>French</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>virtio</td>
+<td>The standard for paravirtualized devices: guest and hypervisor share descriptor rings.</td>
+<td>virtio</td>
+<td>virtio specification</td>
+</tr>
+<tr>
+<td>virtqueue</td>
+<td>The ring of descriptors shared by the guest driver and the device (<code>pgw_virtq</code>).</td>
+<td>file virtuelle</td>
+<td>virtio specification, <code>virtio/include/pgw/virtio.h</code></td>
+</tr>
+<tr>
+<td>split virtqueue</td>
+<td>The virtqueue layout with three separate regions: descriptor table, avail ring, used ring.</td>
+<td>file virtuelle scindée</td>
+<td>virtio specification §2.7</td>
+</tr>
+<tr>
+<td>descriptor</td>
+<td>One entry of a virtqueue: buffer address, length, flags and next index.</td>
+<td>descripteur</td>
+<td>virtio specification</td>
+</tr>
+<tr>
+<td>indirect descriptor</td>
+<td>A descriptor pointing at a table of descriptors, so a chain can carry more buffers than the ring holds (VIO-08).</td>
+<td>descripteur indirect</td>
+<td><code>PGW_VIO_F_RING_INDIRECT_DESC</code></td>
+</tr>
+<tr>
+<td>avail ring</td>
+<td>The ring the guest fills with the descriptor chains it hands to the device.</td>
+<td>file de disponibilité</td>
+<td>virtio specification §2.7</td>
+</tr>
+<tr>
+<td>used ring</td>
+<td>The ring the device fills with the chains it has finished serving.</td>
+<td>file d'utilisation</td>
+<td>virtio specification §2.7</td>
+</tr>
+<tr>
+<td><code>eventfd</code></td>
+<td>The Linux notification primitive QEMU uses for kick and call; the only signal a vhost-user backend needs.</td>
+<td>—</td>
+<td>Linux kernel, <code>host/vhost/</code></td>
+</tr>
+<tr>
+<td>doorbell</td>
+<td>The MMIO or PCI write that tells the device new descriptors are available.</td>
+<td>—</td>
+<td>virtio specification §2.1.2</td>
+</tr>
+<tr>
+<td><code>EVENT_IDX</code></td>
+<td>The feature that lets each side say when it actually wants to be notified.</td>
+<td>—</td>
+<td><code>PGW_VIO_F_RING_EVENT_IDX</code></td>
+</tr>
+<tr>
+<td>feature bits</td>
+<td>The 64-bit flags negotiated between driver and device before the device is used.</td>
+<td>bits de fonctionnalité</td>
+<td><code>PGW_VIO_F_VERSION_1</code></td>
+</tr>
+<tr>
+<td>status register</td>
+<td>The register walked through <code>ACKNOWLEDGE</code> → <code>DRIVER</code> → <code>FEATURES_OK</code> → <code>DRIVER_OK</code>.</td>
+<td>registre d'état</td>
+<td><code>PGW_VIO_STATUS_*</code></td>
+</tr>
+<tr>
+<td>scatter-gather list</td>
+<td>The list of (address, length) pairs describing one transfer without copying it (VIO-07).</td>
+<td>liste de dispersion-réunion</td>
+<td><code>pgw_vio_sg</code></td>
+</tr>
+<tr>
+<td>zero copy</td>
+<td>A transfer whose payload is never copied between layers.</td>
+<td>copie nulle</td>
+<td>spec §6.1</td>
+</tr>
+<tr>
+<td>MSI-X</td>
+<td>The message-signaled interrupt mechanism of modern PCI devices.</td>
+<td>MSI-X</td>
+<td>PCI specification, spec §5.3.5</td>
+</tr>
+<tr>
+<td>INTx</td>
+<td>The legacy pin-based PCI interrupt; the fallback when MSI-X is unavailable.</td>
+<td>INTx</td>
+<td>PCI specification</td>
+</tr>
+<tr>
+<td>PCI capability</td>
+<td>One entry of a device's capability list; virtio uses vendor capabilities (id <code>0x09</code>).</td>
+<td>capacité PCI</td>
+<td>PCI specification, <code>docs/qnx-abi.md</code></td>
+</tr>
+<tr>
+<td>BAR</td>
+<td>Base address register: the PCI address space a device claims.</td>
+<td>registre d'adresse de base</td>
+<td>PCI specification, <code>tests/qemu/qnx71/</code></td>
+</tr>
+<tr>
+<td>MMIO</td>
+<td>Memory-mapped I/O: the device registers appear at fixed addresses (ARM64 guests).</td>
+<td>E/S mappées en mémoire</td>
+<td><code>pgw_mmio_io</code></td>
+</tr>
+<tr>
+<td><code>libpci</code></td>
+<td>The QNX 8.0 library a driver uses to attach to a PCI device and read its capabilities.</td>
+<td>—</td>
+<td>QNX SDP 8.0 documentation</td>
+</tr>
+<tr>
+<td>in-memory mock transport</td>
+<td>A backend simulating the device rings on the PC, so the stack is testable without QEMU (VIO-10).</td>
+<td>transport simulé en mémoire</td>
+<td><code>virtio/</code> (VIO-10)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-the-qnx-guest">4. The QNX guest</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+<th>French</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QNX Neutrino</td>
+<td>The microkernel operating system the guest runs.</td>
+<td>—</td>
+<td>QNX documentation</td>
+</tr>
+<tr>
+<td>resource manager</td>
+<td>A userspace process serving part of the POSIX namespace through messages.</td>
+<td>gestionnaire de ressources</td>
+<td>QNX resource manager documentation, spec §5.1</td>
+</tr>
+<tr>
+<td><code>resmgr_attach()</code></td>
+<td>The call that binds a resource manager to a pathname in the namespace.</td>
+<td>—</td>
+<td>QNX documentation</td>
+</tr>
+<tr>
+<td><code>iofunc</code></td>
+<td>The QNX library layer implementing the common filesystem messages on top of a resource manager.</td>
+<td>—</td>
+<td><code>docs/qnx-abi.md</code></td>
+</tr>
+<tr>
+<td>QNX message (IPC)</td>
+<td>The Neutrino inter-process communication: <code>MsgSend</code>, <code>MsgReceive</code>, <code>MsgReply</code>.</td>
+<td>message QNX</td>
+<td>QNX documentation</td>
+</tr>
+<tr>
+<td>priority inheritance</td>
+<td>A worker thread runs at the priority of the client it currently serves (QNX-03).</td>
+<td>héritage de priorité</td>
+<td>spec §5.2</td>
+</tr>
+<tr>
+<td>IST</td>
+<td>Interrupt service thread: the thread created by <code>InterruptAttachThread()</code> that waits on interrupts.</td>
+<td>thread de service d'interruption</td>
+<td>QNX 8.0 documentation</td>
+</tr>
+<tr>
+<td><code>InterruptAttachThread()</code></td>
+<td>The QNX 8.0 API replacing <code>InterruptAttach()</code>; no user ISR runs in kernel context.</td>
+<td>—</td>
+<td>QNX 8.0 documentation</td>
+</tr>
+<tr>
+<td><code>procnto</code></td>
+<td>The QNX 8.0 kernel process that owns the pathname space.</td>
+<td>—</td>
+<td>QNX documentation</td>
+</tr>
+<tr>
+<td>SDP</td>
+<td>The QNX Software Development Platform: <code>qcc</code>, <code>mkifs</code>, <code>mkqnximage</code>, the guest toolchain.</td>
+<td>plateforme de développement QNX</td>
+<td>QNX documentation</td>
+</tr>
+<tr>
+<td><code>qcc</code></td>
+<td>The QNX compiler driver; <code>-V gcc_ntox86_64</code> or <code>-V gcc_ntoaarch64le</code> selects the target.</td>
+<td>—</td>
+<td>QNX SDP documentation</td>
+</tr>
+<tr>
+<td>IFS</td>
+<td>The Initial Filesystem: the bootable image a QNX guest starts from.</td>
+<td>système de fichiers initial</td>
+<td>QNX documentation</td>
+</tr>
+<tr>
+<td>IFS fragment (build file)</td>
+<td><code>image/passerelle.build</code>: the list of files an image build file must contain for the driver to boot and mount the share.</td>
+<td>fragment de fichier de construction</td>
+<td><code>image/README.md</code></td>
+</tr>
+<tr>
+<td><code>mkqnximage</code></td>
+<td>The QNX utility that builds and launches a virtual-machine disk image.</td>
+<td>—</td>
+<td>QNX documentation, spec §15</td>
+</tr>
+<tr>
+<td>abilities</td>
+<td>The fine-grained privileges a QNX process keeps after dropping root.</td>
+<td>capacités</td>
+<td><code>image/passerelle.sec</code></td>
+</tr>
+<tr>
+<td>security policy</td>
+<td>The QNX 8.0 file granting abilities to processes (<code>image/passerelle.sec</code>).</td>
+<td>politique de sécurité</td>
+<td>QNX 8.0 documentation</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-host-tools-testing-and-project-vocabulary">5. Host tools, testing and project vocabulary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+<th>French</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qshare</code></td>
+<td>Host command preparing and starting QEMU with the share (DX-01, DX-02).</td>
+<td>—</td>
+<td><code>host/qshare/</code></td>
+</tr>
+<tr>
+<td><code>qrun</code></td>
+<td>Host command running a program from the share inside the guest (DX-03).</td>
+<td>—</td>
+<td><code>host/qshare/qrun.py</code></td>
+</tr>
+<tr>
+<td><code>fsproof</code></td>
+<td>Host conformance bench: differential test, content exerciser, directed cases (spec 7.2-7.4).</td>
+<td>—</td>
+<td><code>host/fsproof/</code></td>
+</tr>
+<tr>
+<td><code>pbench</code></td>
+<td>Host comparative benchmark: round trips, throughput, metadata, mixed load (PERF-01 to PERF-07).</td>
+<td>—</td>
+<td><code>host/bench/</code></td>
+</tr>
+<tr>
+<td>guest agent</td>
+<td>The program running &lt;em&gt;inside&lt;/em&gt; the guest: it replays a sequence and writes back a snapshot.</td>
+<td>agent invité</td>
+<td><code>host/fsproof/guest_agent.py</code></td>
+</tr>
+<tr>
+<td>sequence</td>
+<td>The JSON list of operations a bench sends to the agent.</td>
+<td>séquence</td>
+<td><code>host/fsproof/gen.py</code></td>
+</tr>
+<tr>
+<td>snapshot</td>
+<td>The JSON description of a tree: path, kind, size, mode, mtime, SHA-256.</td>
+<td>instantané</td>
+<td><code>host/fsproof/guest_agent.py</code></td>
+</tr>
+<tr>
+<td>differential test</td>
+<td>Run the same sequence in the guest and on the PC, then compare the two trees; the PC is the truth.</td>
+<td>test différentiel</td>
+<td>spec §7.2</td>
+</tr>
+<tr>
+<td>reduction</td>
+<td>Shrinking a failing sequence to the shortest prefix that still reproduces the divergence.</td>
+<td>réduction</td>
+<td><code>host/fsproof/diff.py</code></td>
+</tr>
+<tr>
+<td>regression</td>
+<td>The stored failing case, replayable with <code>fsproof diff --replay</code>.</td>
+<td>régression</td>
+<td><code>host/fsproof/replay.py</code></td>
+</tr>
+<tr>
+<td>reference server</td>
+<td>An independent implementation (<code>tests/ref9p</code>, <code>tests/fuse_ref</code>) our client is tested against, so the test is not self-referential.</td>
+<td>serveur de référence</td>
+<td><code>tests/ref9p/README.md</code></td>
+</tr>
+<tr>
+<td>content exerciser</td>
+<td>Workers hammering a file with writes and checking every read-back (spec §7.3).</td>
+<td>—</td>
+<td><code>host/fsproof/exercise.py</code></td>
+</tr>
+<tr>
+<td>directed case</td>
+<td>One row of the edge-case table of spec §7.4.</td>
+<td>cas dirigé</td>
+<td><code>host/fsproof/cases.py</code></td>
+</tr>
+<tr>
+<td>feasibility test (E1-E5)</td>
+<td>The five experiments that decide whether a design point works on real QNX.</td>
+<td>test de faisabilité</td>
+<td><code>docs/verification-status.md</code> §3</td>
+</tr>
+<tr>
+<td>traceability matrix</td>
+<td>The generated table linking each requirement to the test that proves it.</td>
+<td>matrice de traçabilité</td>
+<td><code>docs/traceability.md</code></td>
+</tr>
+<tr>
+<td>gap analysis</td>
+<td>The numbered list of what the repository still lacks.</td>
+<td>analyse des écarts</td>
+<td><code>docs/gap-analysis.md</code></td>
+</tr>
+<tr>
+<td>sanitizer</td>
+<td>ASan and UBSan: compile-time instrumentation turning memory and undefined behaviour into a failure.</td>
+<td>assainisseur</td>
+<td>spec §6.6, <code>cmake/</code></td>
+</tr>
+<tr>
+<td>fuzz</td>
+<td>Deterministic seeded random input against a wire decoder.</td>
+<td>fuzzing</td>
+<td><code>tests/fuzz/</code></td>
+</tr>
+<tr>
+<td>size guard</td>
+<td>The check keeping every file under 500 lines and every function under 50.</td>
+<td>garde de taille</td>
+<td><code>tools/check-size.py</code></td>
+</tr>
+<tr>
+<td>SPDX header</td>
+<td>The one-line licence identifier at the top of every source file.</td>
+<td>en-tête SPDX</td>
+<td><code>tools/check-spdx.py</code></td>
+</tr>
+<tr>
+<td>ambition tier (S / C / X)</td>
+<td>The three levels of ambition a requirement belongs to: foundation, complete, extreme.</td>
+<td>niveau d'ambition</td>
+<td>spec §0, §6</td>
+</tr>
+</tbody>
+</table>
+    <nav class="pager">
+      <a class="prev" href="fsproof-guest-agent.html">Previous</a>
+      <a class="next" href="qnx-abi.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="_assets/search.js"></script>
+</body>
+</html>
