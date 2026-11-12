@@ -47,8 +47,9 @@ pgw_err pgw_cred_from_ctp(resmgr_context_t *ctp, pgw_fs_cred *cred)
         PGW_ERR("cred: ConnectClientInfo() failed: %s", strerror(errno));
         return pgw_code_from_host(errno);
     }
-    cred->uid = info.cred.euid;
-    cred->gid = info.cred.egid;
+    cred->uid = (uint32_t)info.cred.euid; /* uid_t is signed on QNX; keep the
+                                              public type unsigned (FS-09) */
+    cred->gid = (uint32_t)info.cred.egid;
     /* The priority travels with the request: the submission scheduler orders
      * pending requests by it (QNX-03, QNX-04, PERF-05). QNX numbers priorities
      * the other way round (1 is the most urgent), so the conversion happens
