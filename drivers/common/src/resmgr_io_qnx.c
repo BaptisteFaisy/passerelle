@@ -290,7 +290,8 @@ static int devctl_statvfs(resmgr_context_t *ctp, io_devctl_t *msg)
     if (srv == NULL)
         return EIO;
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_fs_statvfs st;
     pgw_err e = pgw_rmfs_statfs(srv->fs, &cred, &st);
     if (e != PGW_OK)
