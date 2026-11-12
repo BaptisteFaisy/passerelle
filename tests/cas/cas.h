@@ -88,6 +88,17 @@ uint64_t cas_env_u64(const char *name, uint64_t def);
 
 /* --- truth side (plain POSIX, never the code under test) ------------------ */
 
+/* A path buffer wide enough for the limit cases of spec 7.4 (PATH_MAX plus a
+ * share root plus the separator). */
+#define CAS_PATH_MAX 4200
+
+/* Truth-side errno probes. The limit cases compare the layer under test with
+ * what the kernel itself answers, so these return 0 on success and the raw
+ * errno on failure - never a translated code, and never the layer's. */
+int cas_truth_mkdir_errno(const char *root, const char *rel, uint32_t mode);
+int cas_truth_stat_errno(const char *root, const char *rel);
+int cas_truth_create_errno(const char *root, const char *rel);
+
 /* Size of the real file, or 0 when it does not exist. */
 uint64_t cas_truth_size(const char *root, const char *rel);
 bool cas_truth_exists(const char *root, const char *rel);
