@@ -96,7 +96,11 @@ static void test_chunked_write(void)
 PGW_TEST(test_chunked_write);
 
 /* Names are e000.., e001.. in creation order, and never repeated: each one is
- * strictly greater than the previous. */
+ * strictly greater than the previous.
+ *
+ * `prev` holds a whole protocol name (pgw_p9_dirent.name), not the fake
+ * server's shorter one: a smaller buffer would silently truncate a long name
+ * and make the comparison below lie. */
 static void check_entries(const pgw_p9_dirent *ents, size_t got, char *prev)
 {
     for (size_t i = 0; i < got; i++) {
@@ -104,7 +108,7 @@ static void check_entries(const pgw_p9_dirent *ents, size_t got, char *prev)
         PGW_ASSERT_EQ_U(ents[i].type, PGW_DT_REG);
         if (prev[0] != '\0')
             PGW_ASSERT(strcmp(prev, ents[i].name) < 0);
-        snprintf(prev, FAKE_NAME, "%s", ents[i].name);
+        snprintf(prev, sizeof ents[0].name, "%s", ents[i].name);
     }
 }
 
@@ -121,7 +125,7 @@ static void test_readdir_multi_chunk_resume(void)
     uint64_t off = 0;
     size_t total = 0;
     unsigned rounds = 0;
-    char prev[FAKE_NAME];
+    char prev[sizeof ents[0].name];
     prev[0] = '\0';
     for (;;) {
         size_t got = 0;

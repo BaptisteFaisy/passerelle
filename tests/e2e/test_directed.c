@@ -216,7 +216,9 @@ static void test_readdir_large_and_resumed(void)
                                   PGW_O_RDONLY | PGW_O_DIRECTORY, 0, &dir),
                     PGW_OK);
     /* Read in small pages to force several round trips and offsets. */
-    char seen[800][32];
+    /* A name buffer must hold a whole protocol name: a shorter one silently
+     * truncates (gcc reports it as -Wformat-truncation in a Debug build). */
+    static char seen[800][PGW_NAME_MAX + 1];
     size_t n_seen = 0;
     pgw_fs_dirent ents[7];
     uint64_t off = 0;
