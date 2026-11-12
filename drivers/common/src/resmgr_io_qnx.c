@@ -19,6 +19,7 @@
  * the stubs in tests/qnx-stub, so both are spelled out here once. */
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE 1
+#define _QNX_SOURCE 1 /* SETIOV() and other QNX extensions used with _RESMGR_PTR */
 #include "pgw/drvsrv.h"
 
 #include "pgw/log.h"
