@@ -12,8 +12,11 @@ pull request whose committed page is stale, exactly like
 `tools/site/build_site.py --check` does for the website.
 
 Determinism: the version comes from the repository's VERSION file, and the
-page date is the last commit date of that same file (or SOURCE_DATE_EPOCH
-when set), so regenerating the pages twice in a row yields identical bytes.
+page date is pinned in the committed `tools/man/PAGE_DATE` file (bumped when
+the CLI or VERSION changes; SOURCE_DATE_EPOCH overrides it). A git-derived
+date was rejected: `git log -1 -- VERSION` answers the last VERSION-touching
+commit in a full clone but the HEAD date in the CI's shallow one, so the two
+would disagree and --check would fail on an up-to-date tree.
 
 Usage:
     python3 tools/man/build_man.py            # write man/<tool>.1
@@ -29,7 +32,6 @@ import importlib
 import os
 import pathlib
 import re
-import subprocess
 import sys
 import textwrap
 
@@ -153,26 +155,21 @@ def repo_version() -> str:
 
 
 def source_date() -> str:
-    """Page date: SOURCE_DATE_EPOCH, else the last commit date of VERSION.
+    """Page date: SOURCE_DATE_EPOCH, else the pinned tools/man/PAGE_DATE.
 
-    Tying the date to the VERSION file keeps regeneration byte-stable: the
-    pages only get a new date when the version they document changes. Without
-    git (source tarball), today's date answers and a warning says so.
+    The date lives in a committed file, not in the git history: a shallow
+    clone (what the CI checks out) cannot answer "when did VERSION last
+    change", and a wall-clock date would make regeneration differ from one
+    day to the next. Bump PAGE_DATE when the CLI help or VERSION changes.
     """
     epoch = os.environ.get("SOURCE_DATE_EPOCH")
     if epoch:
         stamp = datetime.datetime.fromtimestamp(int(epoch), datetime.timezone.utc)
         return stamp.date().isoformat()
-    try:
-        out = subprocess.run(
-            ["git", "log", "-1", "--format=%cs", "--", "VERSION"],
-            cwd=REPO, capture_output=True, text=True, timeout=10, check=True,
-        ).stdout.strip()
-        if out:
-            return out
-    except (OSError, subprocess.SubprocessError):
-        pass
-    print("warning: no git date for VERSION, using today", file=sys.stderr)
+    pinned = HERE / "PAGE_DATE"
+    if pinned.is_file():
+        return pinned.read_text(encoding="utf-8").strip()
+    print("warning: no tools/man/PAGE_DATE, using today", file=sys.stderr)
     return datetime.date.today().isoformat()
 
 
