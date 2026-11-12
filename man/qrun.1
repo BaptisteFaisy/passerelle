@@ -1,0 +1,58 @@
+.\" SPDX-License-Identifier: Apache-2.0
+.TH "QRUN" "1" "2026-11-12" "passerelle 0.1.0" "Passerelle host tools"
+.SH NAME
+qrun \- Run a program from the share in the guest
+.SH SYNOPSIS
+.B qrun
+.RI [ OPTION ]...
+\fIPROGRAM\fR
+\fIARGS\fR ...
+.SH DESCRIPTION
+Run a program from the share in the guest (DX\-03)
+.P
+qrun runs a program that lives in the shared directory, either inside the QNX
+guest \- by talking to the QEMU console socket given with \-\-console \- or on
+the PC itself with \-\-local. It waits for the program to finish (bounded by
+\-\-timeout), replays its stdout and stderr, and returns its exit code, which
+makes it usable from scripts and from ctest\-like loops.
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fIPROGRAM\fR
+program path, relative to the share
+.TP
+\fIARGS\fR ...
+arguments for the program
+.TP
+\fB\-\-share\fR \fISHARE\fR, \fB\-s\fR \fISHARE\fR
+shared directory (default: .)
+.TP
+\fB\-\-console\fR \fICONSOLE\fR
+guest console unix socket served by QEMU (\-serial unix:<path>)
+.TP
+\fB\-\-local\fR
+run the program on the PC instead of inside the guest
+.TP
+\fB\-\-timeout\fR \fITIMEOUT\fR
+timeout in seconds (default: 120.0)
+.SH EXIT STATUS
+.TP
+\fB0\fR
+the program ran and returned 0
+.TP
+\fB2\fR
+usage error, missing share directory, console or host error
+.TP
+\fBany other value\fR
+the exit code of the program that was run
+.SH FILES
+.TP
+\fI<share>\fR
+the shared directory (\-\-share), read\-only for qrun itself
+.TP
+\fI\-\-console PATH\fR
+the QEMU console unix socket (\-serial unix:<path>)
+.SH SEE ALSO
+qshare(1), fsproof(1), pbench(1), qemu(1)
