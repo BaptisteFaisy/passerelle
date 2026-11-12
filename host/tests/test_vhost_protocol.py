@@ -17,7 +17,7 @@ from vhost import protocol as vp
 from vhost.device import SUPPORTED_FEATURES, SUPPORTED_PROTOCOL_FEATURES, VhostUserDevice
 from vhost.fake_backend import FakeVhostBackend
 from vhost.memory import SharedMemory
-from vhost.testing import temp_socket_path
+from vhost.testing import temp_socket
 from vhost.transport import Transport
 
 TIMEOUT = 5.0
@@ -26,12 +26,13 @@ TIMEOUT = 5.0
 @pytest.fixture()
 def peer():
     """A fake backend and a connected front end, before any negotiation."""
-    path = temp_socket_path()
-    backend = FakeVhostBackend(str(path)).start()
-    try:
-        yield backend, VhostUserDevice(Transport.connect(path, timeout=TIMEOUT), timeout=TIMEOUT)
-    finally:
-        backend.stop()
+    with temp_socket() as path:
+        backend = FakeVhostBackend(str(path)).start()
+        try:
+            device = VhostUserDevice(Transport.connect(path, timeout=TIMEOUT), timeout=TIMEOUT)
+            yield backend, device
+        finally:
+            backend.stop()
 
 
 def test_header_round_trip():
