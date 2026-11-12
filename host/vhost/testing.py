@@ -13,7 +13,9 @@ Standard library only.
 
 from __future__ import annotations
 
+import contextlib
 import pathlib
+import shutil
 import tempfile
 from typing import Iterator
 
@@ -111,6 +113,20 @@ def temp_socket_path(prefix: str = SOCKET_DIR_PREFIX) -> pathlib.Path:
     """
     directory = pathlib.Path(tempfile.mkdtemp(prefix=prefix))
     return directory / "vhost.sock"
+
+
+@contextlib.contextmanager
+def temp_socket() -> Iterator[pathlib.Path]:
+    """A short socket path in a private directory, removed on exit.
+
+    For tests that drive a bare backend (no ``FakeSession`` to close), so that
+    a suite run leaves nothing in /tmp either.
+    """
+    directory = pathlib.Path(tempfile.mkdtemp(prefix=SOCKET_DIR_PREFIX))
+    try:
+        yield directory / "vhost.sock"
+    finally:
+        shutil.rmtree(directory, ignore_errors=True)
 
 
 def session(responder=default_responder, **kwargs) -> Iterator[FakeSession]:
