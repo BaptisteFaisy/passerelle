@@ -62,6 +62,11 @@ META: dict[str, dict[str, list[str]]] = {
             "Inside the guest, the share is mounted with the passerelle driver at "
             "the --mount-point location; qrun(1) then runs programs from it, and "
             "fsproof(1) and pbench(1) prove and measure it.",
+            "Three subcommands answer the everyday questions: qshare doctor says "
+            "what is missing on this machine, qshare init scaffolds a guest "
+            "project ready to be shared, and qshare smoke proves the whole chain "
+            "here (configure, build, ctest, pytest, the reference benches and the "
+            "guest check).",
         ],
         "exit": [
             "0 - success (options printed, snippets written, run or demo finished)",
@@ -71,6 +76,8 @@ META: dict[str, dict[str, list[str]]] = {
         "files": [
             "<VM_DIR>/local/snippets/ - mkqnximage fragments written by --mkqnximage",
             "<share>/cmake_example/, <share>/rust_example/ - projects written by --example",
+            "<share>/README.md, <share>/qemu-options.txt, <share>/guest-setup.txt - "
+            "the project written by 'qshare init'",
             "/tmp/pgw-qemu-console.log - default guest console log of --run",
         ],
         "see_also": ["qrun(1)", "fsproof(1)", "pbench(1)", "qemu(1)", "virtiofsd(1)"],

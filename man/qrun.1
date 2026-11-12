@@ -5,7 +5,7 @@ qrun \- Run a program from the share in the guest
 .SH SYNOPSIS
 .B qrun
 .RI [ OPTION ]...
-\fIPROGRAM\fR
+.RI [ \fIPROGRAM\fR ]
 \fIARGS\fR ...
 .SH DESCRIPTION
 Run a program from the share in the guest (DX\-03)
@@ -27,16 +27,21 @@ program path, relative to the share
 arguments for the program
 .TP
 \fB\-\-share\fR \fISHARE\fR, \fB\-s\fR \fISHARE\fR
-shared directory (default: .)
+shared directory (default: configuration 'share' = '.')
 .TP
 \fB\-\-console\fR \fICONSOLE\fR
-guest console unix socket served by QEMU (\-serial unix:<path>)
+guest console unix socket served by QEMU (default: configuration 'console' =
+'')
 .TP
 \fB\-\-local\fR
 run the program on the PC instead of inside the guest
 .TP
 \fB\-\-timeout\fR \fITIMEOUT\fR
-timeout in seconds (default: 120.0)
+timeout in seconds (default: configuration 'timeout' = '120')
+.TP
+\fB\-\-show\-config\fR \fIFORMAT\fR
+print the effective configuration (text or json) and exit (choices: text,
+json)
 .SH EXIT STATUS
 .TP
 \fB0\fR

@@ -20,8 +20,13 @@ import pathlib
 from dataclasses import dataclass, field
 
 from pgwutil import ValidationError
+from pgwutil.config import DEFAULTS
 
-DEFAULT_TAG = "hostshare"
+# The built-in defaults live in the shared configuration table (gap 99): one
+# definition, read by the library, by the four CLIs and by `--show-config`.
+DEFAULT_TAG = DEFAULTS["tag"]
+DEFAULT_PROTO = DEFAULTS["proto"]
+RECOMMENDED_SECURITY = DEFAULTS["security"]
 TAG_MAX_9P = 31
 TAG_MAX_VIRTIOFS = 36
 PROTOCOLS = ("9p", "virtiofs")
@@ -63,7 +68,7 @@ class ShareConfig:
     path: pathlib.Path
     tag: str = DEFAULT_TAG
     security_model: str = RECOMMENDED_SECURITY
-    proto: str = "9p"
+    proto: str = DEFAULT_PROTO
     socket_path: pathlib.Path | None = None
     mem_size: str = "1G"
     extra_fsdev: tuple[str, ...] = field(default_factory=tuple)
@@ -78,7 +83,7 @@ def validate_share(
     path: pathlib.Path | str,
     tag: str = DEFAULT_TAG,
     security_model: str = RECOMMENDED_SECURITY,
-    proto: str = "9p",
+    proto: str = DEFAULT_PROTO,
     socket_path: pathlib.Path | str | None = None,
     mem_size: str = "1G",
 ) -> ShareConfig:
