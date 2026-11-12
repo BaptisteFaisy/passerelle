@@ -20,7 +20,9 @@ from __future__ import annotations
 
 import os
 import pathlib
+import shutil
 import stat
+import tempfile
 import time
 
 from pgwutil import fuse_wire as fw
@@ -179,10 +181,26 @@ def check_readdir(fuse: VirtqueueFuseClient, share: pathlib.Path, checks: list) 
 
 def run_scenario(share: pathlib.Path, socket_path=None, timeout: float = 10.0) -> dict:
     """Launch virtiofsd on *share* and run the whole sequence; return a report."""
-    started = time.monotonic()
     truth = prepare_share(share)
+    socket_dir = None
+    if socket_path is None:
+        # A private socket per run: two proofs on one machine (make check and
+        # CI, or two tests) must not fight over one well-known path.
+        socket_dir = tempfile.mkdtemp(prefix="pgw-vhost-")
+        socket_path = pathlib.Path(socket_dir) / "vhost.sock"
     config = validate_share(share, tag="vfsproof", proto="virtiofs", socket_path=socket_path)
     checks: list[dict] = []
+    try:
+        report = _run_daemon(config, share, truth, checks, timeout)
+    finally:
+        if socket_dir is not None:
+            shutil.rmtree(socket_dir, ignore_errors=True)
+    return report
+
+
+def _run_daemon(config, share: pathlib.Path, truth: dict, checks: list, timeout: float) -> dict:
+    """Start the daemon, run the sequence against it, and build the report."""
+    started = time.monotonic()
     with UnprivilegedVirtiofsd(config, start_timeout=timeout) as daemon:
         with VhostFuseSession(daemon.socket_path, timeout=timeout) as session:
             fuse = session.fuse
