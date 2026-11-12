@@ -76,3 +76,16 @@ if(PGW_LIBFUZZER)
     target_compile_options(fuzz_p9_lf PRIVATE -fsanitize=fuzzer,address,undefined)
     target_link_options(fuzz_p9_lf PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()
+
+# --- reference protocol implementations (independent oracles) ----------------
+# Each of these directories brings its own server, written independently of our
+# client (Python, standard library only), and the C benches that drive the
+# client against it over a socket. That is what stops the protocol tests from
+# being self-referential: the two sides do not share code.
+foreach(refdir IN ITEMS ref9p fuse_ref)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${refdir}/CMakeLists.txt")
+        add_subdirectory(${refdir})
+    else()
+        message(STATUS "tests/${refdir} not present yet - skipped")
+    endif()
+endforeach()
