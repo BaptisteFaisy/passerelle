@@ -28,6 +28,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include "pgw/p9.h"
 
+#include "fuzz_corpus.h"
+#include "fuzz_p9_decode.h"
+
 #include "pgw/limits.h"
 #include "pgw/test.h"
 
@@ -40,6 +43,20 @@
 
 static uint32_t g_state = 0x12345678u;
 
+/* The kept corpus (gap 48): filled when PGW_FUZZ_CORPUS_DIR points at the
+ * directory that must receive it, empty otherwise. */
+static fuzz_corpus g_corpus;
+static bool g_corpus_on;
+
+static void corpus_from_env(void)
+{
+    const char *dir = getenv("PGW_FUZZ_CORPUS_DIR");
+    if (dir == NULL || dir[0] == '\0')
+        return;
+    fuzz_corpus_init(&g_corpus, dir, "p9");
+    g_corpus_on = true;
+}
+
 static uint32_t rnd(void)
 {
     uint32_t x = g_state;
@@ -50,77 +67,33 @@ static uint32_t rnd(void)
     return x;
 }
 
-/* Run every decoder over the buffer. Return values are irrelevant except for
- * the header invariant checked by the caller; what matters is that nothing
- * reads out of bounds and nothing loops. */
-static void decode_all(const uint8_t *buf, size_t len, uint16_t tag)
-{
-    pgw_p9_hdr hdr;
-    uint32_t ecode = 0;
-    uint32_t msize = 0;
-    uint32_t iounit = 0;
-    uint32_t count = 0;
-    char str[256];
-    char ver[32];
-    pgw_p9_qid qid;
-    pgw_p9_qid wqids[PGW_MAXWELEM];
-    pgw_p9_attr attr;
-    pgw_p9_statfs_t sfs;
-    pgw_p9_dirent ents[8];
-    const uint8_t *data = NULL;
-    uint16_t nwqid = 0;
-    size_t ndirents = 0;
-
-    (void)pgw_p9_dec_hdr(buf, len, &hdr);
-    (void)pgw_p9_dec_rlerror(buf, len, tag, &ecode);
-    (void)pgw_p9_dec_rversion(buf, len, tag, &msize, ver, sizeof(ver));
-    (void)pgw_p9_dec_rattach(buf, len, tag, &qid);
-    (void)pgw_p9_dec_rwalk(buf, len, tag, &nwqid, wqids, PGW_MAXWELEM);
-    (void)pgw_p9_dec_rlopen(buf, len, tag, &qid, &iounit);
-    (void)pgw_p9_dec_rread(buf, len, tag, &count, &data);
-    (void)pgw_p9_dec_rwrite(buf, len, tag, &count);
-    (void)pgw_p9_dec_rgetattr(buf, len, tag, &attr);
-    (void)pgw_p9_dec_rreaddir_iter(buf, len, tag, ents, 8, &ndirents);
-    (void)pgw_p9_dec_rreadlink(buf, len, tag, str, sizeof(str));
-    (void)pgw_p9_dec_rmkdir(buf, len, tag, &qid);
-    (void)pgw_p9_dec_rstatfs(buf, len, tag, &sfs);
-    (void)pgw_p9_dec_empty(buf, len, PGW_P9_RCLUNK, tag);
-}
-
-static int header_invariant_ok(const uint8_t *buf, size_t len)
-{
-    pgw_p9_hdr hdr;
-    memset(&hdr, 0, sizeof(hdr));
-    if (pgw_p9_dec_hdr(buf, len, &hdr) != PGW_OK)
-        return 1; /* rejected: nothing to check */
-    if (hdr.size < PGW_HEADER_SIZE)
-        return 0;
-    if ((size_t)hdr.size > len)
-        return 0;
-    return 1;
-}
-
 /* Build one well-formed message with the protocol encoders. Returns its
- * length, or 0 when the encoder refused (nothing to mutate then). */
-static size_t build_message(uint8_t *buf, size_t cap, uint16_t tag)
+ * length, or 0 when the encoder refused (nothing to mutate then). The family
+ * is the kind of message: the kept corpus keeps one file per family. */
+static size_t build_message(uint8_t *buf, size_t cap, uint16_t tag, const char **family)
 {
     int32_t n = 0;
     switch (rnd() % 5u) {
     case 0:
+        *family = "version";
         n = pgw_p9_enc_tversion(buf, cap, tag, PGW_MSIZE_DEFAULT, "9P2000.L");
         break;
     case 1: {
-        const char *names[2] = { "alpha", "beta" };
+        const char *names[2] = {"alpha", "beta"};
+        *family = "walk";
         n = pgw_p9_enc_twalk(buf, cap, tag, 1u, 2u, 2u, names);
         break;
     }
     case 2:
+        *family = "read";
         n = pgw_p9_enc_tread(buf, cap, tag, 3u, 4096u, 128u);
         break;
     case 3:
+        *family = "getattr";
         n = pgw_p9_enc_tgetattr(buf, cap, tag, 4u, PGW_P9_GETATTR_BASIC);
         break;
     default:
+        *family = "statfs";
         n = pgw_p9_enc_tstatfs(buf, cap, tag, 5u);
         break;
     }
@@ -141,7 +114,7 @@ static void damage(uint8_t *buf, size_t *len)
     case 2: /* flip a byte in the body */
         if (*len > PGW_HEADER_SIZE)
             buf[PGW_HEADER_SIZE + rnd() % (uint32_t)(*len - PGW_HEADER_SIZE)] ^=
-                (uint8_t)(1u << (rnd() % 8u));
+                    (uint8_t)(1u << (rnd() % 8u));
         break;
     case 3: { /* wrong tag */
         uint16_t bad = (uint16_t)rnd();
@@ -158,9 +131,9 @@ static void damage(uint8_t *buf, size_t *len)
     }
 }
 
-static size_t make_mutated(uint8_t *buf, size_t cap, uint16_t tag)
+static size_t make_mutated(uint8_t *buf, size_t cap, uint16_t tag, const char **family)
 {
-    size_t len = build_message(buf, cap, tag);
+    size_t len = build_message(buf, cap, tag, family);
     if (len > 0)
         damage(buf, &len);
     return len;
@@ -172,20 +145,24 @@ static void run_campaign(size_t iters, uint32_t seed)
     static uint8_t buf[MAX_MSG];
     for (size_t i = 0; i < iters; i++) {
         uint16_t tag = (uint16_t)rnd();
+        const char *family = "noise";
         size_t len;
         if ((rnd() & 1u) == 0u) {
             len = (size_t)(rnd() % MAX_MSG);
             for (size_t j = 0; j < len; j++)
                 buf[j] = (uint8_t)rnd();
         } else {
-            len = make_mutated(buf, sizeof(buf), tag);
+            len = make_mutated(buf, sizeof(buf), tag, &family);
         }
-        decode_all(buf, len, tag);
-        if (!header_invariant_ok(buf, len)) {
+        int depth = fuzz_decode_p9(buf, len, tag);
+        if (g_corpus_on)
+            fuzz_corpus_offer(&g_corpus, family, buf, len, depth);
+        if (!fuzz_p9_header_ok(buf, len)) {
             char msg[160];
             snprintf(msg, sizeof(msg),
                      "seed %u iter %zu: header accepted with size out of range "
-                     "(len %zu)", seed, i, len);
+                     "(len %zu)",
+                     seed, i, len);
             pgw_fail(__FILE__, __LINE__, "%s", msg);
         }
     }
@@ -221,13 +198,19 @@ PGW_TEST(test_p9_seeded_campaigns);
 #ifdef PGW_LIBFUZZER
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    decode_all(data, size, 0u);
-    (void)header_invariant_ok(data, size);
+    (void)fuzz_decode_p9(data, size, 0u);
+    (void)fuzz_p9_header_ok(data, size);
     return 0;
 }
 #else
 int main(int argc, char **argv)
 {
-    return pgw_test_main(argc, argv);
+    corpus_from_env();
+    int rc = pgw_test_main(argc, argv);
+    if (g_corpus_on) {
+        int written = fuzz_corpus_flush(&g_corpus);
+        fprintf(stdout, "# corpus: %d file(s) written in %s/p9\n", written, g_corpus.dir);
+    }
+    return rc;
 }
 #endif

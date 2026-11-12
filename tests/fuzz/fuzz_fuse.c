@@ -17,6 +17,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include "pgw/fusep.h"
 
+#include "fuzz_corpus.h"
+#include "fuzz_fuse_decode.h"
+
 #include "pgw/limits.h"
 #include "pgw/test.h"
 
@@ -30,6 +33,20 @@
 
 static uint32_t g_state = 0x9E3779B9u;
 
+/* The kept corpus (gap 48): filled when PGW_FUZZ_CORPUS_DIR points at the
+ * directory that must receive it, empty otherwise. */
+static fuzz_corpus g_corpus;
+static bool g_corpus_on;
+
+static void corpus_from_env(void)
+{
+    const char *dir = getenv("PGW_FUZZ_CORPUS_DIR");
+    if (dir == NULL || dir[0] == '\0')
+        return;
+    fuzz_corpus_init(&g_corpus, dir, "fuse");
+    g_corpus_on = true;
+}
+
 static uint32_t rnd(void)
 {
     uint32_t x = g_state;
@@ -40,70 +57,28 @@ static uint32_t rnd(void)
     return x;
 }
 
-static void decode_all(const uint8_t *buf, size_t len, uint64_t unique)
-{
-    pgw_fuse_out_hdr hdr;
-    pgw_fuse_init_info init;
-    pgw_fuse_entry entry;
-    pgw_fuse_attr attr;
-    pgw_fuse_kstatfs sfs;
-    pgw_fuse_dirent ents[8];
-    uint64_t fh = 0;
-    uint32_t open_flags = 0;
-    uint32_t written = 0;
-    const uint8_t *data = NULL;
-    size_t data_len = 0;
-    size_t ndirents = 0;
-    char target[256];
-
-    (void)pgw_fuse_dec_hdr(buf, len, &hdr);
-    (void)pgw_fuse_dec_init(buf, len, unique, &init);
-    (void)pgw_fuse_dec_entry(buf, len, unique, &entry);
-    (void)pgw_fuse_dec_attr(buf, len, unique, &attr);
-    (void)pgw_fuse_dec_open(buf, len, unique, &fh, &open_flags);
-    (void)pgw_fuse_dec_create(buf, len, unique, &entry, &fh);
-    (void)pgw_fuse_dec_read(buf, len, unique, &data, &data_len);
-    (void)pgw_fuse_dec_write(buf, len, unique, &written);
-    (void)pgw_fuse_dec_readdir(buf, len, unique, ents, 8, &ndirents);
-    (void)pgw_fuse_dec_readlink(buf, len, unique, target, sizeof(target));
-    (void)pgw_fuse_dec_statfs(buf, len, unique, &sfs);
-    (void)pgw_fuse_dec_empty(buf, len, unique);
-}
-
-/* A decoder that accepts a header must report a length inside the buffer and a
- * non-positive error (FUSE carries -errno, never a positive code). */
-static int header_invariant_ok(const uint8_t *buf, size_t len)
-{
-    pgw_fuse_out_hdr hdr;
-    memset(&hdr, 0, sizeof(hdr));
-    if (pgw_fuse_dec_hdr(buf, len, &hdr) != PGW_OK)
-        return 1;
-    if (hdr.len < FUSE_HDR_MIN)
-        return 0;
-    if ((size_t)hdr.len > len)
-        return 0;
-    if (hdr.error > 0)
-        return 0;
-    return 1;
-}
-
-static size_t make_mutated(uint8_t *buf, size_t cap, uint64_t unique)
+static size_t make_mutated(uint8_t *buf, size_t cap, uint64_t unique, const char **family)
 {
     int32_t n = 0;
     switch (rnd() % 5u) {
     case 0:
+        *family = "init";
         n = pgw_fuse_enc_init(buf, cap, unique, 131072u, PGW_FUSE_F_ASYNC_READ);
         break;
     case 1:
+        *family = "lookup";
         n = pgw_fuse_enc_lookup(buf, cap, unique, PGW_FUSE_ROOT_ID, "entry");
         break;
     case 2:
+        *family = "getattr";
         n = pgw_fuse_enc_getattr(buf, cap, unique, 42u, 0u, false);
         break;
     case 3:
+        *family = "read";
         n = pgw_fuse_enc_read(buf, cap, unique, 42u, 7u, 0u, 4096u, false);
         break;
     default:
+        *family = "statfs";
         n = pgw_fuse_enc_statfs(buf, cap, unique, PGW_FUSE_ROOT_ID);
         break;
     }
@@ -129,7 +104,7 @@ static size_t make_mutated(uint8_t *buf, size_t cap, uint64_t unique)
     default: /* flip a body byte */
         if (len > FUSE_HDR_MIN)
             buf[FUSE_HDR_MIN + rnd() % (uint32_t)(len - FUSE_HDR_MIN)] ^=
-                (uint8_t)(1u << (rnd() % 8u));
+                    (uint8_t)(1u << (rnd() % 8u));
         break;
     }
     return len;
@@ -141,19 +116,23 @@ static void run_campaign(size_t iters, uint32_t seed)
     static uint8_t buf[MAX_MSG];
     for (size_t i = 0; i < iters; i++) {
         uint64_t unique = ((uint64_t)rnd() << 32) | (uint64_t)rnd();
+        const char *family = "noise";
         size_t len;
         if ((rnd() & 1u) == 0u) {
             len = (size_t)(rnd() % MAX_MSG);
             for (size_t j = 0; j < len; j++)
                 buf[j] = (uint8_t)rnd();
         } else {
-            len = make_mutated(buf, sizeof(buf), unique);
+            len = make_mutated(buf, sizeof(buf), unique, &family);
         }
-        decode_all(buf, len, unique);
-        if (!header_invariant_ok(buf, len)) {
+        int depth = fuzz_decode_fuse(buf, len, unique);
+        if (g_corpus_on)
+            fuzz_corpus_offer(&g_corpus, family, buf, len, depth);
+        if (!fuzz_fuse_header_ok(buf, len)) {
             pgw_fail(__FILE__, __LINE__,
                      "seed %u iter %zu: FUSE header accepted out of contract "
-                     "(buffer %zu bytes)", seed, i, len);
+                     "(buffer %zu bytes)",
+                     seed, i, len);
         }
     }
 }
@@ -188,13 +167,20 @@ PGW_TEST(test_fuse_seeded_campaigns);
 #ifdef PGW_LIBFUZZER
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    decode_all(data, size, 1u);
-    (void)header_invariant_ok(data, size);
+    (void)fuzz_decode_fuse(data, size, 1u);
+    (void)fuzz_fuse_header_ok(data, size);
     return 0;
 }
 #else
 int main(int argc, char **argv)
 {
-    return pgw_test_main(argc, argv);
+    corpus_from_env();
+    int rc = pgw_test_main(argc, argv);
+    if (g_corpus_on) {
+        int written = fuzz_corpus_flush(&g_corpus);
+        fprintf(stdout, "# corpus: %d file(s) written in %s/fuse\n", written,
+                g_corpus.dir);
+    }
+    return rc;
 }
 #endif
