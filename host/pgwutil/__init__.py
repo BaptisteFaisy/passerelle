@@ -46,6 +46,31 @@ def write_atomic(path: pathlib.Path | str, content: str | bytes) -> pathlib.Path
     return target
 
 
+def write_if_changed(
+    path: pathlib.Path | str, content: str, executable: bool = False
+) -> bool:
+    """Write *content* to *path* only when it differs; True when it was written.
+
+    A scaffolded file that is already there with the same content is left
+    alone, so running the scaffolder twice changes nothing the second time
+    (and the modification time of the tree stays meaningful).
+    """
+    target = pathlib.Path(path).expanduser()
+    if target.is_file():
+        try:
+            same = target.read_text(encoding="utf-8") == content
+        except (OSError, UnicodeDecodeError):
+            same = False
+        if same:
+            if executable and not os.access(target, os.X_OK):
+                target.chmod(0o755)
+            return False
+    written = write_atomic(target, content)
+    if executable:
+        written.chmod(0o755)
+    return True
+
+
 def dump_json(obj: Any, indent: int = 2) -> str:
     """Serialise *obj* to a stable, human-readable JSON document."""
     return json.dumps(obj, indent=indent, sort_keys=True, default=str)
