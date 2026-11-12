@@ -181,7 +181,7 @@
         │
    Host Workstation Directory</code></pre>
 <p>See <a href="architecture.html">docs/architecture.md</a> for full design documentation.</p>
-<p><img src="docs/_assets/architecture.svg" alt="Passerelle architecture: the three layers inside the QNX guest, the QEMU device, and the host side with the shared directory and the host tools"></p>
+<p><img src="_assets/architecture.svg" alt="Passerelle architecture: the three layers inside the QNX guest, the QEMU device, and the host side with the shared directory and the host tools"></p>
 <p>The picture is the README version of the design: three layers inside the guest (resource manager <code>rmfs/</code>, wire protocols <code>proto9p/</code> and <code>protofuse/</code>, virtio transport <code>virtio/</code>), one QEMU device band underneath, and the host directory on the other side — plus the host tools (<code>qshare</code>, <code>qrun</code>, <code>fsproof</code>, <code>pbench</code>) and the reference servers that drive the same client without QNX.</p>
 <hr>
 <h2 id="one-command-demo">One-Command Demo</h2>
