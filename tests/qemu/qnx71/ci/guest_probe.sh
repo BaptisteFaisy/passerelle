@@ -117,6 +117,7 @@ collect_trace() {
     run_guest guest-pidin-info.txt 'pidin info'
     run_guest guest-tracelogger-list.txt 'tracelogger -l 2>&1 | head -60'
     run_guest guest-tracelogger-dump.txt 'tracelogger -d 2>&1 | head -120'
+    run_guest guest-tracelogger-usage.txt 'tracelogger -h 2>&1 | head -40'
     capture_console
 }
 
