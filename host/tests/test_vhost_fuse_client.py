@@ -132,7 +132,9 @@ def test_every_request_builder_has_the_size_the_c_abi_declares():
         "PGW_FUSE_DIRENT_HDR_SIZE": 24,
     }
     for name, length in built.items():
-        assert sizes[name] == length, "%s: C says %d, Python builds %d" % (name, sizes[name], length)
+        assert sizes[name] == length, (
+            "%s: C says %d, Python builds %d" % (name, sizes[name], length)
+        )
 
 
 def test_the_opcode_and_header_tables_agree_with_the_c_client():

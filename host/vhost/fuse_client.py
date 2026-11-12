@@ -58,7 +58,9 @@ class VirtqueueFuseClient:
             raise FuseReplyError("every virtqueue slot is in flight")
         return self._free.pop(0)
 
-    def call(self, opcode: int, nodeid: int, body: bytes = b"", reply_size: int = DEFAULT_REPLY_SIZE) -> bytes:
+    def call(
+        self, opcode: int, nodeid: int, body: bytes = b"", reply_size: int = DEFAULT_REPLY_SIZE
+    ) -> bytes:
         """Send one FUSE request and return its reply body, header stripped."""
         unique = self.next_unique()
         request = fw.pack_in_header(opcode, unique, nodeid, fw.IN_HDR + len(body)) + body
@@ -102,7 +104,9 @@ class VirtqueueFuseClient:
     def _decode(self, reply: bytes, unique: int) -> bytes:
         length, error, reply_unique = fw.parse_out_header(reply)
         if reply_unique != unique:
-            raise FuseReplyError("reply unique %d does not match request %d" % (reply_unique, unique))
+            raise FuseReplyError(
+                "reply unique %d does not match request %d" % (reply_unique, unique)
+            )
         if error > 0:
             raise FuseReplyError("positive error field %d in reply" % error, error)
         if error < 0:
@@ -140,7 +144,9 @@ class VirtqueueFuseClient:
         return fw.unpack_write_out(self.call(fw.OP_WRITE, nodeid, body))
 
     def readdir(self, nodeid: int, fh: int, offset: int = 0, size: int = 8192) -> list[dict]:
-        body = self.call(fw.OP_READDIR, nodeid, fw.pack_read_in(fh, offset, size), fw.OUT_HDR + size)
+        body = self.call(
+            fw.OP_READDIR, nodeid, fw.pack_read_in(fh, offset, size), fw.OUT_HDR + size
+        )
         return fw.unpack_dirents(body)
 
     def flush(self, nodeid: int, fh: int) -> None:

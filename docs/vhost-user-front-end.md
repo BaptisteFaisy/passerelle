@@ -22,13 +22,13 @@ standard library only:
 | Module | Role |
 | --- | --- |
 | `protocol.py` | request numbers, header flags, virtio and protocol feature bits, payload codecs |
-| `transport.py` | UNIX socket, 12-byte header framing, `SCM_RIGHTS` descriptors, reply correlation |
+| `transport.py` | UNIX socket, 12-byte header framing, `SCM_RIGHTS`, reply correlation |
 | `memory.py` | `os.memfd_create` + `mmap` region, the `SET_MEM_TABLE` payload |
-| `vring.py` | split virtqueue: descriptor table, available ring, used ring, buffers, `eventfd` kick/call |
+| `vring.py` | split virtqueue: desc table, avail ring, used ring, buffers, `eventfd` kick/call |
 | `device.py` | the handshake and the per-queue setup, in the order the protocol requires |
 | `fuse_client.py` | FUSE requests posted on the queue, replies harvested and decoded |
-| `fake_backend.py` | a vhost-user **backend** in Python, so the unit tests need no `virtiofsd` |
-| `driver.py` | launches `virtiofsd` and runs the whole sequence, comparing with the truth |
+| `fake_backend.py` | a vhost-user **backend** in Python, so unit tests need no `virtiofsd` |
+| `driver.py` | launches `virtiofsd`, runs the sequence, compares with the truth |
 
 The FUSE wire table is not declared a second time: `host/pgwutil/fuse_wire.py`
 is now the single Python declaration, used by this front end *and* by

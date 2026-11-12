@@ -100,7 +100,9 @@ class VhostUserDevice:
     def set_features(self, features: int) -> int:
         """Ack *features*, refusing anything the device did not offer."""
         if features & ~self.device_features:
-            raise ProtocolError("asking for unsupported features 0x%x" % (features & ~self.device_features))
+            raise ProtocolError(
+                "asking for unsupported features 0x%x" % (features & ~self.device_features)
+            )
         self.acked_features = features
         self.transport.send(Request.SET_FEATURES, encode_u64(features))
         return self.acked_features

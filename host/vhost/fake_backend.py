@@ -279,13 +279,17 @@ class FakeVhostBackend:
         queue[kind] = msg.fds[0]
         msg.fds = msg.fds[1:]
         if kind == "kick":
-            self._selector.register(queue["kick"], selectors.EVENT_READ, ("kick", (queue["kick"], index)))
+            self._selector.register(
+                queue["kick"], selectors.EVENT_READ, ("kick", (queue["kick"], index))
+            )
         self._ack(msg)
 
     def _queue(self, index: int) -> dict:
         if not 0 <= index < self.num_queues:
             raise ProtocolError("queue index %d out of range" % index)
-        return self.queues.setdefault(int(index), {"enabled": False, "next_avail": 0, "last_used": 0})
+        return self.queues.setdefault(
+            int(index), {"enabled": False, "next_avail": 0, "last_used": 0}
+        )
 
     # --- memory translation ------------------------------------------------
     def _locate_va(self, front_end_va: int, length: int = 0) -> tuple[mmap.mmap, int]:

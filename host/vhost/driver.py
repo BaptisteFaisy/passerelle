@@ -58,7 +58,9 @@ class UnprivilegedVirtiofsd(VirtiofsdDaemon):
 class VhostFuseSession:
     """A front end wired to one running virtiofsd, with its FUSE client."""
 
-    def __init__(self, socket_path, queue_index: int = REQUEST_QUEUE, timeout: float = 10.0) -> None:
+    def __init__(
+        self, socket_path, queue_index: int = REQUEST_QUEUE, timeout: float = 10.0
+    ) -> None:
         self.socket_path = str(socket_path)
         self.queue_index = queue_index
         self.timeout = timeout
@@ -124,7 +126,10 @@ def check_init(fuse: VirtqueueFuseClient, checks: list) -> None:
     out = fuse.init()
     _check(checks, "init.version", out.get("major") == fw.FUSE_MAJOR, "major=%s" % out.get("major"))
     _check(checks, "init.minor", out.get("minor", 0) >= 8, "minor=%s" % out.get("minor"))
-    _check(checks, "init.max_write", out.get("max_write", 0) > 0, "max_write=%s" % out.get("max_write"))
+    _check(
+        checks, "init.max_write", out.get("max_write", 0) > 0,
+        "max_write=%s" % out.get("max_write"),
+    )
 
 
 def check_metadata(fuse: VirtqueueFuseClient, share: pathlib.Path, checks: list) -> int:
@@ -132,9 +137,12 @@ def check_metadata(fuse: VirtqueueFuseClient, share: pathlib.Path, checks: list)
     truth = os.stat(share / "hello.txt")
     entry = fuse.lookup(fw.ROOT_ID, "hello.txt")
     attr = entry["attr"]
-    _check(checks, "lookup.ino", attr["ino"] == truth.st_ino, "%s != %s" % (attr["ino"], truth.st_ino))
-    _check(checks, "lookup.size", attr["size"] == truth.st_size, "%s != %s" % (attr["size"], truth.st_size))
-    _check(checks, "lookup.mode", stat.S_IMODE(attr["mode"]) == stat.S_IMODE(truth.st_mode), oct(attr["mode"]))
+    _check(checks, "lookup.ino", attr["ino"] == truth.st_ino,
+           "%s != %s" % (attr["ino"], truth.st_ino))
+    _check(checks, "lookup.size", attr["size"] == truth.st_size,
+           "%s != %s" % (attr["size"], truth.st_size))
+    _check(checks, "lookup.mode",
+           stat.S_IMODE(attr["mode"]) == stat.S_IMODE(truth.st_mode), oct(attr["mode"]))
     got = fuse.getattr(entry["nodeid"])["attr"]
     _check(checks, "getattr.size", got["size"] == truth.st_size, "%s" % got["size"])
     _check(checks, "getattr.nlink", got["nlink"] == truth.st_nlink, "%s" % got["nlink"])
@@ -176,7 +184,8 @@ def check_readdir(fuse: VirtqueueFuseClient, share: pathlib.Path, checks: list) 
     names.discard(".")
     names.discard("..")
     truth = set(os.listdir(share))
-    _check(checks, "readdir.names", names == truth, "got %s want %s" % (sorted(names), sorted(truth)))
+    _check(checks, "readdir.names", names == truth,
+           "got %s want %s" % (sorted(names), sorted(truth)))
 
 
 def run_scenario(share: pathlib.Path, socket_path=None, timeout: float = 10.0) -> dict:
@@ -226,6 +235,8 @@ def format_report(report: dict) -> str:
     """The report as readable lines, for the CLI and for pytest output."""
     lines = ["virtiofsd: %s" % report["virtiofsd"], "handshake: %s" % report["handshake"]]
     for check in report["checks"]:
-        lines.append("%-4s %-18s %s" % ("PASS" if check["ok"] else "FAIL", check["name"], check["detail"]))
+        lines.append(
+            "%-4s %-18s %s" % ("PASS" if check["ok"] else "FAIL", check["name"], check["detail"])
+        )
     lines.append("result: %s in %.2fs" % ("OK" if report["ok"] else "FAILED", report["duration_s"]))
     return "\n".join(lines)

@@ -22,7 +22,12 @@ Standard library only.
 
 from __future__ import annotations
 
-from vhost.device import SUPPORTED_FEATURES, SUPPORTED_PROTOCOL_FEATURES, BackendError, VhostUserDevice
+from vhost.device import (
+    SUPPORTED_FEATURES,
+    SUPPORTED_PROTOCOL_FEATURES,
+    BackendError,
+    VhostUserDevice,
+)
 from vhost.memory import SharedMemory
 from vhost.protocol import ProtocolError, Request
 from vhost.transport import Message, Transport
