@@ -84,6 +84,16 @@
     "level": 3
    },
    {
+    "text": "3. Install the package, use it from another project",
+    "anchor": "3-install-the-package-use-it-from-another-project",
+    "level": 3
+   },
+   {
+    "text": "4. Supply chain: SBOM, provenance, coverage badge",
+    "anchor": "4-supply-chain-sbom-provenance-coverage-badge",
+    "level": 3
+   },
+   {
     "text": "Honest Verification Status",
     "anchor": "honest-verification-status",
     "level": 2
@@ -2145,6 +2155,39 @@
   ]
  },
  {
+  "title": "Adr 0006 Msix Primary Intx Fallback",
+  "url": "adr-ADR-0006-msix-primary-intx-fallback.html",
+  "section": "Project",
+  "source": "docs/adr/ADR-0006-msix-primary-intx-fallback.md",
+  "headings": [
+   {
+    "text": "ADR-006 — MSI-X is the interrupt path; INTx is the fallback, and the driver never depends on the fragment",
+    "anchor": "adr-006-msi-x-is-the-interrupt-path-intx-is-the-fallback-and-the-driver-never-depends-on-the-fragment",
+    "level": 1
+   },
+   {
+    "text": "Context",
+    "anchor": "context",
+    "level": 2
+   },
+   {
+    "text": "Decision",
+    "anchor": "decision",
+    "level": 2
+   },
+   {
+    "text": "Consequences",
+    "anchor": "consequences",
+    "level": 2
+   },
+   {
+    "text": "Revisit when",
+    "anchor": "revisit-when",
+    "level": 2
+   }
+  ]
+ },
+ {
   "title": "Adr 001 Lookup Getattr Symlink Convention",
   "url": "adr-ADR-001-lookup-getattr-symlink-convention.html",
   "section": "Project",
@@ -2285,6 +2328,82 @@
   ]
  },
  {
+  "title": "Fsproof Guest Agent",
+  "url": "fsproof-guest-agent.html",
+  "section": "Project",
+  "source": "docs/fsproof-guest-agent.md",
+  "headings": [
+   {
+    "text": "Running the fsproof guest agent inside a guest",
+    "anchor": "running-the-fsproof-guest-agent-inside-a-guest",
+    "level": 1
+   },
+   {
+    "text": "1. What the agent is",
+    "anchor": "1-what-the-agent-is",
+    "level": 2
+   },
+   {
+    "text": "2. What it really needs: an interpreter, not a cross-compiler",
+    "anchor": "2-what-it-really-needs-an-interpreter-not-a-cross-compiler",
+    "level": 2
+   },
+   {
+    "text": "3. The stable interface, ready to run today",
+    "anchor": "3-the-stable-interface-ready-to-run-today",
+    "level": 2
+   },
+   {
+    "text": "4. The two ways to get an interpreter into the guest",
+    "anchor": "4-the-two-ways-to-get-an-interpreter-into-the-guest",
+    "level": 2
+   },
+   {
+    "text": "5. What is proven here, and what is not",
+    "anchor": "5-what-is-proven-here-and-what-is-not",
+    "level": 2
+   }
+  ]
+ },
+ {
+  "title": "Glossary",
+  "url": "glossary.html",
+  "section": "Project",
+  "source": "docs/glossary.md",
+  "headings": [
+   {
+    "text": "Glossary",
+    "anchor": "glossary",
+    "level": 1
+   },
+   {
+    "text": "1. Sharing a directory: 9P2000.L",
+    "anchor": "1-sharing-a-directory-9p2000l",
+    "level": 2
+   },
+   {
+    "text": "2. Sharing a directory: FUSE and virtiofs",
+    "anchor": "2-sharing-a-directory-fuse-and-virtiofs",
+    "level": 2
+   },
+   {
+    "text": "3. The virtio transport",
+    "anchor": "3-the-virtio-transport",
+    "level": 2
+   },
+   {
+    "text": "4. The QNX guest",
+    "anchor": "4-the-qnx-guest",
+    "level": 2
+   },
+   {
+    "text": "5. Host tools, testing and project vocabulary",
+    "anchor": "5-host-tools-testing-and-project-vocabulary",
+    "level": 2
+   }
+  ]
+ },
+ {
   "title": "Qnx Abi",
   "url": "qnx-abi.html",
   "section": "Project",
@@ -2396,6 +2515,26 @@
    {
     "text": "6. Files of this job",
     "anchor": "6-files-of-this-job",
+    "level": 2
+   },
+   {
+    "text": "7. The pin: the guest disk is reproducible from the repository (gap 74)",
+    "anchor": "7-the-pin-the-guest-disk-is-reproducible-from-the-repository-gap-74",
+    "level": 2
+   },
+   {
+    "text": "8. The cache: no 6.1 GiB download twice (gap 51)",
+    "anchor": "8-the-cache-no-61-gib-download-twice-gap-51",
+    "level": 2
+   },
+   {
+    "text": "9. The kernel-side trace this guest can give (gap 79)",
+    "anchor": "9-the-kernel-side-trace-this-guest-can-give-gap-79",
+    "level": 2
+   },
+   {
+    "text": "10. The QNX 6.5 cross-check: identified, and out of the PR gate (gap 76)",
+    "anchor": "10-the-qnx-65-cross-check-identified-and-out-of-the-pr-gate-gap-76",
     "level": 2
    }
   ]

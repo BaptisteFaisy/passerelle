@@ -59,11 +59,14 @@
 <a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
 <a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
 <a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 0006 msix primary intx fallback" href="adr-ADR-0006-msix-primary-intx-fallback.html">Adr 0006 Msix Primary Intx Fallback</a>
 <a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
 <a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
 <a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
 <a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
 <a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="fsproof guest agent" href="fsproof-guest-agent.html">Fsproof Guest Agent</a>
+<a class="nav-item" data-title="glossary" href="glossary.html">Glossary</a>
 <a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
 <a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
 <a class="nav-item" data-title="release" href="release.html">Release</a>
@@ -74,6 +77,8 @@
     <p class="crumb">Use</p>
     <h1 id="passerelle-detailed-architecture-technical-design">Passerelle — Detailed Architecture &amp; Technical Design</h1>
 <p>This document details the internal design of &lt;strong&gt;Passerelle&lt;/strong&gt;, a high-performance host-guest shared filesystem driver for &lt;strong&gt;QNX® Neutrino® 8.0&lt;/strong&gt; under QEMU. It covers the three-layer architectural model, the lifecycle of an I/O request, the resolution of delicate kernel and protocol challenges, and the source file mapping across the repository.</p>
+<p><img src="_assets/architecture.svg" alt="Passerelle architecture: the three layers inside the QNX guest, the QEMU device, and the host side with the shared directory and the host tools"></p>
+<p>&lt;strong&gt;Reading the picture.&lt;/strong&gt; The one thing to keep in mind is that the guest and the host never talk to each other directly: they talk through layers. Inside the QNX guest, an application's <code>read()</code> becomes an IPC message handled by the resource manager (<code>rmfs/</code>), which speaks one of the two wire protocols (<code>proto9p/</code> for 9P2000.L, <code>protofuse/</code> for virtiofs); both hand raw buffers to the virtio transport (<code>virtio/</code>), which is the only layer that knows about PCI, MMIO, MSI-X and virtqueues. QEMU is a single band underneath — <code>virtio-9p-pci</code> or <code>vhost-user-fs-pci</code> — and the host side is a single directory, served either by QEMU itself or by <code>virtiofsd</code>. Everything drawn to the side of the guest — <code>qshare</code>, <code>qrun</code>, <code>fsproof</code>, <code>pbench</code>, and the reference servers of <code>tests/ref9p</code> and <code>tests/fuse_ref</code> — is host tooling that drives the &lt;em&gt;same&lt;/em&gt; client, which is why the stack can be exercised on the PC with no QNX and no SDP. The ASCII diagram in §1 is the same picture in text.</p>
 <hr>
 <h2 id="1-architectural-overview-three-layers">1. Architectural Overview: Three Layers</h2>
 <p>Passerelle decouples the guest operating system interface, the wire protocol, and the underlying hypervisor transport into three strict layers:</p>
