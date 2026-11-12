@@ -169,97 +169,115 @@ def _collect_list(lines: list[str], start: int) -> tuple[str, int]:
     return f"<{tag}>\n{body}\n</{tag}>", i
 
 
+@dataclass
+class _Ctx:
+    refs: dict[str, tuple[str, str]]
+    seen: dict[str, int]
+    headings: list[tuple[str, str, int]]
+
+
+def _block_code(lines: list[str], i: int, ctx: _Ctx) -> tuple[str, int]:
+    lang = lines[i].strip()[3:].strip()
+    i += 1
+    code: list[str] = []
+    while i < len(lines) and not lines[i].strip().startswith("```"):
+        code.append(lines[i])
+        i += 1
+    i += 1
+    cls = f' class="language-{html.escape(lang)}"' if lang else ""
+    return f"<pre><code{cls}>{_escape(chr(10).join(code))}</code></pre>", i
+
+
+def _block_heading(lines: list[str], i: int, ctx: _Ctx) -> tuple[str, int]:
+    m = re.match(r"^(#{1,6})\s+(.*)$", lines[i].strip())
+    assert m
+    level = len(m.group(1))
+    title = m.group(2).strip()
+    base = slugify(title)
+    count = ctx.seen.get(base, 0)
+    ctx.seen[base] = count + 1
+    anchor = base if count == 0 else f"{base}-{count}"
+    ctx.headings.append((title, anchor, level))
+    return f'<h{level} id="{anchor}">{_inline(title, ctx.refs)}</h{level}>', i + 1
+
+
+def _block_table(lines: list[str], i: int, ctx: _Ctx) -> tuple[str, int]:
+    rows = [_split_row(lines[i])]
+    i += 2
+    while i < len(lines) and lines[i].strip().startswith("|"):
+        rows.append(_split_row(lines[i]))
+        i += 1
+    return _render_table(rows, ctx.refs), i
+
+
+def _block_quote(lines: list[str], i: int, ctx: _Ctx) -> tuple[str, int]:
+    quote: list[str] = []
+    while i < len(lines) and lines[i].strip().startswith(">"):
+        quote.append(lines[i].strip().lstrip(">").strip())
+        i += 1
+    joined = _inline(" ".join(quote), ctx.refs)
+    return f"<blockquote><p>{joined}</p></blockquote>", i
+
+
+def _block_html(lines: list[str], i: int, ctx: _Ctx) -> tuple[str, int]:
+    block: list[str] = []
+    while i < len(lines) and lines[i].strip():
+        block.append(lines[i])
+        i += 1
+    return "\n".join(block), i
+
+
+def _block_para(lines: list[str], i: int, ctx: _Ctx) -> tuple[str, int]:
+    para: list[str] = []
+    while i < len(lines) and lines[i].strip() and not re.match(
+        r"^(#{1,6}\s|```|\||>|\s*[-*+]\s|\s*\d+[.)]\s)", lines[i]
+    ):
+        para.append(lines[i].strip())
+        i += 1
+    if not para:
+        return "", i + 1
+    return f"<p>{_inline(' '.join(para), ctx.refs)}</p>", i
+
+
+def _dispatch(lines: list[str], i: int, ctx: _Ctx) -> tuple[str, int]:
+    """Pick the block handler for the line at `i`."""
+    stripped = lines[i].strip()
+    if re.fullmatch(r"(-{3,}|\*{3,}|_{3,})", stripped):
+        return "<hr>", i + 1
+    if re.match(r"^#{1,6}\s+", stripped):
+        return _block_heading(lines, i, ctx)
+    if (
+        stripped.startswith("|")
+        and i + 1 < len(lines)
+        and _is_separator(_split_row(lines[i + 1]))
+    ):
+        return _block_table(lines, i, ctx)
+    if stripped.startswith(">"):
+        return _block_quote(lines, i, ctx)
+    if re.match(r"^[-*+]\s+", stripped) or re.match(r"^\d+[.)]\s+", stripped):
+        return _collect_list(lines, i)
+    if stripped.startswith("<"):
+        return _block_html(lines, i, ctx)
+    return _block_para(lines, i, ctx)
+
+
 def render(markdown: str) -> Doc:
     """Render Markdown into an HTML body plus its heading anchors."""
-    text = _HTML_COMMENT.sub("", markdown)
-    lines = text.split("\n")
-    refs = _collect_refs(lines)
+    lines = _HTML_COMMENT.sub("", markdown).split("\n")
+    ctx = _Ctx(refs=_collect_refs(lines), seen={}, headings=[])
     doc = Doc()
     out: list[str] = []
-    seen: dict[str, int] = {}
     i = 0
     while i < len(lines):
-        stripped = lines[i].strip()
-        if not stripped:
+        if not lines[i].strip():
             i += 1
             continue
-
-        if stripped.startswith("```"):
-            lang = stripped[3:].strip()
-            i += 1
-            code: list[str] = []
-            while i < len(lines) and not lines[i].strip().startswith("```"):
-                code.append(lines[i])
-                i += 1
-            i += 1
-            cls = f' class="language-{html.escape(lang)}"' if lang else ""
-            body = _escape("\n".join(code))
-            out.append(f"<pre><code{cls}>{body}</code></pre>")
-            continue
-
-        if re.fullmatch(r"(-{3,}|\*{3,}|_{3,})", stripped):
-            out.append("<hr>")
-            i += 1
-            continue
-
-        m = re.match(r"^(#{1,6})\s+(.*)$", stripped)
-        if m:
-            level = len(m.group(1))
-            title = m.group(2).strip()
-            base = slugify(title)
-            count = seen.get(base, 0)
-            seen[base] = count + 1
-            anchor = base if count == 0 else f"{base}-{count}"
-            doc.headings.append((title, anchor, level))
-            out.append(f'<h{level} id="{anchor}">{_inline(title, refs)}</h{level}>')
-            i += 1
-            continue
-
-        if (
-            stripped.startswith("|")
-            and i + 1 < len(lines)
-            and _is_separator(_split_row(lines[i + 1]))
-        ):
-            rows = [_split_row(lines[i])]
-            i += 2
-            while i < len(lines) and lines[i].strip().startswith("|"):
-                rows.append(_split_row(lines[i]))
-                i += 1
-            out.append(_render_table(rows, refs))
-            continue
-
-        if stripped.startswith(">"):
-            quote: list[str] = []
-            while i < len(lines) and lines[i].strip().startswith(">"):
-                quote.append(lines[i].strip().lstrip(">").strip())
-                i += 1
-            joined = _inline(" ".join(quote), refs)
-            out.append(f"<blockquote><p>{joined}</p></blockquote>")
-            continue
-
-        if re.match(r"^[-*+]\s+", stripped) or re.match(r"^\d+[.)]\s+", stripped):
-            block, i = _collect_list(lines, i)
-            out.append(block)
-            continue
-
-        if stripped.startswith("<"):
-            block = []
-            while i < len(lines) and lines[i].strip():
-                block.append(lines[i])
-                i += 1
-            out.append("\n".join(block))
-            continue
-
-        para: list[str] = []
-        while i < len(lines) and lines[i].strip() and not re.match(
-            r"^(#{1,6}\s|```|\||>|\s*[-*+]\s|\s*\d+[.)]\s)", lines[i]
-        ):
-            para.append(lines[i].strip())
-            i += 1
-        if para:
-            joined = _inline(" ".join(para), refs)
-            out.append(f"<p>{joined}</p>")
+        if lines[i].strip().startswith("```"):
+            block, i = _block_code(lines, i, ctx)
         else:
-            i += 1
+            block, i = _dispatch(lines, i, ctx)
+        if block:
+            out.append(block)
     doc.body = "\n".join(out)
+    doc.headings = ctx.headings
     return doc
