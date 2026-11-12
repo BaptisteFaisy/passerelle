@@ -25,6 +25,13 @@
  * the stubs in tests/qnx-stub, so both are spelled out here once. */
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE 1
+/* QNX 8's thread pool passes its work item to block/handler/context_alloc under
+ * THREAD_POOL_PARAM_T. The dispatch layer's own functions (dispatch_block() and
+ * friends) take dispatch_context_t, so the pool parameter is pinned to that
+ * type here - the same define the QNX 8 Resource Manager examples use - instead
+ * of the resmgr_context_t default, which would make every dispatch_* assignment
+ * a type mismatch (QNX-05). */
+#define THREAD_POOL_PARAM_T dispatch_context_t
 #include "pgw/drvsrv.h"
 
 #include "pgw/log.h"
@@ -45,13 +52,6 @@ static pgw_srv *g_srv;
 static _Thread_local pgw_node *t_released;
 
 #define SRV_MSG_MAX 4096u
-
-/* The pool hands its `handle` as a void*; QNX's dispatch_context_alloc() takes
- * the dispatch pointer. This thin adapter keeps the cast in one place. */
-static dispatch_context_t *pool_context_alloc(void *handle)
-{
-    return dispatch_context_alloc((dispatch_t *)handle);
-}
 
 static IOFUNC_OCB_T *srv_ocb_calloc(resmgr_context_t *ctp, IOFUNC_ATTR_T *attr)
 {
@@ -223,7 +223,9 @@ pgw_err pgw_srv_serve(pgw_srv *srv, uint32_t threads)
     thread_pool_attr_t pattr;
     memset(&pattr, 0, sizeof pattr);
     pattr.handle = srv->dpp;
-    pattr.context_alloc = pool_context_alloc;
+    /* The dispatch layer's own functions take dispatch_context_t, which is why
+     * THREAD_POOL_PARAM_T is pinned to that type at the top of the file. */
+    pattr.context_alloc = dispatch_context_alloc;
     pattr.block_func = dispatch_block;
     pattr.unblock_func = dispatch_unblock;
     pattr.handler_func = dispatch_handler;
@@ -233,8 +235,8 @@ pgw_err pgw_srv_serve(pgw_srv *srv, uint32_t threads)
      * (QNX-05). */
     pattr.lo_water = 2;
     pattr.increment = 1;
-    pattr.hi_water = (int32_t)threads;
-    pattr.maximum = (int32_t)threads;
+    pattr.hi_water = (unsigned short)threads;
+    pattr.maximum = (unsigned short)threads;
 
     srv->pool = thread_pool_create(&pattr, POOL_FLAG_EXIT_SELF);
     if (srv->pool == NULL)
