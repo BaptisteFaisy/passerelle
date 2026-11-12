@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /* A failure that says *what* diverged: a directed case must not only report
  * that something is wrong, it must name the value and the layer. */
@@ -154,7 +155,14 @@ size_t cas_fd_count(void);
 /* Ask the kernel to drop the page cache of a file: the closest thing to a
  * crash simulation that a test may do without privileges. */
 bool cas_drop_cache(const char *path);
-/* "<a>/<b>", always NUL terminated. */
-void cas_path_join(char *out, size_t cap, const char *a, const char *b);
+/* "<a>/<b>", always NUL terminated. A header inline so that the case bodies
+ * (cas_cases.h) and the fixture agree on one and the same join. */
+static inline void cas_path_join(char *out, size_t cap, const char *a, const char *b)
+{
+    if (b == NULL || b[0] == '\0')
+        snprintf(out, cap, "%s", a);
+    else
+        snprintf(out, cap, "%s/%s", a, b);
+}
 
 #endif /* PGW_TESTS_CAS_H */
