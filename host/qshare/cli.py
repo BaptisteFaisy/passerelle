@@ -20,7 +20,7 @@ import importlib
 import pathlib
 import sys
 
-from pgwutil import HostError, ValidationError
+from pgwutil import HostError, ValidationError, package_version
 from pgwutil import config as pgwconfig
 from qshare.image import build_fragment, install_fragment, render_fragment
 from qshare.options import (
@@ -38,23 +38,8 @@ COMMANDS = ("doctor", "init", "smoke")
 
 
 def _version_string() -> str:
-    """Version of the installed package, else the repository's VERSION file.
-
-    The package metadata is authoritative once installed; when running straight
-    from a checkout there is no metadata, so the VERSION file at the repository
-    root answers instead. Both must agree - `tools/release/test_version_sync.py`
-    is what enforces it.
-    """
-    try:
-        from importlib.metadata import version
-
-        return version("passerelle-host")
-    except Exception:  # noqa: BLE001 - not installed as a package
-        pass
-    candidate = pathlib.Path(__file__).resolve().parents[2] / "VERSION"
-    if candidate.is_file():
-        return candidate.read_text(encoding="utf-8").strip()
-    return "0.0.0"
+    """Version of the tools: the installed package, else the VERSION file."""
+    return package_version()
 
 
 def _add_share_options(parser: argparse.ArgumentParser) -> None:

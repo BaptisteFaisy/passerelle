@@ -77,6 +77,26 @@ def run_cmd(
     )
 
 
+def package_version(package: str = "passerelle-host") -> str:
+    """Version of the installed host tools, else the repository's VERSION file.
+
+    The package metadata is authoritative once installed; a plain checkout has
+    none, so the VERSION file at the repository root answers instead. Both must
+    agree - `tools/release/test_version_sync.py` is what enforces it. One
+    implementation, used by `qshare --version` and by `qshare doctor`.
+    """
+    try:
+        from importlib.metadata import version
+
+        return version(package)
+    except Exception:  # noqa: BLE001 - not installed as a package
+        pass
+    candidate = pathlib.Path(__file__).resolve().parents[2] / "VERSION"
+    if candidate.is_file():
+        return candidate.read_text(encoding="utf-8").strip()
+    return "0.0.0"
+
+
 def which(program: str, extra: Sequence[str] = ()) -> pathlib.Path | None:
     """Locate *program* on PATH, then among *extra* absolute candidates."""
     for directory in os.environ.get("PATH", "").split(os.pathsep):
