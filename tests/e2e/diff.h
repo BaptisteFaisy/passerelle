@@ -100,6 +100,27 @@ int diff_verify_tree(pgw_rmfs *fs, const char *root, char *err, size_t err_cap);
 /* Write `len` bytes of a deterministic pattern seeded by `seed` at `off`. */
 void diff_fill(void *buf, size_t len, uint32_t seed, uint64_t off);
 
+/* --- the mount of the layer under test (VFS-05) --------------------------- */
+
+/* Which adapter sits under rmfs must change neither the suites nor the way
+ * they are verified. The default mount is the POSIX truth backend; the FUSE
+ * bench of tests/fuse_e2e installs the provider that mounts rmfs over the
+ * FUSE adapter (VFS-05), so the very same bench runs on both protocols
+ * without a second copy of it. */
+typedef struct diff_mount {
+    pgw_rmfs *fs;   /* the layer under test */
+    char root[512]; /* the directory that holds the truth */
+    void *user;     /* the provider's own context */
+    void (*release)(void *user);    /* destroy the context, when it has one */
+    size_t (*leaked)(void *user);   /* descriptors the backend left open */
+} diff_mount;
+
+typedef bool (*diff_mount_fn)(diff_mount *m, void *user, char *err,
+                             size_t err_cap);
+
+/* Install the provider; NULL restores the POSIX truth backend. */
+void diff_set_mount_provider(diff_mount_fn fn, void *user);
+
 #ifdef __cplusplus
 }
 #endif
