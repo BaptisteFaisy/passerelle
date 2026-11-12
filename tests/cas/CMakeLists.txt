@@ -100,3 +100,14 @@ set_tests_properties(cas-load-long PROPERTIES
     LABELS "long;directed"
     TIMEOUT 900
     ENVIRONMENT "PGW_CAS_LOAD_THREADS=8;PGW_CAS_LOAD_SECONDS=30")
+
+# The deepest variant of the path-length case: 40 levels of 100 bytes, so the
+# walk is split in three Twalk messages and the absolute path comes close to
+# PATH_MAX while crossing the wire. Out of the pull-request gate (CI budget,
+# 5 minutes per job), 0.8 s measured here.
+add_test(NAME cas-path-len-deep COMMAND test_cas_path_len)
+set_tests_properties(cas-path-len-deep PROPERTIES
+    DISABLED TRUE
+    LABELS "long;directed"
+    TIMEOUT 600
+    ENVIRONMENT "PGW_CAS_DEEP_LEVELS=40")

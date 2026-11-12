@@ -37,6 +37,17 @@
 
 #define CHAIN_COMP 100u /* bytes in one component of the chain */
 
+/* Depth of the chain driven through the 9P client: 20 levels by default, i.e.
+ * a walk longer than the PGW_MAXWELEM (16) names of one Twalk, which the
+ * session must split (P9-08). Every operation re-walks its whole path from the
+ * session root, so the cost grows with the square of the depth; measured here,
+ * 0.34 s for 20 levels and 0.82 s for 40. The DISABLED long variant goes to 40
+ * levels, which also brings the absolute path close to PATH_MAX. */
+static size_t deep_levels(void)
+{
+    return (size_t)cas_env_u64("PGW_CAS_DEEP_LEVELS", 20);
+}
+
 /* A component of exactly `len` bytes, distinct for every index so two levels
  * of a chain never collide. */
 static void cas_component(char *out, size_t len, size_t i)
@@ -288,8 +299,7 @@ static void test_deep_chain_through_9p(void)
 {
     cas_9p c;
     PGW_ASSERT(cas_9p_open(&c, "pgwcas-deep9p", NULL));
-    const size_t levels = 20; /* more than the 16 names of one Twalk */
-
+    const size_t levels = deep_levels();
     char rel[CAS_PATH_MAX];
     chain_through_client(c.fs, &c.cred, levels, rel, sizeof(rel));
     printf("# deep path over 9P: %zu levels, %zu relative bytes\n", levels, strlen(rel));
