@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adr 002 Qnx Priority Conversion - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="_assets/style.css">
+<link rel="icon" href="_assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="adr-002-one-conversion-point-from-qnx-priority-to-scheduler-urgency">ADR-002 — one conversion point from QNX priority to scheduler urgency</h1>
+<ul>
+<li>**Status**: Accepted (11 November 2026)</li>
+<li>**Requirements**: QNX-03 (request runs at the caller priority), QNX-04 (priority-ordered submission), PERF-05 (a high-priority read must not wait behind a bulk copy)</li>
+<li>**Code**: [`common/include/pgw/prio.h`](../../common/include/pgw/prio.h) (`pgw_prio_from_qnx`, `pgw_prio_to_qnx`), [`drivers/common/src/prio_qnx.c`](../../drivers/common/src/prio_qnx.c), [`rmfs/src/sched.c`](../../rmfs/src/sched.c)</li>
+<li>**Proof**: `prio` (`common/tests/test_prio.c`) — `test_most_urgent_qnx_priority_wins`, `test_conversion_is_an_involution`, `test_out_of_range_is_never_most_urgent`; `test_rmfs_sched` — `test_high_priority_overtakes_bulk`, `test_equal_priority_is_fifo`</li>
+</ul>
+<h2 id="context">Context</h2>
+<p>Two priority conventions meet in this project and they point in opposite directions:</p>
+<ul>
+<li>**QNX** numbers thread priorities so that **1 is the most urgent** and 255 the least — a real-time kernel, smaller is better;</li>
+<li>the **layer-3 submission scheduler** orders pending requests by **descending urgency value**, because that keeps the insertion test trivial and the queue a plain array.</li>
+</ul>
+<p>The first implementation passed the QNX priority straight through to the scheduler. The consequence was measured by the directed case written for PERF-05: a background copy at QNX priority 250 &lt;strong&gt;overtook&lt;/strong&gt; a control-loop read at priority 10. On the target, PERF-05 was inverted — exactly the behaviour the requirement forbids, and the one a real-time user would notice first.</p>
+<h2 id="decision">Decision</h2>
+<p>Convert &lt;strong&gt;once&lt;/strong&gt;, at the boundary, and make the rest of the project speak a single convention:</p>
+<ul>
+<li>`pgw_prio_from_qnx(qnx)` maps 1…255 onto 255…1 (`256 - prio`);</li>
+<li>everywhere else in the tree, `prio` means *bigger is more urgent*;</li>
+<li>an out-of-range or unknown value maps to the **least** urgent class, never to the most urgent one: a mis-read priority must not let a request jump the queue;</li>
+<li>`pgw_prio_to_qnx()` is the inverse, used only for logging and for the kernel trace events of QNX-09, so a trace reads in QNX terms.</li>
+</ul>
+<p>The conversion is a <code>static inline</code> in a header, so there is no second place to get it wrong, and the driver re-applies the caller priority for the whole exchange (<code>drivers/common/src/prio_qnx.c</code>).</p>
+<h2 id="consequences">Consequences</h2>
+<ul>
+<li>PERF-05 behaves as specified on the PC bench: the priority request overtakes the eight low-priority ones already queued, and requests of equal priority stay FIFO.</li>
+<li>The failure mode is now safe by construction: garbage in gives "least urgent" out, which degrades latency for one request instead of inverting the schedule.</li>
+<li>Conversion is an involution, pinned by a test, so the round trip QNX → scheduler → trace cannot drift.</li>
+<li>What is still missing is the *measurement* half of QNX-03: showing the inherited priority in a QNX kernel trace needs a guest built with the SDP. The conversion itself is proven; the trace is not taken.</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Previous</a>
+      <a class="next" href="adr-ADR-003-write-our-own-virtio-transport.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="_assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Did Not Work - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="_assets/style.css">
+<link rel="icon" href="_assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="what-did-not-work">What did not work</h1>
+<p>Five things cost real time, and four of them changed a design or a process. They are written down because a submission that only lists what worked is not a submission anybody can build on. Each entry says what was tried, what actually happened, what it cost, and where the fix lives.</p>
+<hr>
+<h2 id="1-the-qnx-sdp-could-not-be-obtained-without-an-account">1. The QNX SDP could not be obtained without an account</h2>
+<p>&lt;strong&gt;Tried.&lt;/strong&gt; Install QNX SDP 8.0 (QNX Everywhere) to cross-compile the driver with <code>qcc</code> and to build a guest image with <code>mkqnximage</code>, as the specification assumes (§4.3). Every route was checked on the development machine: no <code>qcc</code>, no <code>mkqnximage</code>, no <code>~/qnx800</code>, and no public download that does not require a myQNX account. The community image that is known to ship an SDP, <code>ghcr.io/kodebooth/qnx-sdp</code>, is &lt;strong&gt;private&lt;/strong&gt;.</p>
+<p>&lt;strong&gt;What happened.&lt;/strong&gt; Nothing to install. The machine has QEMU 8.2.2 and <code>virtiofsd</code>, so the &lt;em&gt;host&lt;/em&gt; half of the project is fully exercisable, and the &lt;em&gt;guest&lt;/em&gt; half is not.</p>
+<p>&lt;strong&gt;What it cost.&lt;/strong&gt; This is the single blocking item of the project: feasibility tests &lt;strong&gt;E1 (driver half), E2, E3 and E4&lt;/strong&gt; cannot be run; &lt;strong&gt;PERF-02 … PERF-07&lt;/strong&gt; have no measurement; &lt;strong&gt;21 requirements stay partial&lt;/strong&gt; and the QNX driver sources have never executed. It also means the demonstration video cannot show a QNX guest mounting the share, which is the shot the whole project was designed around.</p>
+<p>&lt;strong&gt;What we did instead.&lt;/strong&gt; Rather than assert that the driver works:</p>
+<ul>
+<li>layers 1 to 3 were made portable C11 with no OS header, so they are built, tested and fuzzed on the PC in CI (P9-10 is a requirement, and it is now the reason the project has any proof at all);</li>
+<li>a **mock virtio backend** (`virtio/src/mock.c`) replaced the missing device, so the transport is tested without QNX;</li>
+<li>the QNX-only files are compile-checked against stub headers (`tests/qnx-stub/include`, CI job `qnx-syntax`) — which proves they parse and type-check, and is labelled as such everywhere;</li>
+<li>a **real QNX 7.1 guest** was booted to ask the device what it looks like from the QNX side (next entry).</li>
+</ul>
+<p>Recorded in <a href="verification-status.html"> 0 </a> §3 and §4, and in <a href="gap-analysis.html"> 1 </a> (every gap marked <code>[S]</code>).</p>
+<h2 id="2-the-qnx-71-image-we-could-get-ships-no-compiler-and-routes-no-interrupt">2. The QNX 7.1 image we could get ships no compiler — and routes no interrupt</h2>
+<p>&lt;strong&gt;Tried.&lt;/strong&gt; Use the community QNX Neutrino &lt;strong&gt;7.1.0&lt;/strong&gt; x86_64 image (2022-07-12) as the guest: build our driver into it, mount the share, run a binary from it.</p>
+<p>&lt;strong&gt;What happened.&lt;/strong&gt; The image boots fine under QEMU 8.2.2 and its own tools answer, but it is a &lt;em&gt;runtime&lt;/em&gt; image: &lt;strong&gt;no <code>qcc</code>, no <code>mkifs</code>&lt;/strong&gt;. It cannot build our driver and nothing can be compiled for it. It is also 7.1, not 8.0, so the kernel changes the design relies on (<code>InterruptAttach()</code> removed, the capability model) are not exercised by it.</p>
+<p>One more thing came out of it, and it is a finding rather than a failure: <code>pci-tool -vv</code> reports our device as <code>1af4/1009</code> with the MSI-X capability, the five virtio vendor capabilities and three assigned BARs — &lt;strong&gt;and <code>Interrupt list - 0 assigned</code>&lt;/strong&gt;. The image's <code>pci_hw.cfg</code> routes INTx only for other bus/device addresses, and <code>pci_server.cfg</code> sets <code>DO_BUS_CONFIG=no</code>, so the BARs are assigned by QEMU firmware, not by the PCI server. A driver must therefore add its own INTx entry (bus, device, pin A) or take the MSI-X path, for which the image does ship <code>pci_cap-0x11.so</code>.</p>
+<p>&lt;strong&gt;What it cost.&lt;/strong&gt; E1 stays half answered; FS-06 (execute a binary from the share), QNX-02, QNX-06 and QNX-07 cannot be demonstrated.</p>
+<p>&lt;strong&gt;What we kept.&lt;/strong&gt; The observation is now evidence instead of an assumption: <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/tests/qemu/qnx71/EVIDENCE.md"> 0 </a>, with the transcript copied from the guest, and the interrupt-routing consequence is written into the driver design and into <a href="adr-ADR-003-write-our-own-virtio-transport.html">ADR-003</a>'s PCI id discussion. It also cross-checks our device-id constants against a real QEMU rather than against a datasheet (VIO-01, VFS-01).</p>
+<h2 id="3-the-lookup-getattr-symlink-convention-was-inverted">3. The <code>lookup</code> / <code>getattr</code> symlink convention was inverted</h2>
+<p>&lt;strong&gt;Tried.&lt;/strong&gt; Implement the backend interface with <code>lookup</code> and <code>getattr</code> as two attribute calls, without writing down which one follows a final symbolic link.</p>
+<p>&lt;strong&gt;What happened.&lt;/strong&gt; <code>rmfs</code> assumed one convention, the POSIX truth backend and the 9P adapter assumed the other. The observable symptom was inverted: <code>lstat</code> on a link loop answered &lt;strong&gt;<code>ELOOP</code>&lt;/strong&gt; while <code>stat</code> on the same path answered &lt;strong&gt;<code>OK</code>&lt;/strong&gt;. Worse, because the walk never &lt;em&gt;saw&lt;/em&gt; a link, it never produced the redirect answer QNX needs, and &lt;strong&gt;FS-08 (loop detection) was unreachable&lt;/strong&gt; — every <code>lstat</code> on a symlink was wrong.</p>
+<p>&lt;strong&gt;What it cost.&lt;/strong&gt; A conformance defect that no amount of reading would have found: it was the differential bench (<code>tests/e2e</code>) that produced it, on a randomly generated symlink loop.</p>
+<p>&lt;strong&gt;Fix.&lt;/strong&gt; The convention is now written where both sides read it, in <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/rmfs/include/pgw/rmfs.h"> 0 </a>: <code>lookup</code> = <code>lstat(2)</code> semantics, never follows the final link; <code>getattr</code> = <code>stat(2)</code> semantics, follows it and may legitimately return <code>ELOOP</code> or <code>ENOENT</code>. An adapter whose protocol cannot distinguish the two may implement both identically, because <code>rmfs</code> resolves links itself through <code>readlink</code>. Pinned by <code>test_rmfs_path</code> (<code>test_symlink_yields_redirect</code>, <code>test_symlink_loop_detected</code>, <code>test_open_nofollow_refuses_symlink</code>). Full record: <a href="adr-ADR-001-lookup-getattr-symlink-convention.html">ADR-001</a>.</p>
+<h2 id="4-strict-true-on-branch-protection-is-incompatible-with-the-mergify-queue">4. <code>strict: true</code> on branch protection is incompatible with the Mergify queue</h2>
+<p>&lt;strong&gt;Tried.&lt;/strong&gt; Protect <code>main</code> the conventional way: required status checks &lt;strong&gt;and&lt;/strong&gt; "Require branches to be up to date before merging" (<code>required_status_checks.strict: true</code>).</p>
+<p>&lt;strong&gt;What happened.&lt;/strong&gt; Measured on pull request &lt;strong&gt;#13&lt;/strong&gt;: with every check green, the Mergify queue &lt;strong&gt;refused to queue anything&lt;/strong&gt; and posted a failing <code>Mergify Merge Queue</code> check reading &lt;em&gt;"Configuration not compatible with a branch protection setting"&lt;/em&gt;. The mechanism is structural — the queue tests a PR through a draft built on the latest base and then merges the &lt;em&gt;original&lt;/em&gt; branch, which GitHub by then considers out of date. Two extra traps on the same afternoon: the protection endpoint is <code>PUT</code> (a <code>PATCH</code> answers 404), and all four keys must be supplied or GitHub answers 422. And <code>queue_rules</code> alone does nothing: a <code>pull_request_rules</code> entry with a <code>queue</code> action is required, plus the Merge Queue product activated for the repository.</p>
+<p>&lt;strong&gt;What it cost.&lt;/strong&gt; Roughly a day of CI archaeology, and a merge pipeline that silently did nothing while looking configured.</p>
+<p>&lt;strong&gt;Fix.&lt;/strong&gt; <code>strict: false</code>, every required context kept, and the reasoning written down with the exact <code>gh api</code> call: <a href="adr-ADR-005-mergify-queue-strict-false.html">ADR-005</a> and <a href="ci.html"> 2 </a>. Losing <code>strict</code> costs nothing here because the queue re-tests every PR on the latest base together with the ones ahead of it, and <code>hermes-lite</code> watches freshness separately (in dry-run: it alerts, it never merges). If <code>strict</code> ever has to come back, the queue must switch to <code>merge_method: fast-forward</code> or to serial in-place checks.</p>
+<h2 id="5--trace-file-writes-a-binary-trace-not-text">5. <code>-trace file=</code> writes a binary trace, not text</h2>
+<p>&lt;strong&gt;Tried.&lt;/strong&gt; Record the QEMU 9P trace for the round-trip baseline with <code>-trace 'enable=v9fs_*' -trace file=baseline.log</code>, then parse <code>baseline.log</code> as text — the whole benchmark (<code>host/bench/trace.py</code>) counts one line per event.</p>
+<p>&lt;strong&gt;What happened.&lt;/strong&gt; The file was &lt;strong&gt;simpletrace binary&lt;/strong&gt;, not text: the parser found no <code>v9fs_*</code> line at all. On Ubuntu's QEMU 8.2 the trace events go through the <code>log</code> backend, which writes plain text to the file named by &lt;strong&gt;<code>-D</code>&lt;/strong&gt;; the <code>file=</code> option belongs to the simpletrace format.</p>
+<p>&lt;strong&gt;What it cost.&lt;/strong&gt; A baseline that looked recorded and contained nothing usable — the failure was loud (<code>no 9P event in &lt;file&gt;; start QEMU with -trace 'enable=v9fs_*' -trace file=...</code>), but the message itself pointed at the wrong option, which cost another round.</p>
+<p>&lt;strong&gt;Fix.&lt;/strong&gt; <code>qshare</code> passes both switches — <code>-D &lt;path&gt;</code> for the text log the parser reads and <code>-trace enable=v9fs_*</code> to enable the events (<a href="https://github.com/BaptisteFaisy/passerelle/blob/main/host/qshare/runner.py"> 3 </a>, with the reason in a comment), and the error message in <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/host/bench/cli.py"> 4 </a> names the working combination. A second limit is stated rather than papered over: the text log carries &lt;strong&gt;no timestamps&lt;/strong&gt;, so latencies are not reported at all — round trips per call do not need them (<a href="adr-ADR-004-roundtrip-measured-baseline.html">ADR-004</a>).</p>
+<hr>
+<h2 id="smaller-things-that-also-did-not-work">Smaller things that also did not work</h2>
+<table>
+<thead>
+<tr>
+<th>Attempt</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Passing the QNX priority straight through to the submission scheduler</td>
+<td>A background copy at priority 250 &lt;strong&gt;overtook&lt;/strong&gt; a priority-10 read: PERF-05 inverted on target. Fixed by a single conversion point, <code>pgw_prio_from_qnx()</code> — <a href="adr-ADR-002-qnx-priority-conversion.html">ADR-002</a></td>
+</tr>
+<tr>
+<td><code>*.log</code> in <code>.gitignore</code></td>
+<td>Swallowed the recorded QEMU traces under <code>host/tests/fixtures/</code>, so <code>host-tools</code> failed on the runner while passing locally. Fixed with an explicit negation</td>
+</tr>
+<tr>
+<td>A hard-coded include list in the <code>qnx-syntax</code> job</td>
+<td>Failed on <code>pgw/drvsrv.h</code>, the drivers' shared service layer. The job now discovers every <code>include/</code> directory of the stack</td>
+</tr>
+<tr>
+<td>Running E5 on the self-hosted R630 workers</td>
+<td>They have neither QEMU nor <code>virtiofsd</code>: the step reports an &lt;strong&gt;explicit skip&lt;/strong&gt; (exit 2, never a silent green), and E5 runs on a GitHub-hosted <code>ubuntu-24.04</code> runner instead</td>
+</tr>
+<tr>
+<td>Direct boot on the CI runner kernel</td>
+<td>The runner's <code>/boot/vmlinuz-*</code> is <code>-rw-------</code>, and <code>linux-modules-extra</code> is not installable there; a step chmods the kernel, and the Azure kernel already ships <code>netfs</code>, <code>9pnet</code>, <code>9pnet_virtio</code>, <code>9p</code> and <code>virtiofs</code></td>
+</tr>
+<tr>
+<td>Reading a red <code>Verdict</code> check as a veto</td>
+<td><code>hermes-lite</code> runs with <code>cancel-in-progress: true</code>, so a superseded run turns red with a cancellation annotation; <code>Verdict</code> is not a required check — read <code>hermes-lite/verdict</code></td>
+</tr>
+<tr>
+<td>The spec's one-hour fuzzing campaign (§7.6)</td>
+<td>At the measured rate it would be ~10⁹ iterations, so the honest claim is &lt;strong&gt;5 000 000 per family&lt;/strong&gt;, and the long CTest entries stay disabled so they never run on a pull request</td>
+</tr>
+</tbody>
+</table>
+    <nav class="pager">
+      <a class="prev" href="submission-readme-summary.html">Previous</a>
+      <a class="next" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="_assets/search.js"></script>
+</body>
+</html>
