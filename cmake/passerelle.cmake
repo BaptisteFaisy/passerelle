@@ -43,7 +43,16 @@ endfunction()
 # pgw_test(<name> SRCS t.c [DEPS lib...]) - registers a CTest case.
 function(pgw_test name)
     cmake_parse_arguments(ARG "" "" "SRCS;DEPS;LABELS" ${ARGN})
-    add_executable(${name} ${ARG_SRCS})
+    # The test suite is the PC's: it uses POSIX interfaces the QNX target does
+    # not have (readdir's d_type, for one). A cross build therefore keeps the
+    # targets (the modules add include directories to them right after) but
+    # does not build them: EXCLUDE_FROM_ALL leaves them out of the default
+    # target, so the cross build compiles the libraries and the drivers only.
+    if(CMAKE_CROSSCOMPILING)
+        add_executable(${name} EXCLUDE_FROM_ALL ${ARG_SRCS})
+    else()
+        add_executable(${name} ${ARG_SRCS})
+    endif()
     target_link_libraries(${name} PRIVATE pgw_test ${ARG_DEPS})
     pgw_apply_flags(${name})
     add_test(NAME ${name} COMMAND ${name})

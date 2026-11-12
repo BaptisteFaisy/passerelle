@@ -27,6 +27,7 @@
 #include <sys/iomsg.h>
 #include <sys/neutrino.h>
 #include <sys/procmgr.h>
+#include <sys/trace.h>
 
 /* --- errno (QNX 8.0 C Library Reference, "errno") --------------------------
  *
@@ -78,7 +79,11 @@ _Static_assert(ECANCELED == 47, "QNX ECANCELED must be 47");
 _Static_assert(O_RDONLY == 0, "QNX O_RDONLY must be 0");
 _Static_assert(O_WRONLY == 1, "QNX O_WRONLY must be 1");
 _Static_assert(O_RDWR == 2, "QNX O_RDWR must be 2");
-_Static_assert(O_ACCMODE == 3, "QNX O_ACCMODE must be 3");
+/* QNX has a fourth access mode, O_EXEC (000003): the mask covers the three
+ * POSIX modes and the execute one, so it is 7 and not the 3 of Linux. Measured
+ * on the SDP 8.0 headers on 12/11/2026 (usr/include/fcntl.h:72). */
+_Static_assert(O_ACCMODE == 7, "QNX O_ACCMODE must be 7 (O_EXEC is a fourth mode)");
+_Static_assert(O_EXEC == 3, "QNX O_EXEC must be 3");
 _Static_assert(O_CREAT != 0 && O_EXCL != 0 && O_TRUNC != 0, "QNX open flags exist");
 _Static_assert(O_APPEND != 0 && O_SYNC != 0 && O_DSYNC != 0, "QNX open flags exist");
 _Static_assert(O_DIRECTORY != 0 && O_NOFOLLOW != 0, "QNX open flags exist");
@@ -124,8 +129,10 @@ _Static_assert(_NTO_INTR_FLAGS_EXCLUSIVE != 0, "QNX _NTO_INTR_FLAGS_EXCLUSIVE ex
  * The user event ids must be inside the range the kernel accepts, otherwise
  * the event is silently dropped and QNX-09 is not met (QNX-09).
  */
-_Static_assert(_NTO_TRACE_USERFIRST > 0, "QNX _NTO_TRACE_USERFIRST exists");
+_Static_assert(_NTO_TRACE_USERFIRST == 0, "QNX user trace range starts at 0");
 _Static_assert(_NTO_TRACE_USERLAST > _NTO_TRACE_USERFIRST, "QNX user trace range is not empty");
+/* The user range is 0..0x3ff in SDP 8.0 (sys/trace.h:168), so 1024 event ids:
+ * the driver's 2 * 20 + 1 ids fit with room to spare. */
 _Static_assert(2 * 20 + 1 < _NTO_TRACE_USERLAST - _NTO_TRACE_USERFIRST,
                "the driver's event ids must fit the user range");
 

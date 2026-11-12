@@ -28,12 +28,15 @@ endif()
 
 set(QNX_SDP_BIN "${QNX_HOST}/bin" CACHE PATH "SDP host tools")
 
-set(CMAKE_C_COMPILER nto-x86_64-gcc CACHE FILEPATH "QNX C compiler")
-set(CMAKE_CXX_COMPILER nto-x86_64-g++ CACHE FILEPATH "QNX C++ compiler")
-set(CMAKE_ASM_COMPILER nto-x86_64-as CACHE FILEPATH "QNX assembler")
-set(CMAKE_LINKER nto-x86_64-ld CACHE FILEPATH "QNX linker")
-set(CMAKE_AR nto-x86_64-ar CACHE FILEPATH "QNX archiver")
-set(CMAKE_RANLIB nto-x86_64-ranlib CACHE FILEPATH "QNX ranlib")
+set(CMAKE_C_COMPILER qcc CACHE FILEPATH "QNX C compiler")
+set(CMAKE_CXX_COMPILER q++ CACHE FILEPATH "QNX C++ compiler")
+set(CMAKE_ASM_COMPILER qcc CACHE FILEPATH "QNX assembler")
+
+# The linker and the archiver are the SDP's too; qcc drives the linker. The
+# SDP 8.0 has no `qar`: the archiver is named after the target.
+set(CMAKE_LINKER qcc CACHE FILEPATH "QNX linker")
+set(CMAKE_AR ntox86_64-ar CACHE FILEPATH "QNX archiver")
+set(CMAKE_RANLIB ntox86_64-gcc-ranlib CACHE FILEPATH "QNX ranlib")
 
 set(CMAKE_SYSROOT "${QNX_TARGET}")
 
@@ -43,11 +46,23 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-set(PGW_MKQNXIMAGE "${QNX_SDP_BIN}/mkqnximage" CACHE FILEPATH "mkqnximage")
-set(PGW_SECPOLCOMPILE "${QNX_SDP_BIN}/secpolcompile" CACHE FILEPATH "secpolcompile")
-set(PGW_SECPOLPUSH "${QNX_SDP_BIN}/secpolpush" CACHE FILEPATH "secpolpush")
+# The host tools of the SDP 8.0 are not all in the same place: the compiler
+# and secpolcompile live in $QNX_HOST/usr/bin, while mkqnximage lives in the
+# shared host/common/bin (the environment script puts both on PATH). The paths
+# are looked up, not guessed, so the toolchain works wherever the SDP sits.
+find_program(PGW_QNX_MKQNXIMAGE NAMES mkqnximage
+             HINTS "${QNX_HOST}/usr/bin" "${QNX_HOST}/../common/bin" "${QNX_SDP_BIN}")
+find_program(PGW_QNX_SECPOLCOMPILE NAMES secpolcompile
+             HINTS "${QNX_HOST}/usr/bin" "${QNX_HOST}/../common/bin" "${QNX_SDP_BIN}")
+find_program(PGW_QNX_SECPOLPUSH NAMES secpolpush
+             HINTS "${QNX_HOST}/usr/bin" "${QNX_HOST}/../common/bin" "${QNX_SDP_BIN}")
+set(PGW_MKQNXIMAGE "${PGW_QNX_MKQNXIMAGE}" CACHE FILEPATH "mkqnximage")
+set(PGW_SECPOLCOMPILE "${PGW_QNX_SECPOLCOMPILE}" CACHE FILEPATH "secpolcompile")
+set(PGW_SECPOLPUSH "${PGW_QNX_SECPOLPUSH}" CACHE FILEPATH "secpolpush")
 
-set(CMAKE_C_FLAGS_INIT "-D__QNX__ -D__QNXNTO__")
+# qcc defines __QNX__ and __QNXNTO__ itself: declaring them again here would
+# be a redefinition, and the build treats warnings as errors.
+set(CMAKE_C_FLAGS_INIT "")
 
 message(STATUS "QNX target: ${QNX_TARGET}")
 message(STATUS "QNX host tools: ${QNX_SDP_BIN}")

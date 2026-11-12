@@ -29,8 +29,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <sys/iofunc.h>  /* first: it sets RESMGR_OCB_T before dispatch/resmgr */
 #include <sys/dispatch.h>
-#include <sys/iofunc.h>
 #include <sys/neutrino.h>
 #include <sys/resmgr.h>
 

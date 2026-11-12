@@ -118,9 +118,12 @@ set(PGW_FSFUSE_QNX_SRCS
     "${CMAKE_CURRENT_SOURCE_DIR}/fsfuse/src/trace_qnx.c"
 )
 
-if(QNX)
+if(QNX OR CMAKE_SYSTEM_NAME STREQUAL "QNX")
     # The real build: the cross toolchain file provides qcc (or ntoaarch64-gcc
     # and friends), so these are QNX objects for QNX targets.
+    # CMAKE_SYSTEM_NAME is the reliable test: CMake does not always define the
+    # QNX variable, and without it this file would take the PC branch and try
+    # to compile the *stubs* with the cross compiler.
     add_executable(fs9p
         "${CMAKE_CURRENT_SOURCE_DIR}/fs9p/src/main.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/fs9p/src/args.c"

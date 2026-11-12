@@ -42,9 +42,11 @@ set(CMAKE_C_COMPILER qcc CACHE FILEPATH "QNX C compiler")
 set(CMAKE_CXX_COMPILER q++ CACHE FILEPATH "QNX C++ compiler")
 set(CMAKE_ASM_COMPILER qcc CACHE FILEPATH "QNX assembler")
 
-# The linker and the archiver are the SDP's too; qcc drives them.
+# The linker and the archiver are the SDP's too; qcc drives them. The SDP 8.0
+# has no `qar`: the archiver is named after the target.
 set(CMAKE_LINKER qcc CACHE FILEPATH "QNX linker")
-set(CMAKE_AR qar CACHE FILEPATH "QNX archiver")
+set(CMAKE_AR ntoaarch64-ar CACHE FILEPATH "QNX archiver")
+set(CMAKE_RANLIB ntoaarch64-gcc-ranlib CACHE FILEPATH "QNX ranlib")
 
 # The C library and the headers come from the target tree.
 set(CMAKE_SYSROOT "${QNX_TARGET}")

@@ -93,8 +93,23 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    int rc = ThreadCreate(shutdown_main, &sigs, 8192u);
-    if (rc < 0) {
+    /* The shutdown thread waits for a signal, then unmounts.
+     *
+     * QNX 8 has no ThreadCreate() with that signature: the one the PC stub
+     * declared (entry, arg, stack size) exists in no QNX version, so the call
+     * survived every compile until the first real one. A detached pthread with
+     * an explicit stack size says the same thing. */
+    pthread_attr_t tattr;
+    pthread_t shutdown_tid;
+    int rc = pthread_attr_init(&tattr);
+    if (rc == 0)
+        rc = pthread_attr_setstacksize(&tattr, 8192u);
+    if (rc == 0)
+        rc = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+    if (rc == 0)
+        rc = pthread_create(&shutdown_tid, &tattr, shutdown_main, &sigs);
+    (void)pthread_attr_destroy(&tattr);
+    if (rc != 0) {
         PGW_ERR("fsfuse: cannot create the shutdown thread");
         return EXIT_FAILURE;
     }
