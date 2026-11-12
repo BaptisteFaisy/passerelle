@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Passerelle - architecture diagram.
+
+  Hand-written SVG: no drawing tool was available, so every shape is explicit.
+  It uses only the generic "sans-serif" font family and no external image,
+  so it renders offline, in a browser and on GitHub.
+
+  Vocabulary: same as docs/architecture.md and docs/spec-en.md.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 790" width="1040" height="790"
+     font-family="DejaVu Sans, Verdana, Geneva, sans-serif" role="img"
+     aria-labelledby="pgw-title pgw-desc">
+  <title id="pgw-title">Passerelle architecture: a host directory shared with a QNX 8.0 guest</title>
+  <desc id="pgw-desc">Three layers inside the QNX guest (resource manager rmfs, 9P2000.L and FUSE
+    protocol clients, virtio transport) talk to QEMU (virtio-9p-pci and vhost-user-fs-pci), which
+    serves the host workstation directory. Host tools qshare, qrun, fsproof and pbench drive the
+    guest, and reference servers (tests/ref9p, tests/fuse_ref, virtiofsd) test the same client
+    without QNX.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#33475b"/>
+    </marker>
+    <marker id="arrow-open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8a94a6"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1040" height="790" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="520" y="30" font-size="18" font-weight="bold" text-anchor="middle" fill="#1b2a3a">
+    Passerelle - a host directory shared with a QNX Neutrino 8.0 guest under QEMU
+  </text>
+  <text x="520" y="50" font-size="12" text-anchor="middle" fill="#55606e">
+    9P2000.L and virtiofs over virtio split virtqueues - three layers in the guest, one device in QEMU
+  </text>
+
+  <!-- ============ Guest band ============ -->
+  <rect x="30" y="70" width="980" height="340" rx="8" fill="#f2f6fc" stroke="#3b7dd8" stroke-width="1.5"/>
+  <text x="48" y="92" font-size="13" font-weight="bold" fill="#1b4f8a">
+    QNX Neutrino 8.0 guest (QEMU virtual machine)
+  </text>
+
+  <!-- Applications -->
+  <rect x="60" y="102" width="920" height="42" rx="5" fill="#ffffff" stroke="#9bb7dd"/>
+  <text x="72" y="128" font-size="13" fill="#1b2a3a">
+    QNX applications: open() read() write() stat() readdir() execve()
+  </text>
+  <text x="968" y="128" font-size="11" text-anchor="end" fill="#55606e">
+    QNX messages handled at caller priority (QNX-03)
+  </text>
+
+  <line x1="520" y1="144" x2="520" y2="162" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Layer 3 -->
+  <rect x="60" y="162" width="920" height="86" rx="5" fill="#ffffff" stroke="#3b7dd8" stroke-width="1.5"/>
+  <text x="72" y="184" font-size="13" font-weight="bold" fill="#1b4f8a">
+    LAYER 3 - Filesystem Resource Manager (rmfs/) - resmgr_attach() into the QNX pathname space
+  </text>
+  <text x="72" y="204" font-size="12" fill="#1b2a3a">
+    POSIX filesystem semantics and namespace resolution - guest-side credential and permission checks (FS-09, SEC-01)
+  </text>
+  <text x="72" y="222" font-size="12" fill="#1b2a3a">
+    Guest-local byte-range advisory locking (FS-14) - open-unlinked file retention (FS-11)
+  </text>
+  <text x="72" y="240" font-size="12" fill="#1b2a3a">
+    Real-time priority-ordered request scheduler (QNX-04)
+  </text>
+
+  <line x1="300" y1="248" x2="300" y2="266" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="740" y1="248" x2="740" y2="266" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Layer 2 : 9P and FUSE -->
+  <rect x="60" y="266" width="440" height="76" rx="5" fill="#ffffff" stroke="#4f9d69" stroke-width="1.5"/>
+  <text x="72" y="288" font-size="13" font-weight="bold" fill="#2c6b45">
+    LAYER 2 - 9P2000.L Protocol (proto9p/)
+  </text>
+  <text x="72" y="308" font-size="12" fill="#1b2a3a">
+    Portable C11 codecs, strict decoders (P9-09)
+  </text>
+  <text x="72" y="326" font-size="12" fill="#1b2a3a">
+    Fid and tag lifecycle pools (P9-07), chunked I/O (P9-08)
+  </text>
+
+  <rect x="520" y="266" width="460" height="76" rx="5" fill="#ffffff" stroke="#4f9d69" stroke-width="1.5"/>
+  <text x="532" y="288" font-size="13" font-weight="bold" fill="#2c6b45">
+    LAYER 2 - FUSE Wire Protocol (protofuse/ - virtiofs)
+  </text>
+  <text x="532" y="308" font-size="12" fill="#1b2a3a">
+    Portable C11 codecs, INIT negotiation, control pipe
+  </text>
+  <text x="532" y="326" font-size="12" fill="#1b2a3a">
+    Inode reference counting: lookup and forget (VFS-04)
+  </text>
+
+  <line x1="300" y1="342" x2="300" y2="358" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="740" y1="342" x2="740" y2="358" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Layer 1 -->
+  <rect x="60" y="358" width="920" height="44" rx="5" fill="#ffffff" stroke="#8a6bbf" stroke-width="1.5"/>
+  <text x="72" y="376" font-size="13" font-weight="bold" fill="#4b3a78">
+    LAYER 1 - virtio Transport (virtio/) - split virtqueue, indirect descriptors (VIO-08), zero-copy (VIO-07)
+  </text>
+  <text x="72" y="394" font-size="12" fill="#1b2a3a">
+    Backends: modern PCI with MSI-X on x86_64, MMIO v1 and v2 on ARM64, in-memory mock for PC tests (VIO-10)
+  </text>
+
+  <!-- ============ QEMU ============ -->
+  <line x1="520" y1="410" x2="520" y2="426" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="30" y="426" width="980" height="68" rx="8" fill="#fdf5e8" stroke="#c98b1e" stroke-width="1.5"/>
+  <text x="48" y="450" font-size="13" font-weight="bold" fill="#8a5b0c">
+    QEMU hypervisor - virtio-9p-pci (9P2000.L) and vhost-user-fs-pci (virtiofs)
+  </text>
+  <text x="48" y="470" font-size="12" fill="#1b2a3a">
+    Shared memory: split virtqueues (avail ring, used ring) and the notification doorbell (EVENT_IDX)
+  </text>
+  <text x="48" y="486" font-size="12" fill="#1b2a3a">
+    Completion comes back to the guest as an interrupt: MSI-X on PCI, INTx line on MMIO
+  </text>
+
+  <!-- ============ Host band ============ -->
+  <rect x="30" y="510" width="980" height="250" rx="8" fill="#f1f7f2" stroke="#3f8f5a" stroke-width="1.5"/>
+  <text x="48" y="532" font-size="13" font-weight="bold" fill="#2c6b45">
+    Host PC (workstation)
+  </text>
+
+  <line x1="200" y1="494" x2="200" y2="556" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="208" y="530" font-size="11" fill="#55606e">9P</text>
+
+  <line x1="560" y1="494" x2="560" y2="556" stroke="#33475b" stroke-width="1.5"
+        marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="568" y="530" font-size="11" fill="#55606e">virtiofs</text>
+
+  <!-- The share -->
+  <rect x="60" y="556" width="340" height="80" rx="5" fill="#ffffff" stroke="#3f8f5a" stroke-width="1.5"/>
+  <text x="72" y="578" font-size="13" font-weight="bold" fill="#2c6b45">
+    Host workstation directory - the share
+  </text>
+  <text x="72" y="598" font-size="12" fill="#1b2a3a">
+    Mounted in the guest as /host; binaries run
+  </text>
+  <text x="72" y="616" font-size="12" fill="#1b2a3a">
+    straight from the share, without copying
+  </text>
+
+  <!-- virtiofsd -->
+  <rect x="420" y="556" width="280" height="80" rx="5" fill="#ffffff" stroke="#3f8f5a" stroke-width="1.5"/>
+  <text x="432" y="578" font-size="13" font-weight="bold" fill="#2c6b45">
+    virtiofsd - the virtiofs daemon
+  </text>
+  <text x="432" y="598" font-size="12" fill="#1b2a3a">
+    Serves the same directory to QEMU over a
+  </text>
+  <text x="432" y="616" font-size="12" fill="#1b2a3a">
+    vhost-user socket, outside the VM
+  </text>
+  <line x1="420" y1="596" x2="402" y2="596" stroke="#33475b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Reference servers -->
+  <rect x="720" y="556" width="260" height="80" rx="5" fill="#ffffff" stroke="#3f8f5a" stroke-width="1.5"/>
+  <text x="732" y="578" font-size="13" font-weight="bold" fill="#2c6b45">
+    Reference servers (tests)
+  </text>
+  <text x="732" y="598" font-size="12" fill="#1b2a3a">
+    tests/ref9p - independent 9P2000.L
+  </text>
+  <text x="732" y="616" font-size="12" fill="#1b2a3a">
+    tests/fuse_ref - FUSE reference server
+  </text>
+
+  <!-- Host tools -->
+  <rect x="60" y="656" width="920" height="86" rx="5" fill="#ffffff" stroke="#3f8f5a" stroke-width="1.5"/>
+  <text x="72" y="678" font-size="13" font-weight="bold" fill="#2c6b45">
+    Host tools (Python 3, standard library only)
+  </text>
+  <text x="72" y="698" font-size="12" fill="#1b2a3a">
+    qshare - start QEMU with the share (DX-01, DX-02)      qrun - run a program inside the guest (DX-03)
+  </text>
+  <text x="72" y="716" font-size="12" fill="#1b2a3a">
+    fsproof - differential conformance bench (spec 7.2-7.4)      pbench - comparative benchmarks (PERF-01 to PERF-07)
+  </text>
+  <text x="72" y="734" font-size="12" fill="#1b2a3a">
+    The same client is driven against the reference servers on the PC, without any QNX and without an SDP.
+  </text>
+
+  <!-- The tools drive the guest -->
+  <path d="M 60 699 L 18 699 L 18 330 L 28 330" fill="none" stroke="#8a94a6" stroke-width="1.5"
+        stroke-dasharray="5 4" marker-end="url(#arrow-open)"/>
+  <text x="24" y="520" font-size="11" fill="#55606e" text-anchor="middle"
+        transform="rotate(-90 24 520)">the host tools drive the guest</text>
+</svg>
