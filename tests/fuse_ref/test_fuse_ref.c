@@ -41,9 +41,9 @@ static void test_init_negotiates_with_the_reference_server(void)
     fuse_ref_ctx *old = fuse_ref_ctx_start(NULL, "12");
     PGW_ASSERT(old != NULL);
     pgw_fuse_entry e;
-    PGW_ASSERT_EQ_I(pgw_fuse_lookup(old->session, PGW_FUSE_ROOT_ID,
-                                    FUSE_REF_SMALL_FILE, &e, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_fuse_lookup(old->session, PGW_FUSE_ROOT_ID, FUSE_REF_SMALL_FILE, &e, 0),
+            PGW_OK);
     PGW_ASSERT_EQ_U(e.attr.size, 10);
     fuse_ref_ctx_stop(old);
     fuse_ref_ctx_stop(c);
@@ -57,23 +57,21 @@ static void test_lookup_and_getattr_match_the_disk(void)
     PGW_ASSERT(c != NULL);
     pgw_fuse_entry e;
 
-    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID,
-                                    FUSE_REF_BIG_FILE, &e, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_BIG_FILE, &e, 0),
+            PGW_OK);
     PGW_ASSERT(e.nodeid != 0);
     PGW_ASSERT_EQ_U(e.attr.size, FUSE_REF_BIG_SIZE);
     PGW_ASSERT_EQ_I(pgw_ftype_from_linux_mode(e.attr.mode), PGW_FT_REG);
     fuse_ref_assert_attr_matches(c, e.nodeid, FUSE_REF_BIG_FILE);
 
-    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_DIR,
-                                    &e, 0),
+    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_DIR, &e, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_I(pgw_ftype_from_linux_mode(e.attr.mode), PGW_FT_DIR);
     fuse_ref_assert_attr_matches(c, e.nodeid, FUSE_REF_DIR);
 
     /* A symlink is reported as a symlink: LOOKUP never follows it. */
-    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID,
-                                    FUSE_REF_LINK, &e, 0),
+    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_LINK, &e, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_I(pgw_ftype_from_linux_mode(e.attr.mode), PGW_FT_LNK);
     fuse_ref_assert_attr_matches(c, e.nodeid, FUSE_REF_LINK);
@@ -87,29 +85,27 @@ static void test_read_matches_the_disk(void)
     fuse_ref_ctx *c = fuse_ref_ctx_start(NULL, NULL);
     PGW_ASSERT(c != NULL);
     pgw_fuse_entry e;
-    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID,
-                                    FUSE_REF_BIG_FILE, &e, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_BIG_FILE, &e, 0),
+            PGW_OK);
     uint64_t fh = 0;
-    PGW_ASSERT_EQ_I(pgw_fuse_open(c->session, e.nodeid, PGW_O_RDONLY, false,
-                                  &fh, 0),
+    PGW_ASSERT_EQ_I(pgw_fuse_open(c->session, e.nodeid, PGW_O_RDONLY, false, &fh, 0),
                     PGW_OK);
     /* The file is larger than max_write: the client must split the read. */
     size_t got = 0;
-    PGW_ASSERT_EQ_I(pgw_fuse_read(c->session, e.nodeid, fh, 0, g_big,
-                                  sizeof(g_big), &got, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_fuse_read(c->session, e.nodeid, fh, 0, g_big, sizeof(g_big), &got, 0),
+            PGW_OK);
     PGW_ASSERT_EQ_U(got, FUSE_REF_BIG_SIZE);
     PGW_ASSERT(pgw_test_pattern_ok(g_big, sizeof(g_big), 0xC0FFEEu, 0));
 
     static uint8_t direct[FUSE_REF_BIG_SIZE];
     size_t on_disk = 0;
-    PGW_ASSERT(fuse_ref_disk_read(c, FUSE_REF_BIG_FILE, direct, sizeof(direct),
-                                  &on_disk));
+    PGW_ASSERT(
+            fuse_ref_disk_read(c, FUSE_REF_BIG_FILE, direct, sizeof(direct), &on_disk));
     PGW_ASSERT_EQ_U(on_disk, FUSE_REF_BIG_SIZE);
     PGW_ASSERT_MEM_EQ(g_big, direct, FUSE_REF_BIG_SIZE);
-    PGW_ASSERT_EQ_I(pgw_fuse_release(c->session, e.nodeid, fh, false, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_fuse_release(c->session, e.nodeid, fh, false, 0), PGW_OK);
     fuse_ref_ctx_stop(c);
 }
 
@@ -122,15 +118,14 @@ static void test_create_and_write_reach_the_disk(void)
 
     pgw_fuse_entry e;
     uint64_t fh = 0;
-    PGW_ASSERT_EQ_I(pgw_fuse_create(c->session, PGW_FUSE_ROOT_ID,
-                                    "created.bin", PGW_O_CREAT | PGW_O_RDWR,
-                                    0644, &e, &fh, 0),
+    PGW_ASSERT_EQ_I(pgw_fuse_create(c->session, PGW_FUSE_ROOT_ID, "created.bin",
+                                    PGW_O_CREAT | PGW_O_RDWR, 0644, &e, &fh, 0),
                     PGW_OK);
     PGW_ASSERT(e.nodeid != 0);
 
     size_t written = 0;
-    PGW_ASSERT_EQ_I(pgw_fuse_write(c->session, e.nodeid, fh, 0, payload,
-                                   sizeof(payload), &written, 0),
+    PGW_ASSERT_EQ_I(pgw_fuse_write(c->session, e.nodeid, fh, 0, payload, sizeof(payload),
+                                   &written, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_U(written, sizeof(payload));
 
@@ -148,8 +143,7 @@ static void test_create_and_write_reach_the_disk(void)
     PGW_ASSERT_EQ_U(read_back, sizeof(payload));
     PGW_ASSERT_MEM_EQ(via_client, payload, sizeof(payload));
     fuse_ref_assert_attr_matches(c, e.nodeid, "created.bin");
-    PGW_ASSERT_EQ_I(pgw_fuse_release(c->session, e.nodeid, fh, false, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_fuse_release(c->session, e.nodeid, fh, false, 0), PGW_OK);
     fuse_ref_ctx_stop(c);
 }
 
@@ -162,8 +156,7 @@ static void test_readdir_matches_the_disk(void)
     char on_disk[16][FUSE_REF_NAME_MAX];
     char via_client[16][FUSE_REF_NAME_MAX];
     size_t n_disk = fuse_ref_disk_names(c, ".", on_disk, 16);
-    size_t n_client = fuse_ref_client_names(c, PGW_FUSE_ROOT_ID, via_client,
-                                             16);
+    size_t n_client = fuse_ref_client_names(c, PGW_FUSE_ROOT_ID, via_client, 16);
     PGW_ASSERT(n_disk >= 5u);
     PGW_ASSERT_EQ_U(n_client, n_disk);
     for (size_t i = 0; i < n_disk; i++)
@@ -178,9 +171,9 @@ static void test_setattr_changes_the_disk(void)
     fuse_ref_ctx *c = fuse_ref_ctx_start(NULL, NULL);
     PGW_ASSERT(c != NULL);
     pgw_fuse_entry e;
-    PGW_ASSERT_EQ_I(pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID,
-                                    FUSE_REF_SMALL_FILE, &e, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_fuse_lookup(c->session, PGW_FUSE_ROOT_ID, FUSE_REF_SMALL_FILE, &e, 0),
+            PGW_OK);
     pgw_fuse_setattr_in sa;
     pgw_fuse_attr a;
     memset(&sa, 0, sizeof(sa));
@@ -210,8 +203,7 @@ static void test_statfs_reports_the_filesystem(void)
     PGW_ASSERT(c != NULL);
     pgw_fuse_kstatfs ks;
     memset(&ks, 0, sizeof(ks));
-    PGW_ASSERT_EQ_I(pgw_fuse_statfs(c->session, PGW_FUSE_ROOT_ID, &ks, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_fuse_statfs(c->session, PGW_FUSE_ROOT_ID, &ks, 0), PGW_OK);
     PGW_ASSERT(ks.bsize > 0u);
     PGW_ASSERT(ks.blocks > 0u);
     PGW_ASSERT_EQ_U(ks.namelen, 255);

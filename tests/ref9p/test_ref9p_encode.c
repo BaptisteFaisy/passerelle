@@ -29,27 +29,26 @@ static void test_encode_version_and_walk(void)
     PGW_ASSERT(n > 0);
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 2u + 8u);
     ref9p_expect_header(ref9p_tx, (size_t)n, PGW_P9_TVERSION, REF9P_NOTAG);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 8192u);   /* msize[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 11), 8u);     /* version length */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 8192u); /* msize[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 11), 8u);   /* version length */
     PGW_ASSERT_MEM_EQ(ref9p_tx + 13, "9P2000.L", 8);
 
-    const char *names[] = { "sub", "nested.txt" };
-    n = pgw_p9_enc_twalk(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 3u, 4u, 2u,
-                         names);
+    const char *names[] = {"sub", "nested.txt"};
+    n = pgw_p9_enc_twalk(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 3u, 4u, 2u, names);
     PGW_ASSERT(n > 0);
     PGW_ASSERT_EQ_U((size_t)n, 34u);
     ref9p_expect_header(ref9p_tx, (size_t)n, PGW_P9_TWALK, REF9P_FIELD_TAG);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 3u);      /* fid[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 11), 4u);     /* newfid[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 15), 2u);     /* nwname[2] */
-    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 17), 3u);     /* wname[0] length */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 3u);  /* fid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 11), 4u); /* newfid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 15), 2u); /* nwname[2] */
+    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 17), 3u); /* wname[0] length */
     PGW_ASSERT_MEM_EQ(ref9p_tx + 19, "sub", 3);
-    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 22), 10u);    /* wname[1] length */
+    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 22), 10u); /* wname[1] length */
     PGW_ASSERT_MEM_EQ(ref9p_tx + 24, "nested.txt", 10);
 
     /* Tattach has fid[4] afid[4] uname[s] aname[s] n_uname[4]. */
-    n = pgw_p9_enc_tattach(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 9u,
-                           PGW_FID_NONE, "u", "", 1000u);
+    n = pgw_p9_enc_tattach(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 9u, PGW_FID_NONE,
+                           "u", "", 1000u);
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 4u + 3u + 2u + 4u);
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 9u);
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 11), PGW_FID_NONE);
@@ -67,9 +66,9 @@ static void test_encode_io_and_metadata(void)
     PGW_ASSERT_EQ_U(ref9p_o_u64(ref9p_tx, 11), 0x1122334455667788ULL);
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 19), 4096u);
 
-    static const uint8_t payload[6] = { 1, 2, 3, 4, 5, 6 };
-    n = pgw_p9_enc_twrite(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 5u, 7u,
-                          payload, 6u);
+    static const uint8_t payload[6] = {1, 2, 3, 4, 5, 6};
+    n = pgw_p9_enc_twrite(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 5u, 7u, payload,
+                          6u);
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 8u + 4u + 6u);
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 19), 6u); /* count[4] */
     PGW_ASSERT_MEM_EQ(ref9p_tx + 23, payload, 6);
@@ -82,10 +81,10 @@ static void test_encode_io_and_metadata(void)
     n = pgw_p9_enc_tsetattr(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 5u, &sa);
     PGW_ASSERT_EQ_U((size_t)n, 67u);
     ref9p_expect_header(ref9p_tx, (size_t)n, PGW_P9_TSETATTR, REF9P_FIELD_TAG);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 5u);    /* fid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 5u); /* fid[4] */
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 11), sa.valid);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 15), 0600u);/* mode[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u64(ref9p_tx, 27), 42u);  /* size[8] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 15), 0600u); /* mode[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u64(ref9p_tx, 27), 42u);   /* size[8] */
 
     n = pgw_p9_enc_tfsync(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 5u);
     PGW_ASSERT_EQ_U((size_t)n, 15u); /* fid[4] datasync[4] */
@@ -102,41 +101,40 @@ PGW_TEST(test_encode_io_and_metadata);
 
 static void test_encode_namespace(void)
 {
-    int32_t n = pgw_p9_enc_tmkdir(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG,
-                                  2u, "d", 0755u, 0u);
+    int32_t n = pgw_p9_enc_tmkdir(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, "d",
+                                  0755u, 0u);
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 3u + 4u + 4u);
     ref9p_expect_header(ref9p_tx, (size_t)n, PGW_P9_TMKDIR, REF9P_FIELD_TAG);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 2u);    /* dfid[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 11), 1u);   /* name[s] */
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 14), 0755u);/* mode[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 18), 0u);   /* gid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 2u);     /* dfid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 11), 1u);    /* name[s] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 14), 0755u); /* mode[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 18), 0u);    /* gid[4] */
 
     n = pgw_p9_enc_tunlinkat(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, "d",
                              PGW_P9_AT_REMOVEDIR);
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 3u + 4u);
     PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 14), PGW_P9_AT_REMOVEDIR);
 
-    n = pgw_p9_enc_trenameat(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u,
-                             "a", 3u, "b");
+    n = pgw_p9_enc_trenameat(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, "a", 3u,
+                             "b");
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 3u + 4u + 3u);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 14), 3u);   /* newdirfid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 14), 3u); /* newdirfid[4] */
     PGW_ASSERT_MEM_EQ(ref9p_tx + 20, "b", 1);
 
-    n = pgw_p9_enc_tsymlink(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, "l",
-                            "t", 0u);
+    n = pgw_p9_enc_tsymlink(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, "l", "t", 0u);
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 3u + 3u + 4u);
     ref9p_expect_header(ref9p_tx, (size_t)n, PGW_P9_TSYMLINK, REF9P_FIELD_TAG);
 
     n = pgw_p9_enc_tlink(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, 6u, "h");
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 4u + 3u);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 2u);    /* dfid[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 11), 6u);   /* fid[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 15), 1u);   /* name[s] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 7), 2u);  /* dfid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 11), 6u); /* fid[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u16(ref9p_tx, 15), 1u); /* name[s] */
 
-    n = pgw_p9_enc_tlcreate(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, "f",
-                            0x42u, 0644u, 0u);
+    n = pgw_p9_enc_tlcreate(ref9p_tx, sizeof ref9p_tx, REF9P_FIELD_TAG, 2u, "f", 0x42u,
+                            0644u, 0u);
     PGW_ASSERT_EQ_U((size_t)n, 7u + 4u + 3u + 4u + 4u + 4u);
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 14), 0x42u);/* flags[4] */
-    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 18), 0644u);/* mode[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 14), 0x42u); /* flags[4] */
+    PGW_ASSERT_EQ_U(ref9p_o_u32(ref9p_tx, 18), 0644u); /* mode[4] */
 }
 PGW_TEST(test_encode_namespace);

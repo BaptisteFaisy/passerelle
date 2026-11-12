@@ -60,8 +60,8 @@ static void fixture_up(struct fixture *fx, const char *fault)
     snprintf(fx->root, sizeof fx->root, "%s", dir);
     fx->srv = ref9p_start(fx->root, fault);
     PGW_ASSERT(fx->srv != NULL);
-    fx->session = pgw_p9_session_open(ref9p_rpc, ref9p_rpc_user(fx->srv),
-                                      FX_MSIZE, "baptiste", "", 0);
+    fx->session = pgw_p9_session_open(ref9p_rpc, ref9p_rpc_user(fx->srv), FX_MSIZE,
+                                      "baptiste", "", 0);
     PGW_ASSERT(fx->session != NULL);
     fx->root_fid = pgw_p9_session_root_fid(fx->session);
     PGW_ASSERT(fx->root_fid != PGW_FID_NONE);
@@ -83,8 +83,7 @@ static void make_truth_tree(const char *root)
     static const char hello[] = "hello world\n";
     PGW_ASSERT(ref9p_truth_write(root, "hello.txt", hello, sizeof hello - 1));
     PGW_ASSERT(ref9p_truth_mkdir(root, "sub", 0755));
-    PGW_ASSERT(ref9p_truth_write(root, "sub/nested.txt", hello,
-                                 sizeof hello - 1));
+    PGW_ASSERT(ref9p_truth_write(root, "sub/nested.txt", hello, sizeof hello - 1));
     PGW_ASSERT(ref9p_truth_symlink(root, "hello.txt", "alias"));
     PGW_ASSERT(ref9p_truth_symlink(root, "loop", "loop"));
 }
@@ -118,8 +117,7 @@ static void test_ref9p_read_matches_truth(void)
 
     uint32_t fid = 0;
     pgw_p9_qid qid;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt", &fid,
-                                     &qid, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt", &fid, &qid, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_U(qid.type & PGW_P9_QTDIR, 0u);
     PGW_ASSERT_EQ_I(pgw_p9_lopen(fx.session, fid, PGW_O_RDONLY, 0), PGW_OK);
@@ -127,12 +125,10 @@ static void test_ref9p_read_matches_truth(void)
     char got[64];
     memset(got, 0, sizeof got);
     size_t n = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_read(fx.session, fid, 0, got, sizeof got, &n, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_read(fx.session, fid, 0, got, sizeof got, &n, 0), PGW_OK);
     char want[64];
     size_t want_len = 0;
-    PGW_ASSERT(ref9p_truth_read(fx.root, "hello.txt", want, sizeof want,
-                                &want_len));
+    PGW_ASSERT(ref9p_truth_read(fx.root, "hello.txt", want, sizeof want, &want_len));
     PGW_ASSERT_EQ_U(n, want_len);
     PGW_ASSERT_MEM_EQ(got, want, want_len);
 
@@ -158,39 +154,35 @@ static void test_ref9p_write_is_chunked_and_lands_in_truth(void)
     fixture_up(&fx, "none");
     make_truth_tree(fx.root);
     uint32_t dir = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0), PGW_OK);
 
     pgw_test_pattern(g_big, sizeof g_big, 0x9E3779B9u, 0);
     uint64_t splits_before = pgw_stat_get(PGW_STAT_SPLIT);
     pgw_p9_qid qid;
     PGW_ASSERT_EQ_I(pgw_p9_lcreate(fx.session, dir, "big.bin",
-                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC,
-                                   0644, 0, &qid, 0),
+                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644, 0, &qid,
+                                   0),
                     PGW_OK);
     size_t written = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_write(fx.session, dir, 0, g_big, sizeof g_big,
-                                 &written, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_write(fx.session, dir, 0, g_big, sizeof g_big, &written, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_U(written, sizeof g_big);
     PGW_ASSERT(pgw_stat_get(PGW_STAT_SPLIT) > splits_before);
 
     /* The real file holds exactly those bytes. */
     size_t truth_len = 0;
-    PGW_ASSERT(ref9p_truth_read(fx.root, "big.bin", g_big_back,
-                                sizeof g_big_back, &truth_len));
+    PGW_ASSERT(ref9p_truth_read(fx.root, "big.bin", g_big_back, sizeof g_big_back,
+                                &truth_len));
     PGW_ASSERT_EQ_U(truth_len, sizeof g_big);
-    PGW_ASSERT(pgw_test_pattern_ok(g_big_back, sizeof g_big_back, 0x9E3779B9u,
-                                   0));
+    PGW_ASSERT(pgw_test_pattern_ok(g_big_back, sizeof g_big_back, 0x9E3779B9u, 0));
 
     /* And the client reads back what it wrote. */
     size_t read_back = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_read(fx.session, dir, 0, g_big_back,
-                                sizeof g_big_back, &read_back, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_p9_read(fx.session, dir, 0, g_big_back, sizeof g_big_back, &read_back, 0),
+            PGW_OK);
     PGW_ASSERT_EQ_U(read_back, sizeof g_big);
-    PGW_ASSERT(pgw_test_pattern_ok(g_big_back, sizeof g_big_back, 0x9E3779B9u,
-                                   0));
+    PGW_ASSERT(pgw_test_pattern_ok(g_big_back, sizeof g_big_back, 0x9E3779B9u, 0));
     PGW_ASSERT_EQ_I(pgw_p9_fsync(fx.session, dir, 0), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_p9_clunk(fx.session, dir, 0), PGW_OK);
     fixture_down(&fx);
@@ -204,14 +196,12 @@ static void test_ref9p_readdir_matches_truth(void)
     fixture_up(&fx, "none");
     make_truth_tree(fx.root);
     uint32_t dir = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0), PGW_OK);
 
     pgw_p9_dirent ents[32];
     size_t count = 0;
     uint64_t next = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_readdir(fx.session, dir, 0, ents, 32, &count, &next,
-                                   0),
+    PGW_ASSERT_EQ_I(pgw_p9_readdir(fx.session, dir, 0, ents, 32, &count, &next, 0),
                     PGW_OK);
     char names[16][256];
     size_t want = ref9p_truth_names(fx.root, "", names, 16);
@@ -241,8 +231,7 @@ static void test_ref9p_setattr_matches_truth(void)
     fixture_up(&fx, "none");
     make_truth_tree(fx.root);
     uint32_t fid = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt", &fid,
-                                     NULL, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt", &fid, NULL, 0),
                     PGW_OK);
 
     pgw_p9_setattr_t sa;
@@ -273,39 +262,33 @@ static void test_ref9p_create_matches_truth(void)
     fixture_up(&fx, "none");
     make_truth_tree(fx.root);
     uint32_t dir = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0), PGW_OK);
 
     pgw_p9_qid qid;
-    PGW_ASSERT_EQ_I(pgw_p9_mkdir(fx.session, dir, "newdir", 0755, 0, &qid, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_mkdir(fx.session, dir, "newdir", 0755, 0, &qid, 0), PGW_OK);
     PGW_ASSERT_EQ_U(qid.type & PGW_P9_QTDIR, PGW_P9_QTDIR);
     struct stat st;
     PGW_ASSERT(ref9p_truth_stat(fx.root, "newdir", &st));
     PGW_ASSERT(S_ISDIR(st.st_mode));
     PGW_ASSERT_EQ_U((uint32_t)(st.st_mode & 07777), expected_perms(0755));
 
-    PGW_ASSERT_EQ_I(pgw_p9_symlink(fx.session, dir, "link", "hello.txt", 0,
-                                   &qid, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_symlink(fx.session, dir, "link", "hello.txt", 0, &qid, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_U(qid.type & PGW_P9_QTSYMLINK, PGW_P9_QTSYMLINK);
     PGW_ASSERT(ref9p_truth_stat(fx.root, "link", &st));
     PGW_ASSERT(S_ISLNK(st.st_mode));
 
     uint32_t link_fid = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "link", &link_fid,
-                                     NULL, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "link", &link_fid, NULL, 0),
                     PGW_OK);
     char target[256];
-    PGW_ASSERT_EQ_I(pgw_p9_readlink(fx.session, link_fid, target, sizeof target,
-                                    0),
+    PGW_ASSERT_EQ_I(pgw_p9_readlink(fx.session, link_fid, target, sizeof target, 0),
                     PGW_OK);
     PGW_ASSERT_STR_EQ(target, "hello.txt");
     PGW_ASSERT_EQ_I(pgw_p9_clunk(fx.session, link_fid, 0), PGW_OK);
 
     uint32_t src = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt", &src,
-                                     NULL, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt", &src, NULL, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_I(pgw_p9_link(fx.session, dir, src, "hard", 0), PGW_OK);
     PGW_ASSERT(ref9p_truth_stat(fx.root, "hard", &st));
@@ -325,27 +308,22 @@ static void test_ref9p_remove_matches_truth(void)
     PGW_ASSERT(ref9p_truth_write(fx.root, "gone.txt", "x", 1));
     PGW_ASSERT(ref9p_truth_mkdir(fx.root, "emptydir", 0755));
     uint32_t dir = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0), PGW_OK);
 
-    PGW_ASSERT_EQ_I(pgw_p9_renameat(fx.session, dir, "gone.txt", dir,
-                                    "moved.txt", 0),
+    PGW_ASSERT_EQ_I(pgw_p9_renameat(fx.session, dir, "gone.txt", dir, "moved.txt", 0),
                     PGW_OK);
     PGW_ASSERT_FALSE(ref9p_truth_exists(fx.root, "gone.txt"));
     PGW_ASSERT(ref9p_truth_exists(fx.root, "moved.txt"));
 
-    PGW_ASSERT_EQ_I(pgw_p9_unlinkat(fx.session, dir, "moved.txt", false, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_unlinkat(fx.session, dir, "moved.txt", false, 0), PGW_OK);
     PGW_ASSERT_FALSE(ref9p_truth_exists(fx.root, "moved.txt"));
 
-    PGW_ASSERT_EQ_I(pgw_p9_unlinkat(fx.session, dir, "emptydir", true, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_unlinkat(fx.session, dir, "emptydir", true, 0), PGW_OK);
     PGW_ASSERT_FALSE(ref9p_truth_exists(fx.root, "emptydir"));
 
     /* A symlink created over 9P is removed like any other name. */
     pgw_p9_qid qid;
-    PGW_ASSERT_EQ_I(pgw_p9_symlink(fx.session, dir, "tmp", "hello.txt", 0, &qid,
-                                   0),
+    PGW_ASSERT_EQ_I(pgw_p9_symlink(fx.session, dir, "tmp", "hello.txt", 0, &qid, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_I(pgw_p9_unlinkat(fx.session, dir, "tmp", false, 0), PGW_OK);
     PGW_ASSERT_FALSE(ref9p_truth_exists(fx.root, "tmp"));
@@ -365,36 +343,32 @@ static void test_ref9p_error_codes_namespace(void)
     fixture_up(&fx, "none");
     make_truth_tree(fx.root);
     uint32_t dir = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "", &dir, NULL, 0), PGW_OK);
 
     /* ENOENT: a name that is not there, walked and removed. */
     uint32_t missing = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "nope", &missing,
-                                     NULL, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "nope", &missing, NULL, 0),
                     PGW_ENOENT);
-    PGW_ASSERT_EQ_I(pgw_p9_unlinkat(fx.session, dir, "nope", false, 0),
-                    PGW_ENOENT);
+    PGW_ASSERT_EQ_I(pgw_p9_unlinkat(fx.session, dir, "nope", false, 0), PGW_ENOENT);
 
     /* EEXIST: exclusive creation of a name that already exists. */
     PGW_ASSERT_EQ_I(pgw_p9_lcreate(fx.session, dir, "hello.txt",
-                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_EXCL, 0644,
-                                   0, NULL, 0),
+                                   PGW_O_RDWR | PGW_O_CREAT | PGW_O_EXCL, 0644, 0, NULL,
+                                   0),
                     PGW_EEXIST);
 
     /* ENOTDIR: walking through a regular file. */
     uint32_t bad = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid,
-                                     "hello.txt/child", &bad, NULL, 0),
-                    PGW_ENOTDIR);
+    PGW_ASSERT_EQ_I(
+            pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt/child", &bad, NULL, 0),
+            PGW_ENOTDIR);
 
     /* ELOOP: a link that points at itself, walked through and opened. */
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "loop/child",
-                                     &bad, NULL, 0),
-                    PGW_ELOOP);
+    PGW_ASSERT_EQ_I(
+            pgw_p9_walk_path(fx.session, fx.root_fid, "loop/child", &bad, NULL, 0),
+            PGW_ELOOP);
     uint32_t loop = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "loop", &loop,
-                                     NULL, 0),
+    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "loop", &loop, NULL, 0),
                     PGW_OK);
     PGW_ASSERT_EQ_I(pgw_p9_lopen(fx.session, loop, PGW_O_RDONLY, 0), PGW_ELOOP);
     PGW_ASSERT_EQ_I(pgw_p9_clunk(fx.session, loop, 0), PGW_OK);
@@ -410,12 +384,11 @@ static void test_ref9p_error_codes_ebadf(void)
     fixture_up(&fx, "none");
     make_truth_tree(fx.root);
     uint32_t stale = 0;
-    PGW_ASSERT_EQ_I(pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt",
-                                     &stale, NULL, 0),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_p9_walk_path(fx.session, fx.root_fid, "hello.txt", &stale, NULL, 0),
+            PGW_OK);
     PGW_ASSERT_EQ_I(pgw_p9_clunk(fx.session, stale, 0), PGW_OK);
-    PGW_ASSERT_EQ_I(pgw_p9_lopen(fx.session, stale, PGW_O_RDONLY, 0),
-                    PGW_EBADF);
+    PGW_ASSERT_EQ_I(pgw_p9_lopen(fx.session, stale, PGW_O_RDONLY, 0), PGW_EBADF);
     fixture_down(&fx);
 }
 PGW_TEST(test_ref9p_error_codes_ebadf);

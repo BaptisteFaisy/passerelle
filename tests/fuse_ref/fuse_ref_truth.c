@@ -55,22 +55,20 @@ void fuse_ref_copy_str(char *dst, size_t cap, const char *src)
     dst[n] = '\0';
 }
 
-void fuse_ref_disk_path(const fuse_ref_ctx *c, const char *name, char *out,
-                        size_t cap)
+void fuse_ref_disk_path(const fuse_ref_ctx *c, const char *name, char *out, size_t cap)
 {
     fuse_ref_join(c->root, name, out, cap);
 }
 
-bool fuse_ref_disk_lstat(const fuse_ref_ctx *c, const char *name,
-                         struct stat *st)
+bool fuse_ref_disk_lstat(const fuse_ref_ctx *c, const char *name, struct stat *st)
 {
     char path[FUSE_REF_PATH_MAX];
     fuse_ref_disk_path(c, name, path, sizeof(path));
     return lstat(path, st) == 0;
 }
 
-bool fuse_ref_disk_read(const fuse_ref_ctx *c, const char *name, void *buf,
-                        size_t cap, size_t *out_len)
+bool fuse_ref_disk_read(const fuse_ref_ctx *c, const char *name, void *buf, size_t cap,
+                        size_t *out_len)
 {
     char path[FUSE_REF_PATH_MAX];
     fuse_ref_disk_path(c, name, path, sizeof(path));
@@ -125,8 +123,7 @@ size_t fuse_ref_client_names(fuse_ref_ctx *c, uint64_t nodeid,
 {
     static pgw_fuse_dirent ents[FUSE_REF_DIRENT_MAX];
     uint64_t fh = 0;
-    PGW_ASSERT_EQ_I(pgw_fuse_open(c->session, nodeid, PGW_O_RDONLY, true, &fh,
-                                  0),
+    PGW_ASSERT_EQ_I(pgw_fuse_open(c->session, nodeid, PGW_O_RDONLY, true, &fh, 0),
                     PGW_OK);
     size_t total = 0;
     uint64_t off = 0;
