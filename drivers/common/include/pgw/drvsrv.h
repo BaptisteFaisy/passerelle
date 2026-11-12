@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <sys/iofunc.h>  /* first: it sets RESMGR_OCB_T before dispatch/resmgr */
 #include <sys/dispatch.h>
@@ -210,6 +211,16 @@ typedef struct pgw_ability {
 pgw_err pgw_privdrop_apply(const pgw_ability *list, size_t n, const char *user);
 
 /* --- interrupt service thread (VIO-04) ---------------------------------- */
+
+/* Sleep `ms` milliseconds. delay() is a _QNX_SOURCE-gated extension; nanosleep()
+ * is POSIX, which both the target and the host build expose. The busy-wait loops
+ * below use it to yield to the CPU instead of spinning (VIO-04, ROB-05). */
+static inline void pgw_relax_ms(unsigned ms)
+{
+    struct timespec ts = { (time_t)(ms / 1000u),
+                           (long)(ms % 1000u) * 1000000L };
+    (void)nanosleep(&ts, NULL);
+}
 
 /* QNX 8.0 removed InterruptAttach(): a thread is attached with
  * InterruptAttachThread() and becomes the Interrupt Service Thread. */

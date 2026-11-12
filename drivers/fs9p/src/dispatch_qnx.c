@@ -75,7 +75,7 @@ static pgw_err wait_completion(fs9p_xport *x, void *cookie, uint32_t *out_len,
             return PGW_ETIMEDOUT;
         }
         if (x->irqs == seen)
-            (void)delay(1); /* nothing arrived yet: yield the CPU */
+            pgw_relax_ms(1); /* nothing arrived yet: yield the CPU */
         seen = x->irqs;
     }
 }
