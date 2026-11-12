@@ -15,6 +15,7 @@
 #include "pgw/limits.h"
 #include "pgw/rmfs.h"
 #include "pgw/test.h"
+#include "test_cred.h"
 
 #include <string.h>
 #include <sys/stat.h>
@@ -90,7 +91,7 @@ static void test_permission_matrix(void)
 
     /* A file owned by uid 1000, group 1000, mode 0640. */
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "own.txt", "data", 4), 0);
-    pgw_fs_cred owner = {1000, 1000, 20};
+    pgw_fs_cred owner = tc_self(20);
     PGW_ASSERT_EQ_I(pgw_rmfs_chmod(fs, &owner, "own.txt", 0640), PGW_OK);
     /* Give the owner the identity the file really has on the host. */
     pgw_fs_attr a;
@@ -115,7 +116,7 @@ static void test_readonly_mount(void)
     opts.readonly = true;
     pgw_rmfs *fs = make_fs_opts(b, &opts);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "ro.txt", "abc", 3), 0);
 
@@ -158,7 +159,7 @@ static void test_noexec_refuses_execution(void)
     opts.noexec = true;
     pgw_rmfs *fs = make_fs_opts(b, &opts);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "prog", "\x7f" "ELF", 4), 0);
     PGW_ASSERT_EQ_I(pgw_rmfs_chmod(fs, &cred, "prog", 0755), PGW_OK);
@@ -185,7 +186,7 @@ static void test_exec_allowed_when_noexec_off(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs_default(b); /* noexec off by default: FS-06 */
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "prog2", "ELF", 3), 0);
     PGW_ASSERT_EQ_I(pgw_rmfs_chmod(fs, &cred, "prog2", 0755), PGW_OK);
@@ -207,7 +208,7 @@ static void test_nosuid_strips_and_refuses(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs_default(b); /* nosuid on by default */
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "suid", "x", 1), 0);
     /* Setting a setuid bit on a nosuid mount drops it silently. */
@@ -234,7 +235,7 @@ static void test_nosuid_blocks_setuid_exec(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs_default(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     /* Create the setuid file on the host side: the mount option cannot strip
      * what already exists, it must refuse to run it (SEC-01). */
@@ -264,7 +265,7 @@ static void test_errors_are_propagated(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs_default(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     pgw_fs_attr a;
     PGW_ASSERT_EQ_I(pgw_rmfs_stat(fs, &cred, "absent", &a), PGW_ENOENT);

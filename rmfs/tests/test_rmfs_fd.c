@@ -14,6 +14,7 @@
 
 #include "pgw/rmfs.h"
 #include "pgw/test.h"
+#include "test_cred.h"
 
 #include <string.h>
 
@@ -31,7 +32,7 @@ static void test_refcount_releases_on_last_close(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "rc.txt", "data", 4), 0);
 
     pgw_rmfs_fd *fd = NULL;
@@ -71,7 +72,7 @@ static void test_release_pid_closes_everything(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
     const uint32_t dead_pid = 4242;
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "p1.txt", "aa", 2), 0);

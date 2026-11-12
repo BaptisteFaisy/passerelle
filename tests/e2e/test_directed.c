@@ -333,6 +333,54 @@ PGW_TEST(test_local_locks);
  * rmfs/tests/test_rmfs_sched.c, including the ordering guarantee and the
  * non-blocking enqueue; it is deliberately not tested twice here. */
 
+/* FS-08: a relative symlink target is relative to the directory holding the
+ * link, never to the share root. The differential bench found this while
+ * running as root: for `d/link -> target.txt` the share answered with the
+ * content of `<root>/target.txt` while POSIX looks for `<root>/d/target.txt`.
+ * The bug was in the redirect target, which was joined from the root. */
+static void test_relative_symlink_target_is_relative_to_its_dir(void)
+{
+    testfs t;
+    PGW_ASSERT(testfs_open(&t, "pgwdir-rellink", NULL));
+    PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(t.fs, &t.cred, "d", 0755), PGW_OK);
+    pgw_rmfs_fd *fd = NULL;
+    size_t n = 0;
+    PGW_ASSERT_EQ_I(pgw_rmfs_open(t.fs, &t.cred, "target.txt",
+                                  PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644,
+                                  &fd), PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_write(t.fs, fd, 0, "at-root", 7, &n), PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_close(t.fs, fd), PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_open(t.fs, &t.cred, "d/target.txt",
+                                  PGW_O_RDWR | PGW_O_CREAT | PGW_O_TRUNC, 0644,
+                                  &fd), PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_write(t.fs, fd, 0, "inside-d", 8, &n), PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_close(t.fs, fd), PGW_OK);
+
+    PGW_ASSERT_EQ_I(pgw_rmfs_symlink(t.fs, &t.cred, "target.txt", "d/link"),
+                    PGW_OK);
+
+    /* Reading d/link must yield the file inside d/, not the one at the root. */
+    PGW_ASSERT_EQ_I(pgw_rmfs_open(t.fs, &t.cred, "d/link", PGW_O_RDONLY, 0, &fd),
+                    PGW_OK);
+    char buf[32] = { 0 };
+    PGW_ASSERT_EQ_I(pgw_rmfs_read(t.fs, fd, 0, buf, sizeof(buf) - 1, &n), PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_close(t.fs, fd), PGW_OK);
+    PGW_ASSERT_STR_EQ(buf, "inside-d");
+
+    /* The truth agrees: the host resolves the very same link the same way. */
+    char abs[512];
+    testfs_abs(&t, "d/link", abs, sizeof(abs));
+    FILE *f = fopen(abs, "rb");
+    PGW_ASSERT(f != NULL);
+    char want[32] = { 0 };
+    size_t m = fread(want, 1, sizeof(want) - 1, f);
+    fclose(f);
+    PGW_ASSERT_EQ_U(m, 8);
+    PGW_ASSERT_STR_EQ(want, "inside-d");
+    testfs_close(&t);
+}
+PGW_TEST(test_relative_symlink_target_is_relative_to_its_dir);
+
 int main(int argc, char **argv)
 {
     return pgw_test_main(argc, argv);
