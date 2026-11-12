@@ -1,0 +1,9 @@
+{
+  "commit": "f4b74ad35c446b893f61416a4c7d39a92d707554",
+  "label": "coverage",
+  "measured_at": "2026-11-12T14:31:40Z",
+  "percent": 91.68,
+  "schema": "passerelle/coverage/1",
+  "source": "quality.yml, job coverage (gcov, production C code)",
+  "tools": "cmake 3.30.5, ctest 3.30.5, gcov 13.3.0"
+}
