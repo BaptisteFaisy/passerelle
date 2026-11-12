@@ -196,16 +196,24 @@ jobs:
             exit 1
           fi
           rc=0
-          PGW_FUZZ_ITERS="$FUZZ_ITERS" timeout 250 "./build/fuzz/tests/$HARNESS" 2>&1 \
+          # PGW_FUZZ_CORPUS_DIR : the campaign keeps the inputs worth keeping
+          # (gap 48). The corpus of the nightly run is uploaded as an
+          # artefact, so a maintainer can compare it with the committed one
+          # and take what is new.
+          mkdir -p corpus
+          PGW_FUZZ_ITERS="$FUZZ_ITERS" PGW_FUZZ_CORPUS_DIR=corpus \
+            timeout 250 "./build/fuzz/tests/$HARNESS" 2>&1 \
             | tee "$LOG_DIR/$HARNESS.log" || rc=$?
           exit "$rc"
 
-      - name: Artefacts (journaux de fuzzing)
+      - name: Artefacts (journaux de fuzzing et corpus des entrees gardees)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nightly-long-fuzz-${{ matrix.harness }}
-          path: nightly-logs/
+          path: |
+            nightly-logs/
+            corpus/
           retention-days: 14
           if-no-files-found: warn
 
