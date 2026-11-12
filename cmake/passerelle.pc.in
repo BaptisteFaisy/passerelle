@@ -17,7 +17,7 @@ includedir=${prefix}/@PGW_PC_INCLUDEDIR@
 
 Name: @PGW_PKG_NAME@
 Description: @PGW_PKG_DESCRIPTION@
-URL: https://github.com/BaptisteFaisy/passerelle
+URL: https://github.com/Tradoooo/passerelle
 Version: @PGW_VERSION@
 Libs: -L${libdir} @PGW_PC_LIBS@
 Cflags: -I${includedir}

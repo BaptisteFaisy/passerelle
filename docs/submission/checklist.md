@@ -16,7 +16,7 @@ read the note.
 
 ## 1. Repository and licence
 
-- [x] Public repository: https://github.com/BaptisteFaisy/passerelle
+- [x] Public repository: https://github.com/Tradoooo/passerelle
       (`gh repo view` reports `visibility: PUBLIC`, `isPrivate: false`).
 - [x] Open-source licence: Apache-2.0, full text in [`LICENSE`](../../LICENSE).
 - [x] [`NOTICE`](../../NOTICE) attributes the projects we read, evaluated or

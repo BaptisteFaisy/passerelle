@@ -20,7 +20,7 @@ practice, a published exploit for everybody running the driver.
 Use whichever of these reaches you best; all of them are private:
 
 1. **GitHub private vulnerability reporting** - the *Security* tab of
-   [`BaptisteFaisy/passerelle`](https://github.com/BaptisteFaisy/passerelle),
+   [`Tradoooo/passerelle`](https://github.com/Tradoooo/passerelle),
    then *Report a vulnerability*. This is the preferred channel: it creates a
    private draft advisory, keeps the discussion out of public view and lets a
    fix ship before the report is published.

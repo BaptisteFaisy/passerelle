@@ -181,7 +181,7 @@ substituted.
 To reproduce the checksum from a clean clone:
 
 ```bash
-git clone https://github.com/BaptisteFaisy/passerelle.git
+git clone https://github.com/Tradoooo/passerelle.git
 cd passerelle && git checkout v0.2.0
 SOURCE_DATE_EPOCH=$(git log -1 --format=%ct) make tarball
 sha256sum dist/passerelle-0.2.0.tar.gz

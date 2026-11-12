@@ -64,7 +64,7 @@ not yet measured, it is labelled "to be measured" on screen — no invented numb
 
 | On screen | Narration |
 |---|---|
-| README on screen, with the prior-art table and the NOTICE file. Then the repository URL and the tutorial title. | "Passerelle builds on public work: `gvergine/qnx-fs-9p` for the 9P client design, `eclipse-score/qnx_unit_tests` for MSI-X on QNX, `kodebooth/qnx-virtio` for the transport API. What we add — x86_64 PCI, virtiofs, the conformance bench, priority scheduling — is written down, tested, and offered back upstream. Code, docs and tutorial: github.com/BaptisteFaisy/passerelle." |
+| README on screen, with the prior-art table and the NOTICE file. Then the repository URL and the tutorial title. | "Passerelle builds on public work: `gvergine/qnx-fs-9p` for the 9P client design, `eclipse-score/qnx_unit_tests` for MSI-X on QNX, `kodebooth/qnx-virtio` for the transport API. What we add — x86_64 PCI, virtiofs, the conformance bench, priority scheduling — is written down, tested, and offered back upstream. Code, docs and tutorial: github.com/Tradoooo/passerelle." |
 
 ---
 

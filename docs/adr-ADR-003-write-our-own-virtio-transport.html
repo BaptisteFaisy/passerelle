@@ -16,7 +16,7 @@
     <a href="user-guide.html">Use it</a>
     <a href="verification-status.html">Status</a>
     <a href="gap-analysis.html">Gaps</a>
-    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+    <a href="https://github.com/Tradoooo/passerelle">GitHub</a>
   </nav>
 </header>
 <div class="layout">
@@ -94,7 +94,7 @@
 <li>**Concurrency and reset shape.** One coarse `pthread_spinlock_t` for the transport, and a reset that polls in a `delay()` loop, which blocks the caller instead of fitting an asynchronous event loop.</li>
 <li>**Adaptation cost.** Splitting it into an OS-independent core plus OS bus accessors means rewriting roughly 80 % of `src/virtio/` and `src/virtio_pci/`, then maintaining a fork whose API has diverged.</li>
 </ol>
-<p>The project is cited with gratitude in <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/NOTICE"> 0 </a> — its use of the QNX 8.0 <code>libpci</code> MSI-X calls is what confirmed our own interrupt design.</p>
+<p>The project is cited with gratitude in <a href="https://github.com/Tradoooo/passerelle/blob/main/NOTICE"> 0 </a> — its use of the QNX 8.0 <code>libpci</code> MSI-X calls is what confirmed our own interrupt design.</p>
 <h2 id="consequences">Consequences</h2>
 <ul>
 <li>Layer 1 is OS-independent behind `pgw_vio_bus_ops`, so `virtio/src/pci_qnx.c` and `mmio_qnx.c` are the only QNX files; everything else runs on the PC, which is what makes the whole test strategy of this repository possible (`test_virtio_pci`, `test_virtio_mmio`, `test_virtio_vq`, `test_virtio_dev`, `test_virtio_mock`).</li>
@@ -108,7 +108,7 @@
     </nav>
     <footer>
       <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
-      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+      Sources on <a href="https://github.com/Tradoooo/passerelle">GitHub</a>.</p>
     </footer>
   </main>
 </div>

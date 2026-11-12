@@ -16,7 +16,7 @@
     <a href="user-guide.html">Use it</a>
     <a href="verification-status.html">Status</a>
     <a href="gap-analysis.html">Gaps</a>
-    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+    <a href="https://github.com/Tradoooo/passerelle">GitHub</a>
   </nav>
 </header>
 <div class="layout">
@@ -344,7 +344,7 @@ timeout 1500 python3 host/qshare/run-e2e.py</code></pre>
 <h3 id="branch-protection-must-not-require-up-to-date-branches">Branch protection must NOT require up-to-date branches</h3>
 <p>Measured on 11 November 2026, on PR #13: with <code>required_status_checks.strict: true</code> ("Require branches to be up to date before merging") on <code>main</code>, the Mergify queue &lt;strong&gt;refuses to queue anything&lt;/strong&gt; and posts a failing <code>Mergify Merge Queue</code> check with the reason &lt;em&gt;"Configuration not compatible with a branch protection setting"&lt;/em&gt;. The queue tests a pull request through a draft PR built on the latest base, then merges the original branch, which GitHub then considers out of date.</p>
 <p>The protection of this repository is therefore:</p>
-<pre><code class="language-bash">gh api -X PUT repos/BaptisteFaisy/passerelle/branches/main/protection --input - &lt;&lt;'JSON'
+<pre><code class="language-bash">gh api -X PUT repos/Tradoooo/passerelle/branches/main/protection --input - &lt;&lt;'JSON'
 {
   "required_status_checks": {
     "strict": false,
@@ -396,7 +396,7 @@ JSON</code></pre>
     </nav>
     <footer>
       <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
-      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+      Sources on <a href="https://github.com/Tradoooo/passerelle">GitHub</a>.</p>
     </footer>
   </main>
 </div>

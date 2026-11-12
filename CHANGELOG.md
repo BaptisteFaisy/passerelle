@@ -306,4 +306,4 @@ nothing in this release is claimed as verified under QNX.
 - The client is tested against in-memory fakes and a POSIX truth backend; there
   is no reference 9P server or reference FUSE backend to cross-check against yet.
 
-[0.1.0]: https://github.com/BaptisteFaisy/passerelle/releases/tag/v0.1.0
+[0.1.0]: https://github.com/Tradoooo/passerelle/releases/tag/v0.1.0

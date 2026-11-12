@@ -283,7 +283,7 @@ def build_sbom(root, version, build_dir=None):
                 "purl": "pkg:generic/passerelle@%s" % version,
                 "externalReferences": [
                     {"type": "vcs",
-                     "url": "https://github.com/BaptisteFaisy/passerelle"},
+                     "url": "https://github.com/Tradoooo/passerelle"},
                 ],
             },
             "properties": [
