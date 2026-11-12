@@ -54,6 +54,11 @@ class UnprivilegedVirtiofsd(VirtiofsdDaemon):
     def command(self) -> list[str]:
         return super().command() + ["--sandbox=none", "--seccomp=none"]
 
+    def stop(self) -> None:
+        """Stop the daemon and remove the pid file it leaves next to the socket."""
+        super().stop()
+        pathlib.Path(str(self.socket_path) + ".pid").unlink(missing_ok=True)
+
 
 class VhostFuseSession:
     """A front end wired to one running virtiofsd, with its FUSE client."""
