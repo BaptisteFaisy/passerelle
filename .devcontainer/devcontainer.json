@@ -1,0 +1,29 @@
+{
+  "name": "Passerelle (QNX 8.0 guest driver, QEMU share)",
+  "image": "passerelle-dev",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "llvm-vs-code-extensions.vscode-clangd"
+      ],
+      "settings": {
+        "cmake.buildDirectory": "${workspaceFolder}/build",
+        "cmake.configureOnOpen": true
+      }
+    }
+  },
+  "forwardPorts": [2222, 2223, 2224, 2225],
+  "postCreateCommand": "cmake -B build -DPGW_MODULES='common;virtio;proto9p;protofuse;rmfs;drivers;tests' && cmake --build build -j4"
+}
