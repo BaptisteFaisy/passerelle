@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: Apache-2.0
+#
+# Debian rules for the passerelle-host binary package (gap 96).
+#
+# The Python project lives in host/ (pyproject.toml, package name
+# passerelle-host), not at the source root, so dh is pointed at that
+# subdirectory and pybuild installs the four console tools.
+# Standard-library-only project: no test dependency beyond python3-pytest,
+# which the upstream CI already runs; the tests are skipped here to keep
+# dpkg-buildpackage free of network and QEMU requirements.
+
+export PYBUILD_NAME = passerelle-host
+export PYBUILD_TEST_ARGS =
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild --sourcedirectory=host

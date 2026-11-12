@@ -1,0 +1,35 @@
+Source: passerelle
+Section: python
+Priority: optional
+Maintainer: Passerelle Team <packaging@passerelle.invalid>
+Build-Depends: debhelper-compat (= 13),
+               dh-sequence-python3,
+               python3-all,
+               python3-setuptools,
+               pybuild-plugin-pyproject
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Vcs-Browser: https://github.com/BaptisteFaisy/passerelle
+Vcs-Git: https://github.com/BaptisteFaisy/passerelle.git
+
+Package: passerelle-host
+Architecture: all
+Depends: python3,
+         ${python3:Depends},
+         ${misc:Depends}
+Recommends: cmake,
+            qemu-system-x86
+Description: host tools for the Passerelle 9P2000.L / virtiofs stack
+ Passerelle is a 9P2000.L and virtiofs client for QNX 8.0 guests under
+ QEMU. This package ships the host side of the project: the Python tools
+ that prepare and drive a shared filesystem for the guest.
+ .
+ Console tools installed:
+  * qshare  - generate the QEMU options that export a host directory;
+  * qrun    - start a QEMU guest with a share and wait for its agent;
+  * fsproof - replay a recorded 9P trace against the client stack;
+  * pbench  - the pass/fail benchmark harness of the specification.
+ .
+ The QNX SDP is not part of this package: it is licensed and not
+ redistributable. Building the guest driver needs cmake and a C11
+ compiler (see Recommends); the host tools themselves are pure Python.
