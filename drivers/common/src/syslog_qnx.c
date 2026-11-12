@@ -9,13 +9,17 @@
  *     pgw/log.h, so `cat`/`devctl` on the mount point shows where the round
  *     trips go without stopping the driver.
  *
+ * QNX 8's slog2 API differs from QNX 6/7: slog2_buffer_t is an opaque pointer
+ * (not a struct), slog2f() is (buffer, code, severity, format, ...), and the
+ * buffer set is configured through buffer_config[] entries of {name, num_pages}.
+ *
  * Logging never allocates: slog2f() formats into its own buffer and the counter
  * table is formatted into a thread-local buffer.
  */
-/* The project compiles with -std=c11 (no GNU extensions). QNX ignores these
- * feature macros: its own headers always expose S_IF*, strnlen and the POSIX
- * realtime interfaces. The host needs them declared to build this file against
- * the stubs in tests/qnx-stub, so both are spelled out here once. */
+/* The project compiles with -std=c11 (no GNU extensions). The feature macros
+ * below make the POSIX realtime interfaces visible on the host build (which
+ * compiles this file against tests/qnx-stub) and fix the rest of the POSIX
+ * surface on QNX. */
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE 1
 #include "pgw/drvsrv.h"
@@ -33,21 +37,21 @@
 static slog2_buffer_t g_buffers[1];
 static bool g_open;
 
-static uint16_t severity_of(pgw_level lvl)
+static uint8_t severity_of(pgw_level lvl)
 {
     switch (lvl) {
     case PGW_LOG_ERROR:
-        return SLOG2_ERROR;
+        return (uint8_t)SLOG2_ERROR;
     case PGW_LOG_WARN:
-        return SLOG2_WARNING;
+        return (uint8_t)SLOG2_WARNING;
     case PGW_LOG_INFO:
-        return SLOG2_INFO;
+        return (uint8_t)SLOG2_INFO;
     case PGW_LOG_DEBUG:
-        return SLOG2_DEBUG1;
+        return (uint8_t)SLOG2_DEBUG1;
     case PGW_LOG_TRACE:
-        return SLOG2_DEBUG2;
+        return (uint8_t)SLOG2_DEBUG2;
     default:
-        return SLOG2_NOTICE;
+        return (uint8_t)SLOG2_NOTICE;
     }
 }
 
@@ -56,8 +60,9 @@ static void slog_backend(pgw_level lvl, const char *msg, void *user)
     (void)user;
     if (!g_open || msg == NULL)
         return;
-    (void)slog2f(&g_buffers[0], severity_of(lvl), "passerelle", "driver", 0u,
-                 "%s", msg);
+    /* (buffer, code, severity, format, ...): the code is a user-supplied hook
+     * the driver leaves at zero (QNX-08). */
+    (void)slog2f(g_buffers[0], (uint16_t)0u, severity_of(lvl), "%s", msg);
 }
 
 pgw_err pgw_slog2_open(const char *set_name)
@@ -69,14 +74,13 @@ pgw_err pgw_slog2_open(const char *set_name)
     slog2_buffer_set_config_t cfg;
     memset(&cfg, 0, sizeof cfg);
     cfg.num_buffers = 1;
-    cfg.verbosity_level = (uint8_t)SLOG2_DEBUG2;
-    cfg.buffer_size = 8; /* pages: 32 KiB of history per driver */
     cfg.buffer_set_name = set_name;
-    cfg.buffer[0].buffer_name = "passerelle";
-    cfg.buffer[0].num_lines = 1000;
+    cfg.verbosity_level = (uint8_t)SLOG2_DEBUG2;
+    cfg.buffer_config[0].buffer_name = "passerelle";
+    cfg.buffer_config[0].num_pages = 8; /* 32 KiB of history per driver */
     if (slog2_register(&cfg, g_buffers, 0) != 0)
         return pgw_code_from_host(errno);
-    (void)slog2_set_default_buffer(&g_buffers[0]);
+    (void)slog2_set_default_buffer(g_buffers[0]);
     g_open = true;
     pgw_log_set_backend(slog_backend, NULL);
     return PGW_OK;
