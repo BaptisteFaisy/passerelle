@@ -113,7 +113,10 @@ void pgw_attr_from_fs(iofunc_attr_t *attr, const pgw_fs_attr *a,
 
 /* --- caller identity and priority (FS-09, SEC-01, QNX-03) ---------------- */
 
-void pgw_cred_from_ctp(resmgr_context_t *ctp, pgw_fs_cred *cred);
+/* Fill `cred` with the caller's identity and priority. Fails (and returns an
+ * error) when the kernel cannot identify the client, so every caller refuses
+ * the operation instead of guessing (FS-09, SEC-01). */
+pgw_err pgw_cred_from_ctp(resmgr_context_t *ctp, pgw_fs_cred *cred);
 
 /* pgw_err -> this build's errno. An unmapped code stays an error (ROB-01). */
 int pgw_qnx_status(pgw_err e);
@@ -213,7 +216,6 @@ pgw_err pgw_privdrop_apply(const pgw_ability *list, size_t n, const char *user);
 typedef struct pgw_ist {
     int irq;
     int id;
-    int thread;
     volatile bool running;
     void (*on_irq)(void *user);
     void *user;
