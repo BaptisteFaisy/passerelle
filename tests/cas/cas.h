@@ -76,6 +76,10 @@ typedef struct cas_mount {
  * decorator, so the case can see every call that reaches the backend. */
 bool cas_mount_open(cas_mount *m, const char *tag, const pgw_fs_opts *opts,
                     cas_probe *probe);
+/* A second mount over an *existing* directory: the durability case closes
+ * everything and comes back, as a driver would after a crash. */
+bool cas_mount_open_at(cas_mount *m, const char *root,
+                       const pgw_fs_opts *opts, cas_probe *probe);
 void cas_mount_close(cas_mount *m);
 
 /* Absolute host path of a relative path inside the fixture. */

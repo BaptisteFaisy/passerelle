@@ -187,13 +187,9 @@ const pgw_fs_backend_ops cas_probe_ops = {
 
 /* --- the fixture ---------------------------------------------------------- */
 
-bool cas_mount_open(cas_mount *m, const char *tag, const pgw_fs_opts *opts,
-                    cas_probe *probe)
+static bool mount_over(cas_mount *m, const char *root, const pgw_fs_opts *opts,
+                       cas_probe *probe)
 {
-    memset(m, 0, sizeof(*m));
-    char *root = pgw_test_tmpdir(tag);
-    if (root == NULL)
-        return false;
     snprintf(m->root, sizeof(m->root), "%s", root);
     m->be = pgw_posix_backend_open(m->root);
     if (m->be == NULL)
@@ -222,6 +218,25 @@ bool cas_mount_open(cas_mount *m, const char *tag, const pgw_fs_opts *opts,
     }
     m->cred = tc_self(10); /* the owner of the files, never a literal uid */
     return true;
+}
+
+bool cas_mount_open(cas_mount *m, const char *tag, const pgw_fs_opts *opts,
+                    cas_probe *probe)
+{
+    memset(m, 0, sizeof(*m));
+    char *root = pgw_test_tmpdir(tag);
+    if (root == NULL)
+        return false;
+    return mount_over(m, root, opts, probe);
+}
+
+bool cas_mount_open_at(cas_mount *m, const char *root, const pgw_fs_opts *opts,
+                       cas_probe *probe)
+{
+    memset(m, 0, sizeof(*m));
+    if (root == NULL)
+        return false;
+    return mount_over(m, root, opts, probe);
 }
 
 void cas_mount_close(cas_mount *m)
