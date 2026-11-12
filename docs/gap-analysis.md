@@ -11,7 +11,7 @@ file listed **100 concrete gaps**: the requirement lines that are not fully
 satisfied, and everything else a submission is judged on that is not a
 requirement line.
 
-**67 of those 100 are closed** and are marked inline (`Closed 11-12/11` for the
+**68 of those 100 are closed** and are marked inline (`Closed 11-12/11` for the
 night wave that delivered the reference servers, the publication pipeline, the
 quality gates, the QNX 7.1 guest in CI and the submission pack; `Closed 12/11`
 for the two waves that delivered the faulty server, the directed cases of §7.4,
@@ -22,9 +22,9 @@ export story, the SBOM, the pinned guest image, the architecture picture, the
 English glossary and the everyday commands). Rows are kept rather than
 deleted: the closure note says *what* closed them, so a claim can be checked.
 What is left: **26 requirement gaps** (24 of them blocked on the QNX SDP, 2
-de-scoped X-tier) and **7 non-requirement gaps**, of which the demo video, the
-Discord question and the upstream pull request need a human, and the two
-outward-facing gaps need an approval.
+de-scoped X-tier) and **6 non-requirement gaps**: the demo video, the Discord question and the upstream pull
+request need a human, and the three QNX guest items (71, 72, 75) need an SDP or a guest
+image with a toolchain.
 
 Where the 77 requirements stand:
 
@@ -120,7 +120,7 @@ purpose.
 | 57 | **Closed 11-12/11** - `tests/ref9p/`: an independent Python 9P2000.L server, and C benches driving our client against it over a socket. **No reference 9P server**: the client is only tested against an in-memory fake, never against a real server implementation |
 | 58 | **Closed 11-12/11, and further on 12/11** - `tests/fuse_ref/` is the independent FUSE backend; `host/vhost/` now drives the *real* `virtiofsd` over a vhost-user socket (memfd memory table, split virtqueue, eventfd kick/call), so the virtiofs path is no longer tested only against our own code (PR #36). **No reference FUSE backend**: the virtiofs client is only tested against a fake |
 | 59 | **Closed 12/11** - our client against `diod`, a third-party 9P server, in a CI job; the local run skips with the reason written out (PR #60). No cross-check against a third-party 9P client (interoperability proof) |
-| 60 | No cross-check against `diod`'s protocol description turned into an executable test |
+| 60 | **Closed 12/11** - `tests/conformance/`: diod's own description of the 9P2000.L wire turned into an executable conformance table — 44 rules, each citing the section of the excerpt it comes from and the named case that proves it; the table checks its own citations. The 25 rules that are statements about bytes are read at the offsets the description gives, the 10 sequence rules run through the production client, the 6 that need the real server run against `diod` in CI (PR #68). No cross-check against `diod`'s protocol description turned into an executable test |
 | 61 | **Closed 12/11** - `tests/prop/`: a seeded, shrinking, bounded property harness over both codec boundaries - round trip, capacity bounds, extremes, stability. No `hypothesis` dependency (PR #49). No property-based tests (Hypothesis) on the codec boundaries |
 | 62 | **Closed 12/11** - a reduced divergence is persisted as a regression case (`PGW_CORPUS_SAVE` / `tools/corpus-save.sh`) and replayed by `test_corpus` in the normal suite. **The corpus is empty and that is honest**: the differential bench is clean today (PR #49). The divergences reduced by the bench are not stored as regression cases |
 | 63 | **Closed 12/11** - `tests/cas/test_cas_load.c`: a mount under a continuous workload, with a bounded priority read (PR #38). No load test: mount under a continuous workload |
