@@ -276,6 +276,11 @@ ctest --test-dir build --output-on-failure      # 2/2 tests passed</code></pre>
 <td><code>python3 -m pytest host/tests/test_vhost_protocol.py host/tests/test_vhost_vring.py host/tests/test_vhost_fuse_client.py -q</code> against a Python vhost-user backend, so the tests need no <code>virtiofsd</code></td>
 </tr>
 <tr>
+<td>The protocol description of <code>diod</code> turned into an executable table</td>
+<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
+<td><code>ctest -R conformance</code> — 44 rules taken from diod's own description of the 9P2000.L wire, each citing the section it comes from and the named case that proves it; the table checks its own citations. The byte-level rules are read at the offsets the description gives, the sequence rules run through the production client, and the rules that need the real server run against <code>diod</code> in CI (P9-01 … P9-10)</td>
+</tr>
+<tr>
 <td>One environment definition, one package</td>
 <td>&lt;strong&gt;Implemented&lt;/strong&gt;</td>
 <td><code>.devcontainer/devcontainer.json</code> validated statically by pytest; <code>packaging/debian/</code> validated against <code>VERSION</code> and the real file list; <code>pip install ./host</code> + the four console scripts are exercised by <code>release.yml</code></td>

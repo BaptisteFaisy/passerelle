@@ -57,6 +57,14 @@ a hostile or a larger-than-expected peer, not by reading it.
 - `.devcontainer/`: one development-environment definition, shared with the
   root `Dockerfile` and validated statically (PR #37).
 - `docs/vhost-user-front-end.md`: what that proof covers, and what it does not.
+- `tests/conformance/`: diod's own description of the 9P2000.L wire turned
+  into an **executable conformance table** — 44 rules, each citing the section
+  of the excerpt it comes from and the named case that proves it. The table
+  checks its own citations: a rule without an existing section, without a
+  case, or a case without a function, fails the bench. The 25 rules that are
+  statements about bytes are read at the offsets the description gives, the 10
+  sequence rules run through the production client, and the 6 that need the
+  real server run against `diod` in CI (P9-01 … P9-10).
 - `tests/prop/`: a property harness on both codec boundaries — seeded per
   iteration, shrinking to a minimal failing case, bounded so a hang is caught
   by the test timeout. Round trip, capacity bounds, extremes and stability over
