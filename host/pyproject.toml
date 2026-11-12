@@ -10,7 +10,7 @@ name = "passerelle-host"
 # release workflow's `install check` job compares `qshare --version` with the
 # tag being released.
 version = "0.1.0"
-description = "Passerelle host tools: qshare, qrun, fsproof, pbench"
+description = "Passerelle host tools: qshare, qrun, fsproof, pbench, vhost"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -27,4 +27,4 @@ pbench = "bench.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pgwutil*", "qshare*", "fsproof*", "bench*"]
+include = ["pgwutil*", "qshare*", "fsproof*", "bench*", "vhost*"]
