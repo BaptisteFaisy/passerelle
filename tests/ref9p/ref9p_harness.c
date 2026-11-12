@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -159,6 +160,12 @@ static int connect_loopback(int port)
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0)
         return -1;
+    /* A frame goes out as two writes (the 4-byte length, then the message):
+     * with Nagle on, the second waits for the ACK of the first and the delayed
+     * ACK of the peer adds ~40 ms to *every* exchange. The benches send
+     * thousands of frames, so the socket is put in non-delayed mode. */
+    int nodelay = 1;
+    (void)setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof nodelay);
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof addr);
     addr.sin_family = AF_INET;

@@ -20,7 +20,14 @@
 #include <sys/types.h>
 
 #define PGW_BE_MAX_HANDLES 256
-#define PGW_BE_MAX_DIR_ENTRIES 4096
+/* A directory snapshot grows as the directory is read (PGW_BE_DIR_CHUNK at a
+ * time, doubling), so a small directory costs a small allocation while a
+ * directory of the directed cases of spec 7.4 (100 000 entries, gap 65) is
+ * listed in full. PGW_BE_MAX_DIR_ENTRIES is the ceiling: past it the listing
+ * fails loudly instead of silently truncating, because a truncated listing is
+ * exactly the divergence the differential bench exists to catch. */
+#define PGW_BE_MAX_DIR_ENTRIES 1048576u
+#define PGW_BE_DIR_CHUNK 64u
 #define PGW_BE_PATH_MAX 4096
 
 /* One open handle. A directory handle snapshots its entries at open time so
@@ -30,9 +37,10 @@ typedef struct be_handle {
     bool is_dir;
     int fd; /* file descriptor, -1 for directories */
     char path[PGW_BE_PATH_MAX];
-    char (*names)[256]; /* directory snapshot */
+    char (*names)[256]; /* directory snapshot, `cap` entries long */
     uint8_t *types;
     size_t n_entries;
+    size_t cap;
 } be_handle;
 
 struct pgw_posix_backend {
