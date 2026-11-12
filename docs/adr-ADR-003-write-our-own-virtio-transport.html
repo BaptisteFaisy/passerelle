@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adr 003 Write Our Own Virtio Transport - Passerelle</title>
+<meta name="description" content="Passerelle: a shared folder for QNX 8.0 guests under QEMU, over virtio (9P2000.L and virtiofs).">
+<link rel="stylesheet" href="_assets/style.css">
+<link rel="icon" href="_assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">◈</span> Passerelle</a>
+  <nav class="topnav">
+    <a href="overview.html">Overview</a>
+    <a href="user-guide.html">Use it</a>
+    <a href="verification-status.html">Status</a>
+    <a href="gap-analysis.html">Gaps</a>
+    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <input id="filter" type="search" placeholder="Filter pages" aria-label="Filter pages">
+    <p class="nav-section">Start</p>
+<a class="nav-item" data-title="home" href="index.html">Home</a>
+<a class="nav-item" data-title="overview" href="overview.html">Overview</a>
+<p class="nav-section">Use</p>
+<a class="nav-item" data-title="user guide" href="user-guide.html">User guide</a>
+<a class="nav-item" data-title="architecture" href="architecture.html">Architecture</a>
+<a class="nav-item" data-title="building" href="building.html">Building</a>
+<a class="nav-item" data-title="ci and merge process" href="ci.html">CI and merge process</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="state of the art" href="state-of-the-art.html">State of the art</a>
+<a class="nav-item" data-title="decisions" href="decisions.html">Decisions</a>
+<a class="nav-item" data-title="verification status" href="verification-status.html">Verification status</a>
+<a class="nav-item" data-title="measurements" href="measurements.html">Measurements</a>
+<a class="nav-item" data-title="linux 9p baseline" href="measurements-linux-baseline-9p.html">Linux 9P baseline</a>
+<a class="nav-item" data-title="gap analysis" href="gap-analysis.html">Gap analysis</a>
+<a class="nav-item" data-title="video script" href="video-script.html">Video script</a>
+<p class="nav-section">Learn</p>
+<a class="nav-item" data-title="codelab" href="codelab.html">Codelab</a>
+<a class="nav-item" data-title="codelab 01 - environment" href="codelab-01-environment-and-first-image.html">Codelab 01 - environment</a>
+<a class="nav-item" data-title="codelab 02 - the pci bus" href="codelab-02-the-pci-bus-under-qnx-8.html">Codelab 02 - the PCI bus</a>
+<a class="nav-item" data-title="codelab 03 - finding a device" href="codelab-03-finding-a-modern-virtio-device.html">Codelab 03 - finding a device</a>
+<a class="nav-item" data-title="codelab 04 - features and status" href="codelab-04-features-and-the-status-sequence.html">Codelab 04 - features and status</a>
+<a class="nav-item" data-title="codelab 05 - the virtqueue" href="codelab-05-the-split-virtqueue.html">Codelab 05 - the virtqueue</a>
+<a class="nav-item" data-title="codelab 06 - interrupts" href="codelab-06-interrupts.html">Codelab 06 - interrupts</a>
+<a class="nav-item" data-title="codelab 07 - first 9p exchange" href="codelab-07-the-first-9p-exchange.html">Codelab 07 - first 9P exchange</a>
+<a class="nav-item" data-title="codelab 08 - to a resource manager" href="codelab-08-from-prototype-to-resource-manager.html">Codelab 08 - to a resource manager</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="upstream contributions" href="upstream.html">Upstream contributions</a>
+<p class="nav-section">Reference</p>
+<a class="nav-item" data-title="specification (en)" href="spec-en.html">Specification (EN)</a>
+<a class="nav-item" data-title="specification (fr)" href="spec-fr.html">Specification (FR)</a>
+<p class="nav-section">Project</p>
+<a class="nav-item" data-title="checklist" href="submission-checklist.html">Checklist</a>
+<a class="nav-item" data-title="devpost" href="submission-devpost.html">Devpost</a>
+<a class="nav-item" data-title="one pager" href="submission-one-pager.html">One Pager</a>
+<a class="nav-item" data-title="readme summary" href="submission-readme-summary.html">Readme Summary</a>
+<a class="nav-item" data-title="what did not work" href="submission-what-did-not-work.html">What Did Not Work</a>
+<a class="nav-item" data-title="adr 001 lookup getattr symlink convention" href="adr-ADR-001-lookup-getattr-symlink-convention.html">Adr 001 Lookup Getattr Symlink Convention</a>
+<a class="nav-item" data-title="adr 002 qnx priority conversion" href="adr-ADR-002-qnx-priority-conversion.html">Adr 002 Qnx Priority Conversion</a>
+<a class="nav-item" data-title="adr 003 write our own virtio transport" href="adr-ADR-003-write-our-own-virtio-transport.html">Adr 003 Write Our Own Virtio Transport</a>
+<a class="nav-item" data-title="adr 004 roundtrip measured baseline" href="adr-ADR-004-roundtrip-measured-baseline.html">Adr 004 Roundtrip Measured Baseline</a>
+<a class="nav-item" data-title="adr 005 mergify queue strict false" href="adr-ADR-005-mergify-queue-strict-false.html">Adr 005 Mergify Queue Strict False</a>
+<a class="nav-item" data-title="qnx abi" href="qnx-abi.html">Qnx Abi</a>
+<a class="nav-item" data-title="qnx71 guest" href="qnx71-guest.html">Qnx71 Guest</a>
+<a class="nav-item" data-title="release" href="release.html">Release</a>
+<a class="nav-item" data-title="traceability" href="traceability.html">Traceability</a>
+  </aside>
+  <main class="content">
+    <p class="crumb">Project</p>
+    <h1 id="adr-003-write-our-own-layer-1-instead-of-vendoring-kodeboothqnx-virtio">ADR-003 — write our own layer 1 instead of vendoring <code>kodebooth/qnx-virtio</code></h1>
+<ul>
+<li>**Status**: Accepted (11 November 2026) — this is the code-level outcome of decision **D3** of the specification</li>
+<li>**Requirements**: VIO-01 (transitional *and* modern PCI ids), VIO-07 (zero-copy scatter-gather), VIO-08 (indirect descriptors, `EVENT_IDX`), VIO-10 (a standalone, documented transport), P9-10 (the layers build and are tested on the host PC with no QNX toolchain)</li>
+<li>**Evidence**: [`upstream/kodebooth-qnx-virtio/evaluation.md`](../../upstream/kodebooth-qnx-virtio/evaluation.md), [`docs/decisions.md`](../decisions.md) (D3), [`docs/state-of-the-art.md`](../state-of-the-art.md)</li>
+<li>**Code**: [`virtio/`](../../virtio) — `pgw/virtio.h`, a bus-ops table, PCI modern + transitional, MMIO v1/v2, and a mock backend for PC tests</li>
+</ul>
+<h2 id="context">Context</h2>
+<p><code>kodebooth/qnx-virtio</code> (April 2026, MIT, ~2 400 lines of transport plus a complete virtio-gpio resource manager) is a real library, not a sketch: the device abstraction is transport-agnostic and vtable-based, both virtqueue layouts are handled, and its interrupt path is the right one for QNX 8.0 (<code>InterruptAttachThread()</code> + <code>InterruptWait()</code>).</p>
+<p>The specification's rule for D3 was: &lt;em&gt;evaluate it during week 1; write our own if adapting costs more than a day.&lt;/em&gt; The evaluation was done by reading the tree line by line (it cannot be built here: it needs the SDP).</p>
+<h2 id="decision">Decision</h2>
+<p>&lt;strong&gt;Do not vendor it. Write our own portable layer 1.&lt;/strong&gt; Five findings drove the call, in order of weight:</p>
+<ol>
+<li>**It cannot be compiled or unit-tested off QNX.** `virtio.c` includes `&lt;sys/neutrino.h&gt;` and calls `InterruptAttachThread()`; `virtio_pci.c` calls `libpci` directly. That contradicts P9-10 and the design rule that layers 1 and 2 are tested on the host PC, in CI, with no SDP.</li>
+<li>**Modern-only PCI ids.** `VIRTIO_PCI_DID(type)` is `0x1040 + type` and the device is forced to `legacy = false`, so the transitional id `0x1009` that VIO-01 requires — and that stock QEMU configurations expose — is not recognised. (Our own PCI test sees `1af4/1009` reported by a real QNX 7.1 guest.)</li>
+<li>**No indirect descriptors, no `EVENT_IDX`.** Chains are allocated descriptor by descriptor; the rings reserve the event-index bytes without using them. VIO-08 would have to be written from scratch anyway.</li>
+<li>**Concurrency and reset shape.** One coarse `pthread_spinlock_t` for the transport, and a reset that polls in a `delay()` loop, which blocks the caller instead of fitting an asynchronous event loop.</li>
+<li>**Adaptation cost.** Splitting it into an OS-independent core plus OS bus accessors means rewriting roughly 80 % of `src/virtio/` and `src/virtio_pci/`, then maintaining a fork whose API has diverged.</li>
+</ol>
+<p>The project is cited with gratitude in <a href="https://github.com/BaptisteFaisy/passerelle/blob/main/NOTICE"> 0 </a> — its use of the QNX 8.0 <code>libpci</code> MSI-X calls is what confirmed our own interrupt design.</p>
+<h2 id="consequences">Consequences</h2>
+<ul>
+<li>Layer 1 is OS-independent behind `pgw_vio_bus_ops`, so `virtio/src/pci_qnx.c` and `mmio_qnx.c` are the only QNX files; everything else runs on the PC, which is what makes the whole test strategy of this repository possible (`test_virtio_pci`, `test_virtio_mmio`, `test_virtio_vq`, `test_virtio_dev`, `test_virtio_mock`).</li>
+<li>Both PCI id families are supported, indirect descriptors and notification suppression are negotiated, and the transport is zero-copy by construction (descriptors carry the caller's addresses).</li>
+<li>No MIT code is vendored, so there is no second licence in the tree and no fork to track upstream.</li>
+<li>The cost is ours: ~2 000 lines of transport to maintain, and a QNX-side bus backend that is only compile-checked (`qnx-syntax`) until an SDP is available.</li>
+</ul>
+    <nav class="pager">
+      <a class="prev" href="adr-ADR-002-qnx-priority-conversion.html">Previous</a>
+      <a class="next" href="adr-ADR-004-roundtrip-measured-baseline.html">Next</a>
+    </nav>
+    <footer>
+      <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
+      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+    </footer>
+  </main>
+</div>
+<script src="_assets/search.js"></script>
+</body>
+</html>
