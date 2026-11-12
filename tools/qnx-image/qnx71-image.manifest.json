@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "description": "The QNX 7.1 guest disk used by the CI job, pinned. The disk itself is QNX software under QNX's non-commercial terms: it is NOT in this repository and never will be (rule 'no binary in the repository'). This file is what makes it reproducible: the source is pinned by digest (docker verifies every layer against it during the pull) and the extracted disk is pinned by size and SHA256, both verified before the disk is used.",
+  "verified_on": "2026-11-12",
+  "source": {
+    "kind": "docker-image",
+    "registry": "docker.io",
+    "repository": "autosarai/qemu_qnx7_1",
+    "tag": "1.1.0",
+    "digest": "sha256:07319f04f85ea25f2629e7b6cf30b4572c47f37e7031ba9150c86226b2de553a",
+    "created": "2023-04-12T01:20:59Z",
+    "layers": 11,
+    "compressed_bytes": 652384855,
+    "layer_digests": [
+      "sha256:b549f31133a955f68f9fa0d93f18436c4a180e12184b999a8ecf14f7eaa83309",
+      "sha256:cfb9c58796fa5faaeecb6aacb86453c460713e3f2573bfab29f97a866ba627d0",
+      "sha256:f598f6b2f82aad7c0c066239ce2cd2bc1e0bae80434973f1bf4f6a2baab3f888",
+      "sha256:225be36ff5d45a612d56fd7afd9a145343fa7d6b053aa3bfdf3c2a2ed869fecb",
+      "sha256:c9c8a40fa0aa84ac96fe4b0f3d9211d050baafa06aad565a9a8ac683672bc178",
+      "sha256:cdcd93fbe69258805e4405a73297e78aaa01f50ec6b2b3d565f6c0d35a4381f4",
+      "sha256:079e36dda6b335b638443f695e7578f0673de3955fcafcfa14b640140dab9ad4",
+      "sha256:e74d019b827070d60ec2982a1453bf3cc2bdd539f2d3becfd6649790da015c18",
+      "sha256:ae5773ec13cfe3411d4ef97eae24e88f94822af6ea068747a24483b20cffc36d",
+      "sha256:1f313d7d77d6f5339e0b723db32014e7baa4c099738dfe61b31b2279897d6023",
+      "sha256:8a5dd5b453d861bad0a22bc9d96ff82fa9c1f2b00b897e25838c582b5754ff56"
+    ],
+    "licence": "QNX Neutrino, under the non-commercial terms of the QNX licence: not redistributable, fetched at run time and verified against the digest above",
+    "how_the_digest_was_obtained": "registry-1.docker.io manifest lookup (GET /v2/autosarai/qemu_qnx7_1/manifests/1.1.0), the Docker-Content-Digest header, on 2026-11-12"
+  },
+  "disk": {
+    "path_in_source": "/home/popcornsar/fs_3GB.img",
+    "size_bytes": 6500959232,
+    "sha256": null,
+    "sha256_note": "pinned by the first CI run that fetched the disk: 'python3 tools/qnx-image/image_manifest.py pin --manifest tools/qnx-image/qnx71-image.manifest.json --file <disk>'. Until it is pinned, the job verifies the source digest and records the observed disk digest in its artefact instead of pretending the disk is pinned."
+  }
+}
