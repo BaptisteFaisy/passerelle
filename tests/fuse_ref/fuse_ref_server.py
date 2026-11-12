@@ -78,6 +78,15 @@ from fuse_ref_wire import (
 )
 
 
+def dt_type_entry(entry):
+    """The DT_* type of a directory entry, from d_type (no stat needed)."""
+    if entry.is_dir(follow_symlinks=False):
+        return 4   # DT_DIR
+    if entry.is_file(follow_symlinks=False):
+        return 8   # DT_REG
+    return 10      # DT_LNK (a link or another special file)
+
+
 class Server(NamespaceOps):
     """Node and handle tables over a real directory."""
 
@@ -131,8 +140,18 @@ class Server(NamespaceOps):
 
     def stat_attr(self, path, follow):
         st = (os.stat if follow else os.lstat)(path)
-        return pack_attr(st.st_ino, st.st_size, st.st_mode, st.st_nlink,
-                         st.st_mtime_ns, st.st_atime_ns, st.st_ctime_ns)
+        attr = bytearray(pack_attr(st.st_ino, st.st_size, st.st_mode,
+                                   st.st_nlink, st.st_mtime_ns, st.st_atime_ns,
+                                   st.st_ctime_ns))
+        # pack_attr (host/pgwutil/fuse_wire.py) has no uid/gid parameter and
+        # leaves those two words at zero. A real FUSE server reports the
+        # owner, and the layer checks it (SEC-01): a reference server that
+        # reports "root" for every file would refuse every write of a normal
+        # caller. The two words sit after the six 64-bit fields, the three
+        # nanosecond words, the mode and the link count.
+        attr[68:72] = struct.pack("<I", st.st_uid)
+        attr[72:76] = struct.pack("<I", st.st_gid)
+        return bytes(attr)
 
     def attr_body(self, path, follow):
         return struct.pack("<QII", 0, 0, 0) + self.stat_attr(path, follow)
@@ -235,11 +254,14 @@ class Server(NamespaceOps):
         return pack_reply(unique, pack_open_out(fh))
 
     def snapshot_dir(self, path):
-        names = sorted(os.listdir(path))
+        # The type of an entry comes from the directory entry itself (d_type),
+        # as a real FUSE server does: an lstat per entry would need the search
+        # bit of the directory, which a listing does not require (the truth
+        # side lists a directory whose mode has no "x" without a problem).
         listing = [(".", 4, None), ("..", 4, None)]
-        for nm in names:
-            st = os.lstat(os.path.join(path, nm))
-            listing.append((nm, dirent_type(st.st_mode), st.st_ino))
+        with os.scandir(path) as it:
+            for entry in sorted(it, key=lambda e: e.name):
+                listing.append((entry.name, dt_type_entry(entry), 0))
         return listing
 
     def io_arg(self, nodeid, body):
