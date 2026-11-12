@@ -384,6 +384,9 @@ pgw_err pgw_rmfs_link(pgw_rmfs *fs, const pgw_fs_cred *cred,
         a.p2 = rnew;
         err = rmfs_run(fs, prio, call_link, &a);
         rmfs_cache_invalidate(fs, rnew);
+        /* The link count of the existing name just changed: its cached
+         * attributes are stale (gap 68, FS-13). */
+        rmfs_cache_invalidate(fs, rexist);
     }
     rmfs_count(err);
     PGW_DBG("rmfs: link %s -> %s : %s", existing, newpath, pgw_err_name(err));

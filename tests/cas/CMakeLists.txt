@@ -43,6 +43,29 @@ include_directories(
     "${REF9P_DIR}"
     "${CMAKE_SOURCE_DIR}/rmfs/tests")
 
+# The case bodies shared by every adapter under test (ROB-04, gap 68): they
+# take a cas_view and nothing else, so the POSIX backend, the 9P adapter and
+# the FUSE adapter run the very same assertions. Written once, here.
+pgw_library(pgw_cas_cases
+    SRCS
+        cas_cases_replace.c
+        cas_cases_hardlink.c
+        cas_host.c
+    DEPS pgw_rmfs pgw_test pgw_posix_backend
+    INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}" "${REF9P_DIR}"
+            "${CMAKE_SOURCE_DIR}/tests/posix_backend"
+)
+
+pgw_test(test_cas_replace
+    SRCS test_cas_replace.c ${CAS_MAIN} ${CAS_9P_SRCS}
+    DEPS pgw_diff pgw_proto9p pgw_cas_cases
+    LABELS "directed;conformance")
+
+pgw_test(test_cas_hardlink
+    SRCS test_cas_hardlink.c ${CAS_MAIN} ${CAS_9P_SRCS}
+    DEPS pgw_diff pgw_proto9p pgw_cas_cases
+    LABELS "directed;conformance")
+
 pgw_test(test_cas_big_file
     SRCS test_cas_big_file.c ${CAS_MAIN} ${CAS_9P_SRCS}
     DEPS pgw_diff pgw_proto9p
