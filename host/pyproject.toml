@@ -4,6 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "passerelle-host"
+# This literal must equal the repository's VERSION file. It cannot be read from
+# there: a published sdist contains only this directory, not the tree above it.
+# tools/release/test_version_sync.py fails the build on any drift, and the
+# release workflow's `install check` job compares `qshare --version` with the
+# tag being released.
 version = "0.1.0"
 description = "Passerelle host tools: qshare, qrun, fsproof, pbench"
 readme = "README.md"

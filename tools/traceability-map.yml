@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# tools/traceability-map.yml - requirement -> proof map.
+#
+# One line per requirement of docs/spec-en.md, in the order of the spec:
+#
+#   <ID>: {state: <tested|partial|missing>, tests: [<a>, <b>], files: [<path>], note: "<...>"}
+#
+# The format is a restricted flow-style YAML subset, parsed by
+# tools/traceability.py without PyYAML. The grammar is documented in that
+# script; in short: one entry per line, the four keys above exactly once,
+# bare words in the two lists, and a double-quoted note.
+#
+# States (they must match docs/verification-status.md):
+#   tested  - the proof runs in the CI on the host PC, or is measured and published
+#   partial - part of the requirement is exercised, the rest needs a QNX guest
+#   missing - not started (extreme tier, de-scoped first when time runs out)
+#
+# A "tested" entry must cite the test that proves it when the spec verifies
+# the requirement by test (T), and the file that carries the evidence when the
+# spec verifies it by inspection, measurement or demonstration (I, M, D).
+# A "partial" entry must say what is still missing; a "missing" entry must
+# cite no test, because nothing runs for it yet.
+#
+# The generator refuses a map that is stale (a requirement without an entry),
+# that invents a requirement (an entry the spec does not ask for), that cites
+# a file that does not exist, or that cites a test no build knows about.
+
+# --- 6.1 Virtio transport --------------------------------------------------
+VIO-01: {state: tested, tests: [test_virtio_pci, test_modern_9p_device_is_found, test_transitional_9p_id_is_accepted], files: [virtio/src/pci.c, virtio/src/pci_modern.c, virtio/include/pgw/virtio.h], note: "vendor and device matching, modern and transitional ids. A real QNX 7.1 guest reports 1af4/1009 for the same device (tests/qemu/qnx71/EVIDENCE.md)."}
+VIO-02: {state: tested, tests: [test_virtio_pci, test_capabilities_are_all_discovered, test_device_without_common_cfg_is_refused], files: [virtio/src/pci_caps.c, virtio/src/pci_modern.c], note: "capability walk over a fake config space; the QNX 7.1 guest exposes MSI-X and the five vendor capabilities."}
+VIO-03: {state: tested, tests: [test_virtio_mmio, test_v2_device_is_found, test_v1_device_is_found], files: [virtio/src/mmio.c, virtio/src/mmio_qnx.c], note: "MMIO v1 and v2 against a RAM-backed register file; mmio_qnx.c is compile-checked by the qnx-syntax job."}
+VIO-04: {state: partial, tests: [test_virtio_pci, test_msix_table_is_programmed, test_intx_path_uses_the_isr_capability], files: [virtio/src/pci.c, virtio/src/pci_qnx.c, drivers/fs9p/src/irq_qnx.c], note: "MSI-X programming and the INTx fallback are tested on the PC; delivery needs a QNX guest with a routed vector (E1). Measured on the QNX 7.1 reference image: no interrupt is routed to this device, so the driver must add its own INTx entry or use MSI-X."}
+VIO-05: {state: tested, tests: [test_virtio_dev, test_reads_9p_mount_tag, test_rejects_oversized_9p_tag], files: [virtio/src/dev.c], note: "mount tag read from the device config space, length-prefixed as in the Linux header."}
+VIO-06: {state: tested, tests: [test_virtio_mock, test_two_devices_are_independent], files: [virtio/src/dev.c, virtio/src/mock.c], note: "one device object per share; two mock devices keep separate state."}
+VIO-07: {state: tested, tests: [test_virtio_vq, test_zero_copy_uses_caller_addresses, test_phys_address_wins_over_virtual], files: [virtio/src/virtq.c, virtio/src/virtq_alloc.c], note: "descriptors carry the caller addresses, no intermediate copy in the transport; the spec asks for inspection here and the test pins it."}
+VIO-08: {state: tested, tests: [test_virtio_vq, test_indirect_used_above_threshold, test_indirect_disabled_when_not_negotiated, test_event_idx_suppresses_redundant_kick], files: [virtio/src/virtq.c, virtio/src/virtq_alloc.c], note: "the test half is green; the measurement half (kick counts on a QNX guest) has no number yet."}
+VIO-09: {state: tested, tests: [test_virtio_dev, test_destroy_resets_first, test_reset_detaches_irq_and_zeroes_status], files: [virtio/src/dev.c], note: "reset zeroes the device status and detaches the interrupt handler."}
+VIO-10: {state: tested, tests: [test_virtio_mock, test_open_reports_identity, test_full_stack_asynchronous], files: [virtio/include/pgw/virtio.h, virtio/src/mock.c, docs/architecture.md], note: "standalone library behind a bus-ops table, with a documented mock backend; the protocol layers reuse it with no QNX."}
+
+# --- 6.2 9P2000.L protocol -------------------------------------------------
+P9-01: {state: tested, tests: [test_p9_session, test_negotiation, test_p9_codec], files: [proto9p/src/p9_session.c, proto9p/src/p9_enc.c, proto9p/src/p9_dec.c], note: "Tversion and Tattach negotiate the version and the maximum message size."}
+P9-02: {state: tested, tests: [test_p9_codec, test_enc_simple_ones, test_enc_namespace_messages, test_dec_rattach_and_rwalk], files: [proto9p/src/p9_enc.c, proto9p/src/p9_dec.c], note: "every core message has an encode and a decode round trip."}
+P9-03: {state: tested, tests: [test_p9_codec, test_enc_attr_messages, test_enc_links], files: [proto9p/src/p9_enc.c, proto9p/src/p9_dec_attr.c], note: "setattr, symlink, readlink and link."}
+P9-04: {state: tested, tests: [test_p9_codec, test_wire_flags_are_linux, test_errno_linux_to_qnx, test_err_linux_table], files: [proto9p/src/p9_xlate.c, common/src/err.c, common/src/flags.c], note: "one table per direction, tested value by value; the session uses them."}
+P9-05: {state: tested, tests: [test_p9_session, test_nested_request, test_many_twaks_for_a_deep_path], files: [proto9p/src/p9_session.c, proto9p/src/p9_idpool.c], note: "several requests in flight, one tag each; the pool refuses a double allocation."}
+P9-06: {state: tested, tests: [test_p9_session, test_timeout_sends_flush, test_explicit_flush], files: [proto9p/src/p9_session_io.c], note: "a cancelled or timed-out request sends Tflush carrying the old tag."}
+P9-07: {state: tested, tests: [test_p9_idpool, test_pool_million_cycles_no_leak, test_no_fid_leak_over_many_operations], files: [proto9p/src/p9_idpool.c], note: "1 000 000 alloc and free cycles without a leak; the differential bench checks the counters return to zero."}
+P9-08: {state: tested, tests: [test_p9_session, test_chunked_read_300k, test_chunked_write, test_readdir_multi_chunk_resume], files: [proto9p/src/p9_session_io.c], note: "a 300 KiB read with msize 8192 is split and resumed."}
+P9-09: {state: tested, tests: [test_p9_validation, test_truncation_at_every_length, test_trailing_bytes_refused, fuzz_p9], files: [proto9p/src/p9_dec.c, proto9p/src/p9_dec_attr.c], note: "size, type, tag and internal lengths are checked; randomized input campaigns run under the sanitizers."}
+P9-10: {state: tested, tests: [test_p9_codec, test_p9_session, test_p9_validation, test_p9_idpool], files: [proto9p/CMakeLists.txt, proto9p/include/pgw/p9.h], note: "the layer includes no OS header; the build-test job compiles and runs it on Linux."}
+
+# --- 6.3 Filesystem behaviour ---------------------------------------------
+FS-01: {state: tested, tests: [test_rmfs_open, test_open_read_write_seek_close, test_file_above_4gib], files: [rmfs/src/rmfs_ops_io.c, rmfs/src/open_table.c], note: "open, read, write, seek, close with 64-bit offsets and no materialisation of a sparse file above 4 GiB."}
+FS-02: {state: tested, tests: [test_rmfs_meta, test_stat_reports_every_field], files: [rmfs/src/rmfs_ops_meta.c, rmfs/src/attr_cache.c], note: "size, type, mode, owner, nanosecond timestamps, link count and a stable inode number."}
+FS-03: {state: tested, tests: [test_directed, test_readdir_large_and_resumed, test_readdir_resumes_without_duplicates], files: [rmfs/src/rmfs_ops_io.c, tests/e2e/test_directed.c], note: "600 entries read in pages of 7, offset resumption, no entry lost or doubled."}
+FS-04: {state: tested, tests: [test_directed, test_create_excl_trunc_append, test_rmfs_open], files: [rmfs/src/rmfs_ops_io.c, rmfs/src/rmfs_calls.c], note: "exclusive create, truncation on open and append mode; the flags reach the wire as Linux values."}
+FS-05: {state: tested, tests: [test_directed, test_rename_over_existing_file, test_rmfs_meta, test_rename_across_directories], files: [rmfs/src/rmfs_ops_meta.c], note: "mkdir, rmdir, unlink and atomic rename, including across directories."}
+FS-06: {state: partial, tests: [], files: [rmfs/src/rmfs_ops_io.c, drivers/fs9p/src/dispatch_qnx.c], note: "the read and offset paths the program loader uses are tested on the PC, but executing a binary from the share needs a QNX guest (E3) and therefore the SDP. Nothing is claimed here."}
+FS-07: {state: tested, tests: [test_rmfs_meta, test_chmod_chown_truncate_utimens, test_directed], files: [rmfs/src/rmfs_ops_meta.c], note: "chmod, chown, truncate and utimens, with nanosecond resolution."}
+FS-08: {state: tested, tests: [test_rmfs_path, test_symlink_loop_detected, test_readlink_returns_body, test_hard_link_shares_inode, test_directed], files: [rmfs/src/path.c, rmfs/include/pgw/rmfs.h], note: "loop detection bounded by PGW_SYMLINK_MAX; the lookup and getattr convention is written down in pgw/rmfs.h (ADR-001)."}
+FS-09: {state: tested, tests: [test_rmfs_perms, test_permission_matrix, test_readonly_mount, test_noexec_refuses_execution, test_directed], files: [rmfs/src/rmfs.c, drivers/common/src/opts.c], note: "permission matrix with a non-owner caller; ro, noexec and nosuid are mount options."}
+FS-10: {state: tested, tests: [test_directed, test_fsync_and_statfs], files: [rmfs/src/rmfs_ops_meta.c, tests/posix_backend/backend_file.c], note: "fsync reaches the backend and statfs reports the shared directory."}
+FS-11: {state: tested, tests: [test_diff, test_deleted_but_open_stays_readable, test_deleted_while_open_stays_readable], files: [rmfs/src/open_table.c, tests/e2e/test_diff.c], note: "an unlinked file stays readable until the last descriptor closes."}
+FS-12: {state: tested, tests: [test_diff, test_host_change_visible_without_remount, test_pc_change_seen_on_next_read], files: [rmfs/src/rmfs_ops_io.c, rmfs/src/attr_cache.c], note: "no data cache by default (decision D4): a change made on the PC is seen on the next read, without remounting."}
+FS-13: {state: tested, tests: [test_rmfs_cache, test_attr_cache_disabled_by_default, test_expiry_follows_the_injected_clock, test_attr_ttl_clamped_to_max], files: [rmfs/src/attr_cache.c, rmfs/src/attr_cache.h], note: "off by default, TTL bounded by PGW_ATTR_CACHE_NS_MAX, expiry driven by the injected clock."}
+FS-14: {state: tested, tests: [test_rmfs_locks, test_read_locks_are_shared, test_dead_process_locks_are_released, test_directed], files: [rmfs/src/lock.c, rmfs/src/lock.h], note: "guest-local byte-range locks, released when the owner dies; they are not forwarded to the host, which is FS-16."}
+FS-15: {state: tested, tests: [test_directed, test_long_names, test_normalize_keeps_utf8], files: [rmfs/src/path.c, common/include/pgw/limits.h], note: "255-byte names accepted, 256 refused, UTF-8 preserved."}
+FS-16: {state: missing, tests: [], files: [], note: "X tier, first item de-scoped when the schedule slips (spec section 10): relay byte-range locks to the 9P server. Not started."}
+
+# --- 6.4 QNX integration ---------------------------------------------------
+QNX-01: {state: partial, tests: [test_driver_opts], files: [drivers/common/src/resmgr_io_qnx.c, drivers/common/src/resmgr_meta_qnx.c, drivers/common/src/resmgr_dir_qnx.c], note: "the resource-manager glue is written and compile-checked against the stub headers by the qnx-syntax job, but it has never run: it needs the SDP."}
+QNX-02: {state: partial, tests: [test_system_layout_fragment, test_ifs_layout_fragment], files: [image/passerelle.build], note: "the IFS fragment is written and the guest proc boot shows the minimum is realistic, but building and booting our own image needs mkqnximage, hence the SDP."}
+QNX-03: {state: partial, tests: [prio, test_most_urgent_qnx_priority_wins, test_caller_priority_reaches_backend], files: [drivers/common/src/prio_qnx.c, common/include/pgw/prio.h], note: "the conversion and the priority-ordered submission are proven on the PC; the requirement asks for a kernel trace on a QNX guest, and that trace does not exist yet."}
+QNX-04: {state: tested, tests: [test_rmfs_sched, test_high_priority_overtakes_bulk, test_equal_priority_is_fifo], files: [rmfs/src/sched.c], note: "a priority request overtakes eight low-priority ones, FIFO inside one priority; the measured half of the requirement needs a QNX guest."}
+QNX-05: {state: tested, tests: [test_rmfs_sched, test_enqueue_does_not_block, test_core_runs_when_saturated], files: [rmfs/src/sched.c, rmfs/src/rmfs.c], note: "a parked request never holds the caller thread and the core still runs when the queue is saturated."}
+QNX-06: {state: partial, tests: [test_default_options_are_safe], files: [drivers/common/src/privdrop_qnx.c, image/passerelle.sec], note: "privilege drop and the security policy are written; the QNX 7.1 guest ships ability and libsecpol.so, so the mechanism exists, but nothing runs without the SDP."}
+QNX-07: {state: partial, tests: [], files: [drivers/fs9p/src/mount_qnx.c, drivers/fsfuse/src/mount_qnx.c], note: "mount and umount integration is written, not run; E1 needs the SDP."}
+QNX-08: {state: partial, tests: [common, test_log_stats_and_pattern, test_counters_move], files: [drivers/common/src/syslog_qnx.c, common/src/log.c], note: "the per-operation counter table is tested on the PC and exported as name=value; the slog2 backend is written but has never run."}
+QNX-09: {state: partial, tests: [], files: [drivers/common/src/trace_qnx.c, drivers/fs9p/src/trace_qnx.c], note: "trace events are written around each request; measuring them needs the QNX kernel trace tooling."}
+
+# --- 6.5 Performance -------------------------------------------------------
+PERF-01: {state: tested, tests: [test_cli_roundtrips, test_compare_tables_flags_extra_roundtrips], files: [docs/measurements/linux-baseline-9p.md, host/bench/trace.py, host/bench/roundtrips.py], note: "published baseline from a real QEMU 8.2 trace: 1 643 events, 822 requests, round trips per POSIX call. The Passerelle column of that table needs a QNX guest."}
+PERF-02: {state: partial, tests: [test_cli_roundtrips, test_report_passes_on_good_numbers], files: [host/bench/roundtrips.py, host/bench/report.py, docs/measurements/linux-baseline-9p.md], note: "the harness and the thresholds exist and are tested; no comparison is possible until the driver runs on a QNX guest."}
+PERF-03: {state: partial, tests: [test_throughput_reports_mib_per_second, test_each_workload_runs_at_small_scale], files: [host/bench/loads.py, host/bench/report.py], note: "the 1 GiB sequential workload is implemented and runs at small scale; there is no measurement, because there is no QNX guest."}
+PERF-04: {state: partial, tests: [test_metadata_counts_three_operations_per_file], files: [host/bench/loads.py, host/bench/report.py], note: "the create, stat and unlink workload and the directory-tree walk are implemented; no measurement, no QNX guest."}
+PERF-05: {state: partial, tests: [test_priority_workload_exposes_the_ratio, test_high_priority_overtakes_bulk, test_report_fails_on_priority_regression], files: [host/bench/loads.py, rmfs/src/sched.c], note: "the scheduler behaviour is proven on the PC and the workload reports the ratio; the 2x idle-duration figure needs a QNX guest under a bulk copy."}
+PERF-06: {state: partial, tests: [test_mount_verdict_threshold, test_mount_measurement_needs_a_console], files: [host/bench/mount.py, host/bench/report.py], note: "the mount measurement is implemented and skips explicitly when no guest console is available; there is no number yet."}
+PERF-07: {state: partial, tests: [test_report_requires_rivals_at_complete_level, test_report_requires_virtiofs_at_extreme_level, test_levels_table_matches_the_specification], files: [host/bench/report.py, host/bench/cli.py, host/pgwutil/svg.py], note: "the comparative report refuses to publish a table missing a rival; nothing can be compared until clients A and B and our driver run on the same guest."}
+
+# --- 6.6 Robustness --------------------------------------------------------
+ROB-01: {state: tested, tests: [test_rmfs_meta, test_errors_are_propagated, test_p9_validation], files: [common/src/err.c, rmfs/src/rmfs.c], note: "a refused operation returns an errno code and never a hang; the Linux errno table is tested value by value."}
+ROB-02: {state: tested, tests: [test_diff, test_no_handle_leak_after_many_cycles, test_p9_idpool, test_release_pid_closes_everything], files: [rmfs/src/open_table.c, rmfs/src/lock.c], note: "20 000 open and close cycles leave the counters at zero; a dying process releases its descriptors and its locks."}
+ROB-03: {state: partial, tests: [], files: [drivers/fs9p/src/mount_qnx.c, virtio/src/dev.c], note: "the PC side of a clean unmount is tested (reset, interrupt detached); unmounting under an active I/O load needs a QNX guest."}
+ROB-04: {state: partial, tests: [test_diff, test_directed], files: [rmfs/src/rmfs_ops_meta.c, tests/e2e/diff_ops.c], note: "the differential bench shows clean errors when a file is removed or replaced on the PC; the same behaviour on a live QNX mount is not exercised."}
+ROB-05: {state: tested, tests: [test_p9_session, test_timeout_is_configurable, test_time_fake_clock], files: [proto9p/src/p9_session_io.c, common/src/time.c], note: "the deadline is configurable and the clock is injectable, so no test has to sleep."}
+ROB-06: {state: tested, tests: [fuzz_p9, fuzz_fuse, test_p9_seeded_campaigns, test_fuse_seeded_campaigns], files: [tests/fuzz/fuzz_p9.c, tests/fuzz/fuzz_fuse.c], note: "noise plus five kinds of damage on well-formed messages; 5 000 000 iterations per family recorded, repeated under ASan and UBSan, zero defect."}
+ROB-07: {state: missing, tests: [], files: [], note: "X tier, de-scoped first (spec section 10): resilience against a maliciously buggy server. Not started."}
+
+# --- 6.7 Security ----------------------------------------------------------
+SEC-01: {state: tested, tests: [test_rmfs_perms, test_nosuid_strips_and_refuses, test_nosuid_blocks_setuid_exec, test_default_options_are_safe], files: [rmfs/src/rmfs.c, drivers/common/src/opts.c], note: "nosuid is the default, a read-only mount refuses writes and the permission matrix is enforced guest-side."}
+SEC-02: {state: partial, tests: [test_pci_open_without_a_pci_server_returns_null, test_wrong_vendor_or_device_is_refused], files: [virtio/src/pci_qnx.c, virtio/src/pci.c], note: "the driver opens a single pci_device_find match, so it cannot reach another device; the code-level audit the spec asks for needs a QNX build."}
+SEC-03: {state: tested, tests: [test_recommended_model_needs_no_root, test_security_help_mentions_root, test_virtiofsd_starts_and_stops], files: [docs/architecture.md, host/qshare/options.py], note: "the QEMU security models are documented, qshare defaults to mapped-xattr which needs no root, and E5 ran virtiofsd unprivileged."}
+
+# --- 6.8 Developer experience ---------------------------------------------
+DX-01: {state: tested, tests: [test_build_9p_args_exact, test_cli_emit_prints_options, test_cli_mkqnximage], files: [host/qshare/options.py, host/qshare/cli.py, host/qshare/image.py], note: "the emitted options are the ones that booted a Linux guest (E5) and a QNX 7.1 guest; the mkqnximage fragment is generated but not yet built."}
+DX-02: {state: partial, tests: [test_demo_replays_in_one_command], files: [host/qshare/demo.py], note: "the one-command replay exists and is tested against the host half (E5); the QNX side of the demonstration needs the driver built with the SDP."}
+DX-03: {state: partial, tests: [test_cli_local_mode, test_run_local_returns_output_and_status, test_parse_guest_output_roundtrip], files: [host/qshare/qrun.py], note: "qrun is written and tested in local mode; running a binary from the share inside a QNX guest needs the driver."}
+DX-04: {state: tested, tests: [test_cmake_example_layout, test_rust_example_layout, test_cmake_example_builds_and_passes], files: [host/qshare/examples.py, docs/user-guide.md], note: "the CMake and Rust examples are written by qshare --example, and the CMake one is built and run by the host test."}
+DX-05: {state: tested, tests: [test_clab], files: [docs/user-guide.md, docs/architecture.md, codelab/README.md], note: "user guide, architecture guide and the eight-chapter codelab; the codelab code builds and its exercises run as test_clab."}
+DX-06: {state: missing, tests: [], files: [], note: "X tier, de-scoped (spec section 10): the whole system root hosted on the share. Not started."}
+
+# --- 6.9 virtiofs ----------------------------------------------------------
+VFS-01: {state: tested, tests: [test_virtio_dev, test_reads_virtiofs_tag_and_queue_count, test_rejects_virtiofs_without_request_queue], files: [virtio/src/dev.c, protofuse/src/fusep_abi.h], note: "PGW_VIRTIO_ID_FS is 26, and the guest in E5 reports device 0x001a; discovery on a QNX guest is still E1."}
+VFS-02: {state: tested, tests: [protofuse_session, test_forget_and_interrupt_are_hiprio, test_priority_lane_first], files: [protofuse/src/fusep_session.c, protofuse/src/fusep_reply.c], note: "FORGET and INTERRUPT travel on the hiprio lane, file I/O on the request queues."}
+VFS-03: {state: tested, tests: [protofuse_codec, protofuse_session, test_negotiation_takes_max_write_from_server, test_read_and_write_are_split, test_entry_roundtrip], files: [protofuse/src/fusep_init.c, protofuse/src/fusep_ops.c, protofuse/src/fusep_encode.c, protofuse/src/fusep_decode.c], note: "version negotiation with fallback, the full operation set, splitting on max_write and an 8-aligned reclen."}
+VFS-04: {state: tested, tests: [protofuse_refs, test_lookup_accumulates_references, test_batch_forget_is_used_on_modern_servers, test_hundred_thousand_cycles], files: [protofuse/src/fusep_refs.c, protofuse/src/fusep_node.c], note: "100 000 lookup and forget cycles; closing the session settles every outstanding reference."}
+VFS-05: {state: partial, tests: [protofuse_session, test_full_session], files: [rmfs/adapters/fuse_adapter.c, rmfs/include/pgw/rmfs_glue.h], note: "pgw_rmfs_from_fuse() exists and the codec session is green, but running the same differential conformance suite through the adapter needs a guest, so the identical-suite half of the requirement is unproven."}
+VFS-06: {state: tested, tests: [test_virtiofsd_starts_and_stops, test_virtiofs_options_are_accepted_by_qemu, test_build_virtiofs_args_exact], files: [host/qshare/runner.py, host/qshare/options.py, tests/qemu/run_share_check.py], note: "E5 measured: qshare starts virtiofsd without root and a Linux guest mounts the share through the emitted options."}
+VFS-07: {state: missing, tests: [], files: [], note: "X tier: the comparative bench of virtiofs against the 9P clients. Not started, no QNX guest."}
+
+# --- 6.10 Reverse sharing --------------------------------------------------
+SRV-01: {state: missing, tests: [], files: [], note: "X tier, first item de-scoped (spec section 10): an in-guest 9P server exporting a QNX tree to the host. Not started."}
+SRV-02: {state: missing, tests: [], files: [], note: "X tier: exporting the guest proc and dev trees. Not started, and it depends on SRV-01."}

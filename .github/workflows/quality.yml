@@ -1,0 +1,227 @@
+name: quality (couverture + analyse statique, hors PR)
+
+# Chaîne de qualité du dépôt. Décision de budget (règle user 2026-10-24,
+# CI ≤ 5 min par job, voir ~/Bureau/CI-BUDGET-5MIN.md) :
+#
+#   * la couverture et l'analyse statique sont HORS pull request : un build
+#     instrumenté + ctest + gcov + clang-tidy sur 158 unités de traduction
+#     dépasse le budget de 5 min d'une PR et n'apporte rien au verdict
+#     d'entrée (les tests et les sanitizers sont déjà dans ci.yml). Elles se
+#     déclenchent donc sur `push` vers main et sur `workflow_dispatch`.
+#   * la porte légère reste SUR la pull request : le job `format` ne vérifie
+#     que le formatage (mesuré : ~1 s sur 255 fichiers), donc il tient dans
+#     le budget avec une marge de 300x.
+#
+# Les trois jobs déclarent `timeout-minutes: 5` — la valeur maximale que le
+# garde-fou .github/ci-budget/check_timeouts.py accepte pour un workflow qui
+# n'est pas dans sa liste d'exemptions (seul qemu-e2e.yml, le banc long, y
+# est). Chaque étape est bornée en plus par `timeout <s>`, sous le plafond du
+# job, pour qu'un blocage échoue avec un message lisible et non par une
+# troncature.
+#
+# Runners : le dépôt est public, donc les runners hébergés GitHub sont
+# gratuits. Ces trois jobs tournent sur `ubuntu-latest` : les workers R630
+# n'ont ni clang-tidy ni lcov et sont saturés par les 4 workers de ci.yml.
+#
+# Jamais de faux vert : chaque outil manquant est signalé par un avis explicite
+# (`::notice::`) et, pour la couverture et l'analyse statique — dont c'est ici
+# l'objet même — un saut fait échouer le job.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 4 threads : les runners hébergés ont 4 vCPU, on ne les sature pas.
+  CMAKE_BUILD_JOBS: 4
+  PGW_MODULES: common;virtio;proto9p;protofuse;rmfs;drivers;tests
+
+jobs:
+  # Porte de formatage — la seule qui tourne sur une pull request.
+  # Mesuré le 11/11/2026 : 255 fichiers vérifiés en 1,0 s (clang-format 23
+  # compris). timeout-minutes: 5 = le plafond autorisé par le garde-fou CI,
+  # 300x la durée réelle ; il n'est pas question de l'allonger.
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Toolchain (clang-format épinglé sur la version de la baseline)
+        run: |
+          set -uo pipefail
+          # tools/quality/check_format.py rétrograde la vérification
+          # clang-format en simple avis quand la majeure du binaire diffère de
+          # celle qui a produit tools/quality/format-baseline.txt : on épingle
+          # donc la version, comme ci.yml épingle cmake, pour que la porte
+          # reste dure et reproductible.
+          baseline=$(sed -n 's/^# clang-format: *\([0-9.]*\).*/\1/p' \
+                     tools/quality/format-baseline.txt | head -1)
+          want=${baseline:-23.1.5}
+          target="$GITHUB_WORKSPACE/.ci-tools/clang-format"
+          if timeout 180 python3 -m pip install --quiet --disable-pip-version-check \
+               --target "$target" "clang-format==$want"; then
+            bin="$target/clang_format/data/bin"
+            echo "$bin" >> "$GITHUB_PATH"
+            "$bin/clang-format" --version
+          else
+            echo "::warning::pip clang-format==$want indisponible : on utilise celui du runner (l'écart de version rétrograde le contrôle en avis, jamais en faux vert)"
+            clang-format --version \
+              || echo "::notice::aucun clang-format : seuls les contrôles sans dépendance (longueur de ligne, tabulations, espaces de fin, saut de ligne final) sont appliqués"
+          fi
+
+      - name: Porte de formatage (hygiène dure + clang-format)
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 240 python3 tools/quality/check_format.py --jobs 4 || rc=$?
+          if [ "$rc" -eq 3 ]; then
+            echo "::error::check_format.py n'a trouvé aucun fichier source à contrôler : la porte ne peut pas être verte"
+            exit 1
+          fi
+          exit "$rc"
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::format: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  # Couverture de la pile portable : build instrumenté (preset `coverage`),
+  # ctest, collecte gcov, rapport texte + HTML + XML + badge SVG.
+  # Mesuré le 11/11/2026 sur un poste 12 coeurs : 5,8 s de bout en bout
+  # (configure + build + ctest + 127 fichiers gcov). Sur un runner hébergé
+  # 4 vCPU, compter 60 à 90 s : timeout-minutes: 5 laisse une marge de 3x
+  # tout en restant dans le budget que le garde-fou accepte.
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Toolchain (cmake, gcc, gcov)
+        run: |
+          set -euo pipefail
+          cmake --version | head -1
+          cc --version | head -1
+          gcov --version | head -1
+
+      - name: Couverture (preset coverage -> summary/badge/xml/html)
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 270 python3 tools/quality/run_coverage.py \
+            --jobs "$CMAKE_BUILD_JOBS" || rc=$?
+          case "$rc" in
+            0) echo "coverage report written under build/coverage" ;;
+            3) echo "::error::gcov/cmake absent : la couverture n'a pas pu être mesurée (saut explicite, pas un faux vert)" ; exit 1 ;;
+            *) echo "::error::run_coverage.py a échoué (code $rc)" ; exit "$rc" ;;
+          esac
+
+      - name: Artefacts (rapport de couverture + journal de compilation)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            build/coverage/summary.txt
+            build/coverage/badge.svg
+            build/coverage/coverage.xml
+            build/coverage/index.html
+            build/coverage/build.log
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::coverage: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+  # Analyse statique : clang-tidy si présent, sinon cppcheck, sinon saut
+  # explicite. Mesuré le 11/11/2026 : 15 s pour 158 unités de traduction avec
+  # 8 analyseurs en parallèle (61 avertissements, 0 erreur). timeout-minutes: 5
+  # = plafond du garde-fou CI, ~10x la durée réelle.
+  static-analysis:
+    name: static-analysis
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 5
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Toolchain (clang-tidy, sinon cppcheck)
+        run: |
+          set -uo pipefail
+          if command -v clang-tidy >/dev/null 2>&1; then
+            clang-tidy --version | head -2
+            exit 0
+          fi
+          echo "::warning::clang-tidy absent du runner : installation (sinon repli cppcheck)"
+          sudo apt-get update -qq
+          timeout 180 sudo apt-get install -y --no-install-recommends clang-tidy \
+            || timeout 120 sudo apt-get install -y --no-install-recommends cppcheck \
+            || echo "::notice::ni clang-tidy ni cppcheck installable : le job échouera en saut explicite"
+          command -v clang-tidy || command -v cppcheck || true
+
+      - name: Base de compilation (preset ci)
+        run: |
+          set -euo pipefail
+          timeout 120 cmake --preset ci
+
+      - name: Analyse statique (clang-tidy ou cppcheck)
+        run: |
+          set -uo pipefail
+          rc=0
+          timeout 240 python3 tools/quality/scan_static.py \
+            --build-dir build/ci --jobs "$CMAKE_BUILD_JOBS" || rc=$?
+          if [ "$rc" -eq 3 ]; then
+            echo "::error::aucun analyseur disponible : saut explicite, le job n'est pas vert (jamais de faux vert)"
+            exit 1
+          fi
+          exit "$rc"
+
+      - name: Artefacts (rapport d'analyse statique)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-report
+          path: build/ci/static-analysis.txt
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Report duration
+        if: always()
+        run: |
+          echo "::notice::static-analysis: $(( $(date +%s) - JOB_START ))s (budget 300s)"

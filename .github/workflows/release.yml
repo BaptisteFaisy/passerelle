@@ -1,0 +1,241 @@
+name: release (tag v*)
+
+# Publishing a version. Triggered by a `v*` tag, or by hand with the tag as an
+# input (the documented way to resume a failed publication - docs/release.md).
+#
+# What this workflow produces:
+#   * a deterministic source tarball of the repository at the tag, carrying
+#     LICENSE, the attribution NOTICE, README.md and docs/;
+#   * its SHA256, published as an artefact AND in the body of the release;
+#   * a GitHub Release whose notes are the matching section of CHANGELOG.md;
+#   * the proof that the Python tools install (`pip install ./host`) and that
+#     `qshare --version` answers;
+#   * a PyPI upload, only when the PYPI_API_TOKEN secret exists.
+#
+# Rules of the CI socle (see ~/Bureau/CI-BUDGET-5MIN.md): an explicit
+# `timeout-minutes` on every job, a `concurrency` group per tag, and
+# `fetch-depth: 1` on every checkout. `cancel-in-progress: false` because a
+# publication under way is never cancelled.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v0.1.0) - resumes a failed publication"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # A pushed tag gives its own name; a manual run takes its input instead.
+  RELEASE_TAG: "${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+
+jobs:
+  verify:
+    name: verify (VERSION / CHANGELOG / pyproject / tag)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Check that the release is coherent
+        run: |
+          set -euo pipefail
+          echo "tag: ${RELEASE_TAG}"
+          python3 tools/release/verify_release.py --tag "${RELEASE_TAG}" --require-tag
+      - name: Check that the version has a single source of truth
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check pytest
+          python3 -m pytest tools/release -q
+
+  tarball:
+    name: source tarball + SHA256
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [verify]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Build the deterministic tarball
+        run: |
+          set -euo pipefail
+          # SOURCE_DATE_EPOCH is the commit time of the tag, so anybody who
+          # checks out that commit rebuilds the same bytes and the same SHA256.
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+          python3 tools/release/make_tarball.py --output-dir dist
+      - name: Record the checksum in the job summary
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          {
+            echo "## Source tarball"
+            echo
+            echo '```'
+            cat "dist/passerelle-${version}.tar.gz.sha256"
+            echo '```'
+            echo
+            echo "Members: $(tar tzf "dist/passerelle-${version}.tar.gz" | wc -l)"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: passerelle-source-tarball
+          path: |
+            dist/passerelle-*.tar.gz
+            dist/passerelle-*.tar.gz.sha256
+          if-no-files-found: error
+
+  install-check:
+    name: install check (pip install ./host, qshare --version)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [verify]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install the host tools into a clean venv
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/pgw-venv
+          /tmp/pgw-venv/bin/pip install --quiet --disable-pip-version-check ./host
+      - name: The console scripts answer
+        run: |
+          set -euo pipefail
+          expected="$(cat VERSION)"
+          got="$(/tmp/pgw-venv/bin/qshare --version | awk '{print $2}')"
+          echo "qshare --version -> ${got} (VERSION says ${expected})"
+          test "${got}" = "${expected}"
+          for tool in qrun fsproof pbench; do
+            /tmp/pgw-venv/bin/"${tool}" --help > /dev/null
+            echo "${tool}: installed and runnable"
+          done
+      - name: The tools still pass their tests once installed
+        run: |
+          set -euo pipefail
+          /tmp/pgw-venv/bin/pip install --quiet --disable-pip-version-check pytest
+          /tmp/pgw-venv/bin/python -m pytest host/tests tools/release -q
+
+  pypi-token:
+    name: PyPI token check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      present: ${{ steps.detect.outputs.present }}
+    env:
+      # Never printed: the secret is only tested for presence.
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+    steps:
+      - id: detect
+        name: Is PYPI_API_TOKEN configured?
+        run: |
+          set -euo pipefail
+          if [ -n "${PYPI_API_TOKEN:-}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::PYPI_API_TOKEN found - the publish-pypi job will upload to PyPI."
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::PYPI_API_TOKEN is not configured - PyPI publication is skipped on purpose (source tarball and GitHub release only). See docs/release.md."
+          fi
+
+  release:
+    name: GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [verify, tarball, install-check]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: passerelle-source-tarball
+          path: dist
+      - name: Write the release notes from CHANGELOG.md
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          tarball="passerelle-${version}.tar.gz"
+          checksum="$(awk '{print $1}' "dist/${tarball}.sha256")"
+          python3 tools/release/changelog_section.py "${version}" --with-heading > notes.md
+          {
+            echo
+            echo "## Artefacts"
+            echo
+            echo "| File | SHA256 |"
+            echo "| --- | --- |"
+            echo "| \`${tarball}\` | \`${checksum}\` |"
+            echo
+            echo "Verify the download:"
+            echo
+            echo '```bash'
+            echo "sha256sum -c ${tarball}.sha256"
+            echo '```'
+            echo
+            echo "Built from tag \`${RELEASE_TAG}\`, commit \`$(git rev-parse --short HEAD)\`."
+            echo "Procedure and recovery: docs/release.md of this tag."
+          } >> notes.md
+      - name: Create the release (or upload the artefacts to an existing one)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" > /dev/null 2>&1; then
+            echo "::notice::Release ${RELEASE_TAG} already exists - uploading the artefacts only."
+            gh release upload "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --clobber \
+              "dist/passerelle-${version}.tar.gz" "dist/passerelle-${version}.tar.gz.sha256"
+            exit 0
+          fi
+          gh release create "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" \
+            --title "Passerelle ${version}" --notes-file notes.md \
+            "dist/passerelle-${version}.tar.gz" "dist/passerelle-${version}.tar.gz.sha256"
+
+  publish-pypi:
+    name: publish to PyPI (only with PYPI_API_TOKEN)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [pypi-token, verify, install-check, release]
+    if: needs.pypi-token.outputs.present == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Build the sdist and the wheel
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check build twine
+          python3 -m build --sdist --wheel --outdir dist host
+      - name: Check the package metadata
+        run: |
+          set -euo pipefail
+          python3 -m twine check dist/*
+      - name: Upload to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 -m twine upload --non-interactive --disable-progress-bar dist/*
+
+  pypi-skipped:
+    name: PyPI publication skipped (notice)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [pypi-token, release]
+    if: needs.pypi-token.outputs.present != 'true'
+    steps:
+      - name: Say why nothing was published
+        run: |
+          echo "::notice::PyPI publication skipped for ${RELEASE_TAG}: the PYPI_API_TOKEN secret is not configured on this repository. The published artefacts are the source tarball and the GitHub release. To enable PyPI, add the secret and re-run this workflow (docs/release.md)."
