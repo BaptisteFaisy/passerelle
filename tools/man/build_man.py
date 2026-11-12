@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Generate the man pages of the host tools from their argparse definitions.
 
-Gap 98 (DX-05): `qshare`, `qrun`, `fsproof` and `pbench` ship a manual page
+Gap 98: `qshare`, `qrun`, `fsproof` and `pbench` ship a manual page
 each, committed under `man/`. The single source of truth is the CLI itself:
 this script imports each tool's `argparse` parser (the same `_parser()` the
 entry point uses) and renders NAME, SYNOPSIS, DESCRIPTION, OPTIONS, EXIT

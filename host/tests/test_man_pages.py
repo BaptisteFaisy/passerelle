@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Tests of the man-page generator (gap 98, DX-05).
+"""Tests of the man-page generator (gap 98).
 
 Why the CI wiring is a pytest and not a new workflow: the `host-tools` job of
 ci.yml runs `pytest host/tests` on every pull request (no path filter) and is
