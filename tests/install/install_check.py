@@ -130,36 +130,61 @@ def pkg_config_flags(pcfile):
     return cflags, libs
 
 
-def sanitizer_flags(build_dir):
-    """Return the sanitizer flags of the build tree, if it was instrumented."""
+def cache_text(build_dir):
+    """Return the content of the CMake cache of a build tree."""
     cache = build_dir / "CMakeCache.txt"
     if not cache.is_file():
-        return []
-    text = cache.read_text(encoding="utf-8", errors="replace")
-    if "PGW_SANITIZERS:BOOL=ON" in text:
-        return ["-fsanitize=address,undefined", "-fno-sanitize-recover=all"]
+        return ""
+    return cache.read_text(encoding="utf-8", errors="replace")
+
+
+def cache_flags(text, name):
+    """Return the flags of one CMake cache entry, as a list."""
+    for line in text.splitlines():
+        if line.startswith(name + ":"):
+            value = line.split("=", 1)[1].strip()
+            return value.split() if value else []
     return []
 
 
-def compile_consumer(cc, source, outdir, cflags, libs, extra):
+def build_flags(build_dir):
+    """Return the (compile, link) flags of the build tree, when instrumented.
+
+    A build that is instrumented (coverage: -fprofile-arcs/--coverage, or
+    sanitizers: -fsanitize=...) cannot be linked into a plain consumer: the
+    objects carry the instrumentation. The consumer is therefore built with
+    the very flags of the tree it consumes.
+    """
+    text = cache_text(build_dir)
+    flags = {"compile": cache_flags(text, "CMAKE_C_FLAGS"),
+             "link": cache_flags(text, "CMAKE_EXE_LINKER_FLAGS")}
+    if "PGW_SANITIZERS:BOOL=ON" in text:
+        san = ["-fsanitize=address,undefined", "-fno-sanitize-recover=all"]
+        flags["compile"] += san
+        flags["link"] += san
+    return flags
+
+
+def compile_consumer(cc, source, outdir, cflags, libs, flags):
     """Compile the consumer with the pkg-config flags and run it."""
     binary = outdir / "consumer-pkgconfig"
-    run([cc] + list(cflags) + [str(source)] + list(libs) + list(extra)
-        + ["-o", str(binary)])
+    run([cc] + list(cflags) + list(flags["compile"]) + [str(source)]
+        + list(libs) + list(flags["link"]) + ["-o", str(binary)])
     out = run([str(binary)])
     if EXPECTED_OUTPUT not in out:
         raise CheckError("the consumer did not print %r: %s" % (EXPECTED_OUTPUT, out))
 
 
-def build_cmake_consumer(cc, consumer_dir, prefix, outdir, extra):
+def build_cmake_consumer(cc, consumer_dir, prefix, outdir, flags):
     """Configure, build and run the consumer that uses find_package()."""
     build = outdir / "consumer-cmake"
-    flags = " ".join(extra)
+    cflags = " ".join(flags["compile"])
+    ldflags = " ".join(flags["link"])
     conf = run(["cmake", "-S", str(consumer_dir), "-B", str(build),
                 "-DCMAKE_PREFIX_PATH=%s" % prefix,
                 "-DCMAKE_C_COMPILER=%s" % cc,
-                "-DCMAKE_C_FLAGS=%s" % flags,
-                "-DCMAKE_EXE_LINKER_FLAGS=%s" % flags])
+                "-DCMAKE_C_FLAGS=%s" % cflags,
+                "-DCMAKE_EXE_LINKER_FLAGS=%s" % ldflags])
     if "Passerelle_VERSION=" not in conf:
         raise CheckError("find_package(Passerelle) did not report a version")
     run(["cmake", "--build", str(build)])
@@ -202,9 +227,9 @@ def main(argv=None):
         pcfile = find_pc(prefix)
         check_pc(pcfile, version)
         cflags, libs = pkg_config_flags(pcfile)
-        extra = sanitizer_flags(build)
-        compile_consumer(cc, consumer / "consumer.c", prefix, cflags, libs, extra)
-        build_cmake_consumer(cc, consumer, prefix, prefix, extra)
+        flags = build_flags(build)
+        compile_consumer(cc, consumer / "consumer.c", prefix, cflags, libs, flags)
+        build_cmake_consumer(cc, consumer, prefix, prefix, flags)
     except CheckError as err:
         print("install-check: FAILED: %s" % err, file=sys.stderr)
         return 1
