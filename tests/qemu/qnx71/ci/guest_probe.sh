@@ -115,6 +115,8 @@ collect_trace() {
     run_guest guest-proc-boot-listing.txt 'ls /proc/boot'
     run_guest guest-slog2info.txt 'slog2info -a 2>&1 | head -300'
     run_guest guest-pidin-info.txt 'pidin info'
+    run_guest guest-tracelogger-list.txt 'tracelogger -l 2>&1 | head -60'
+    run_guest guest-tracelogger-dump.txt 'tracelogger -d 2>&1 | head -120'
     capture_console
 }
 
@@ -196,12 +198,17 @@ summarize() {
 trace_summary() {
     echo "tools in the image:"
     sed 's/^/  /' "$OUT/guest-trace-tools.txt" 2>/dev/null || echo "  (not captured)"
-    lines=$(wc -l < "$OUT/guest-slog2info.txt" 2>/dev/null | tr -d '[:space:]')
-    echo "system log (slog2info -a): ${lines:-0} line(s) captured"
+    # The system log separates its records with a carriage return, not with a
+    # newline: counting the \n alone would say "6 lines" for a 26 KB log.
+    lines=$(tr '\r' '\n' < "$OUT/guest-slog2info.txt" 2>/dev/null | grep -c . || true)
+    echo "system log (slog2info -a): ${lines:-0} record(s) captured"
+    echo "tracelogger -l (trace classes): $(head -1 "$OUT/guest-tracelogger-list.txt" 2>/dev/null)"
+    echo "tracelogger -d (trace data): $(wc -c < "$OUT/guest-tracelogger-dump.txt" 2>/dev/null | tr -d '[:space:]') byte(s)"
     echo "VGA console dump: $([ -s "$OUT/host-vga-console.ppm" ] && echo present || echo absent)"
     echo
-    echo "It proves: the kernel's own diagnostic output for this boot, and the"
-    echo "list of the tracing tools the image ships (or does not)."
+    echo "It proves: the kernel's own diagnostic output for this boot, the list"
+    echo "of the tracing tools the image ships, and that the QNX trace"
+    echo "facility itself (tracelogger) answers in the guest."
     echo "It does not prove: QNX-09. The guest has no compiler, so our driver"
     echo "never runs in it and no TraceEvent of ours is produced there; the"
     echo "per-request events need the driver and the SDP tracing toolkit."
