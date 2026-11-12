@@ -10,6 +10,11 @@
   pbench priority    4 KiB read during a bulk copy (PERF-05)
   pbench all         every workload in one go, written to JSON
   pbench report      aggregate runs into Markdown + JSON + SVG, check 7.6
+
+Options default to None and are resolved through the one configuration file
+the four host tools share (gap 99): `client`, `tag`, `scale` or `level` set
+once in `[common]` or `[pbench]` apply here too. `--show-config` prints the
+effective values and where each of them came from.
 """
 
 from __future__ import annotations
@@ -23,20 +28,27 @@ from bench.loads import WORKLOADS, LoadResult, run_workload
 from bench.report import LEVELS, TargetRun, build_report, write_report
 from bench.roundtrips import build_table, render_markdown
 from bench.trace import parse_trace
-from pgwutil import HostError, dump_json, load_json, write_atomic
+from pgwutil import HostError, ValidationError, dump_json, load_json, write_atomic
+from pgwutil import config as pgwconfig
+
+TOOL = "pbench"
 
 
 def _add_workload_parsers(subs: object) -> None:
     """Register the roundtrips and per-workload subcommands."""
     rounds = subs.add_parser("roundtrips", help="roundtrips per POSIX call from a trace")
     rounds.add_argument("trace", help="QEMU trace file (-trace 'v9fs_*')")
-    rounds.add_argument("--client", default="passerelle", help="client name for the report")
+    rounds.add_argument(
+        "--client", default=None, help=pgwconfig.help_text("client", "client name for the report")
+    )
     rounds.add_argument("--markdown", metavar="FILE", help="write the table as Markdown")
     rounds.add_argument("--json", metavar="FILE", help="write the table as JSON")
     for name in WORKLOADS:
         sub = subs.add_parser(name, help=f"run the {name} workload")
         sub.add_argument("--dir", help="working directory (default: temporary)")
-        sub.add_argument("--scale", type=float, default=1.0, help="1.0 = specification size")
+        sub.add_argument(
+            "--scale", type=float, default=None, help=pgwconfig.help_text("scale", "workload scale")
+        )
         sub.add_argument("--json", metavar="FILE", help="write the result as JSON")
 
 
@@ -44,8 +56,12 @@ def _add_all_parser(subs: object) -> None:
     """Register the 'all' subcommand and its conformance options."""
     every = subs.add_parser("all", help="run every workload and write one JSON file")
     every.add_argument("--dir", help="working directory (default: temporary)")
-    every.add_argument("--scale", type=float, default=1.0, help="1.0 = specification size")
-    every.add_argument("--client", default="passerelle", help="client name")
+    every.add_argument(
+        "--scale", type=float, default=None, help=pgwconfig.help_text("scale", "workload scale")
+    )
+    every.add_argument(
+        "--client", default=None, help=pgwconfig.help_text("client", "client name")
+    )
     every.add_argument("--json", metavar="FILE", required=True, help="output JSON file")
     every.add_argument("--mount-ms", type=float, default=0.0, help="measured mount time (PERF-06)")
     every.add_argument("--diff-ops", type=int, default=0, help="differential operations run")
@@ -73,17 +89,26 @@ def _add_report_parsers(subs: object) -> None:
     """Register the mount, report and workloads subcommands."""
     mount = subs.add_parser("mount", help="measure the guest mount time (PERF-06)")
     mount.add_argument("--console", required=True, help="guest console unix socket")
-    mount.add_argument("--driver", default="passerelle", help="guest driver command")
-    mount.add_argument("--tag", default="hostshare", help="mount tag")
-    mount.add_argument("--mount-point", default="/host", help="guest mount point")
+    mount.add_argument(
+        "--driver", default=None, help=pgwconfig.help_text("driver", "guest driver command")
+    )
+    mount.add_argument("--tag", default=None, help=pgwconfig.help_text("tag", "mount tag"))
+    mount.add_argument(
+        "--mount-point", default=None, help=pgwconfig.help_text("mount-point", "guest mount point")
+    )
     mount.add_argument("--json", metavar="FILE", help="write the measurement as JSON")
     report = subs.add_parser("report", help="aggregate runs and check section 7.6")
     report.add_argument(
         "--run", action="append", default=[], metavar="JSON",
         help="JSON file produced by 'pbench all' (repeatable)",
     )
-    report.add_argument("--level", choices=tuple(LEVELS), default="socle", help="threshold level")
-    report.add_argument("--output", "-o", default="bench_report", help="output prefix")
+    report.add_argument(
+        "--level", choices=tuple(LEVELS), default=None,
+        help=pgwconfig.help_text("level", "threshold level"),
+    )
+    report.add_argument(
+        "--output", "-o", default=None, help=pgwconfig.help_text("output", "output prefix")
+    )
     subs.add_parser("workloads", help="list the workload names")
 
 
@@ -93,10 +118,11 @@ def _parser() -> argparse.ArgumentParser:
         prog="pbench",
         description="Passerelle measurements: roundtrips, workloads, comparative report",
     )
-    subs = parser.add_subparsers(dest="command", required=True)
+    subs = parser.add_subparsers(dest="command")
     _add_workload_parsers(subs)
     _add_all_parser(subs)
     _add_report_parsers(subs)
+    pgwconfig.add_show_config(parser)
     return parser
 
 
@@ -270,8 +296,17 @@ def _report(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point of the pbench command."""
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
     try:
+        cfg = pgwconfig.apply(args, pgwconfig.load(TOOL))
+        if args.show_config:
+            print(pgwconfig.render(cfg, args.show_config))
+            return 0
+        if not args.command:
+            parser.print_usage(sys.stderr)
+            sys.stderr.write("pbench: a subcommand is required (see 'pbench workloads')\n")
+            return 2
         if args.command == "roundtrips":
             return _roundtrips(args)
         if args.command == "all":
@@ -284,6 +319,10 @@ def main(argv: list[str] | None = None) -> int:
             print(" ".join(WORKLOADS))
             return 0
         return _workload(args)
-    except (HostError, OSError, ValueError) as err:
+    except (HostError, ValidationError, OSError, ValueError) as err:
         sys.stderr.write(f"pbench: {err}\n")
         return 2
+
+
+if __name__ == "__main__":  # pragma: no cover - console entry point
+    raise SystemExit(main())
