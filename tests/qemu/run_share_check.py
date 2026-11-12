@@ -55,16 +55,17 @@ def require(cmd: str, why: str) -> None:
 def find_kernel() -> pathlib.Path:
     """Newest host kernel that is readable and has a matching /lib/modules tree.
 
-    Recent Ubuntu kernels are installed 0600 (root only); QEMU runs unprivileged
-    here, so readability is part of the choice, not just the version.
+    The lookup is the one of `pgwutil.hostenv`, shared with `qshare doctor`
+    (gap 92): recent Ubuntu kernels are installed 0600 (root only) and QEMU
+    runs unprivileged here, so readability is part of the choice.
     """
-    for kernel in sorted(pathlib.Path("/boot").glob("vmlinuz-*"), reverse=True):
-        if not os.access(kernel, os.R_OK):
-            continue
-        version = kernel.name[len("vmlinuz-"):]
-        if pathlib.Path(f"/lib/modules/{version}").is_dir():
-            return kernel
-    raise Skipped("no readable host kernel with a matching /lib/modules tree")
+    sys.path.insert(0, str(HOST_DIR))
+    from pgwutil.hostenv import find_host_kernel
+
+    kernel = find_host_kernel()
+    if kernel is None:
+        raise Skipped("no readable host kernel with a matching /lib/modules tree")
+    return kernel
 
 
 def build_initramfs(work: pathlib.Path, cache: pathlib.Path,

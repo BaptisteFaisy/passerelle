@@ -25,6 +25,11 @@ ASAN_DIR    ?= build-asan
 DIST_DIR    ?= dist
 PREFIX      ?= /usr/local
 JOBS        ?= 4
+HOST_DIR    ?= host
+# Directory `make init` scaffolds; empty means "nothing to do".
+INIT_DIR    ?=
+# Extra flags of `make smoke` (--fast, --dry-run, --json, ...).
+SMOKE_FLAGS ?=
 MODULES     ?= common;virtio;proto9p;protofuse;rmfs;drivers;tests
 # Long campaigns of spec 7.6, out of every pull request (CI budget: 5 min).
 DIFF_OPS    ?= 1000000
@@ -34,7 +39,7 @@ VERSION     := $(shell cat VERSION 2>/dev/null | tr -d '[:space:]')
 REMOVE      := $(shell command -v trash >/dev/null 2>&1 && echo trash || echo rm -rf)
 
 .PHONY: help build check asan bench demo coverage size spdx tarball \
-        release-check install clean
+        release-check install clean doctor init smoke
 
 help: ## Show this list
 	@echo "Passerelle $(VERSION) - make targets"
@@ -91,6 +96,35 @@ demo: ## E5 bench: boot a Linux guest on the options qshare emits
 	  exit 0; \
 	fi; \
 	if [ $$rc -ne 0 ]; then echo "demo: FAILED - the bench reported a failing check"; fi; \
+	exit $$rc
+
+doctor: ## Say what is missing on this machine (qshare doctor)
+	@command -v $(PYTHON) >/dev/null 2>&1 || { \
+	  echo "doctor: SKIPPED - $(PYTHON) not found (the host tools are Python)"; exit 0; }
+	@set +e; PYTHONPATH=$(HOST_DIR) $(PYTHON) -m qshare.cli doctor; rc=$$?; \
+	if [ $$rc -eq 3 ]; then \
+	  echo "doctor: the E5 demonstration cannot run here;"; \
+	  echo "        the table above says what to install"; \
+	else echo "doctor: OK - the E5 demonstration can run here"; fi; \
+	exit 0
+
+init: ## Scaffold a guest project ready to be shared (qshare init)
+	@command -v $(PYTHON) >/dev/null 2>&1 || { \
+	  echo "init: SKIPPED - $(PYTHON) not found (the host tools are Python)"; exit 0; }
+	@if [ -z "$(INIT_DIR)" ]; then \
+	  echo "init: SKIPPED - no directory given (make init DIR=/path/to/project)"; exit 0; \
+	fi
+	@PYTHONPATH=$(HOST_DIR) $(PYTHON) -m qshare.cli init $(INIT_DIR)
+
+smoke: ## Prove the whole chain works here (qshare smoke)
+	@command -v $(PYTHON) >/dev/null 2>&1 || { \
+	  echo "smoke: SKIPPED - $(PYTHON) not found (the host tools are Python)"; exit 0; }
+	@set +e; PYTHONPATH=$(HOST_DIR) $(PYTHON) -m qshare.cli smoke $(SMOKE_FLAGS); rc=$$?; \
+	if [ $$rc -eq 3 ]; then \
+	  echo "smoke: SKIPPED - nothing could run here (the reasons are printed above)"; \
+	  exit 0; \
+	fi; \
+	if [ $$rc -ne 0 ]; then echo "smoke: FAILED - a step failed (see above)"; fi; \
 	exit $$rc
 
 coverage: ## Line coverage of the C stack (needs gcovr or lcov)
