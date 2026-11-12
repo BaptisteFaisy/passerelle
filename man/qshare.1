@@ -18,6 +18,11 @@ install the guest driver, writes the CMake and Rust example projects with
 Inside the guest, the share is mounted with the passerelle driver at the
 \-\-mount\-point location; qrun(1) then runs programs from it, and fsproof(1)
 and pbench(1) prove and measure it.
+.P
+Three subcommands answer the everyday questions: qshare doctor says what is
+missing on this machine, qshare init scaffolds a guest project ready to be
+shared, and qshare smoke proves the whole chain here (configure, build, ctest,
+pytest, the reference benches and the guest check).
 .SH OPTIONS
 .TP
 \fB\-h\fR, \fB\-\-help\fR
@@ -116,6 +121,9 @@ mkqnximage fragments written by \-\-mkqnximage
 .TP
 \fI<share>/cmake_example/, <share>/rust_example/\fR
 projects written by \-\-example
+.TP
+\fI<share>/README.md, <share>/qemu\-options.txt, <share>/guest\-setup.txt\fR
+the project written by 'qshare init'
 .TP
 \fI/tmp/pgw\-qemu\-console.log\fR
 default guest console log of \-\-run
