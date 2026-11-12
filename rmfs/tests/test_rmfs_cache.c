@@ -14,6 +14,7 @@
 #include "pgw/log.h"
 #include "pgw/rmfs.h"
 #include "pgw/test.h"
+#include "test_cred.h"
 #include "pgw/time.h"
 
 #include <string.h>
@@ -40,7 +41,7 @@ static void test_attr_cache_disabled_by_default(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "d.txt", "abc", 3), 0);
 
     pgw_fs_attr a;
@@ -78,7 +79,7 @@ static void test_expiry_follows_the_injected_clock(void)
     pgw_time_set_clock(fake_clock, &g_now_ns);
     pgw_rmfs *fs = make_fs(b, 100000000ull); /* 100 ms */
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "t.txt", "abc", 3), 0);
 
     pgw_fs_attr a;
@@ -108,7 +109,7 @@ static void test_writes_invalidate_the_entry(void)
     pgw_time_set_clock(fake_clock, &g_now_ns);
     pgw_rmfs *fs = make_fs(b, 1000000000ull); /* 1 s */
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     pgw_rmfs_fd *fd = NULL;
     PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, &cred, "w.txt",
@@ -137,7 +138,7 @@ static void test_stat_costs_one_round_trip(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0); /* cache off: every answer is a real call */
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "one.txt", "abc", 3), 0);
 
     size_t lookups0 = b->lookup_calls;

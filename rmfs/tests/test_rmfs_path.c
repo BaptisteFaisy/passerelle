@@ -15,6 +15,7 @@
 #include "pgw/limits.h"
 #include "pgw/rmfs.h"
 #include "pgw/test.h"
+#include "test_cred.h"
 
 #include <string.h>
 
@@ -92,7 +93,7 @@ static void test_symlink_yields_redirect(void)
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
 
-    pgw_fs_cred cred = {1000, 1000, 10};
+    pgw_fs_cred cred = tc_self(10);
     PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(fs, &cred, "dir", 0755), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_symlink(fs, &cred, "dir", "link"), PGW_OK);
 
@@ -120,7 +121,7 @@ static void test_symlink_follow_when_asked(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 10};
+    pgw_fs_cred cred = tc_self(10);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "target.txt", "hello", 5),
                     0);
@@ -152,7 +153,7 @@ static void test_symlink_loop_detected(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 10};
+    pgw_fs_cred cred = tc_self(10);
 
     /* loop -> loop : resolution must stop with ELOOP, not spin (FS-08). */
     PGW_ASSERT_EQ_I(pgw_rmfs_symlink(fs, &cred, "loop", "loop"), PGW_OK);
@@ -189,7 +190,7 @@ static void test_readlink_returns_body(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 10};
+    pgw_fs_cred cred = tc_self(10);
 
     PGW_ASSERT_EQ_I(pgw_rmfs_symlink(fs, &cred, "some/where", "lnk"), PGW_OK);
     char target[PGW_PATH_MAX];
@@ -208,7 +209,7 @@ static void test_hard_link_shares_inode(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 10};
+    pgw_fs_cred cred = tc_self(10);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "orig.txt", "abc", 3), 0);
     PGW_ASSERT_EQ_I(pgw_rmfs_link(fs, &cred, "orig.txt", "copy.txt"), PGW_OK);
@@ -235,7 +236,7 @@ static void test_open_nofollow_refuses_symlink(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 10};
+    pgw_fs_cred cred = tc_self(10);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "real.txt", "abc", 3), 0);
     PGW_ASSERT_EQ_I(pgw_rmfs_symlink(fs, &cred, "real.txt", "ln"), PGW_OK);

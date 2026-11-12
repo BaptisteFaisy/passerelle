@@ -105,6 +105,30 @@ static pgw_err probe_attr(const pgw_fs_backend_ops *ops, void *impl,
 }
 
 /* Fill the redirect response for a symlink met at `prefix` (spec 5.3). */
+/* A relative link target is relative to the directory that holds the link, not
+ * to the share root: POSIX resolves `d2/l -> d1/f` as `d2/d1/f`. Rebasing the
+ * target here keeps redirect_join() - and every caller - free of that rule.
+ * An absolute target (leading '/') and a link sitting at the root need nothing.
+ * A target too long to rebase is left alone: the resolution that follows fails
+ * loudly instead of silently pointing somewhere else. */
+static void rebase_relative_target(const char *link_path, char *target,
+                                   size_t cap)
+{
+    if (target[0] == '\0' || target[0] == '/')
+        return;
+    char dir[PGW_PATH_MAX];
+    char name[PGW_NAME_MAX + 1];
+    if (rmfs_split_path(link_path, dir, sizeof(dir), name, sizeof(name)) != PGW_OK)
+        return;
+    if (dir[0] == '\0' || strcmp(dir, ".") == 0)
+        return;
+    char rebased[PGW_PATH_MAX];
+    int n = snprintf(rebased, sizeof(rebased), "%s/%s", dir, target);
+    if (n <= 0 || (size_t)n >= sizeof(rebased))
+        return;
+    snprintf(target, cap, "%s", rebased);
+}
+
 static pgw_err make_redirect(const pgw_fs_backend_ops *ops, void *impl,
                              const char *prefix, const char *rest,
                              uint32_t prio, rmfs_redirect *redir)
@@ -122,6 +146,7 @@ static pgw_err make_redirect(const pgw_fs_backend_ops *ops, void *impl,
             return e;
         }
     }
+    rebase_relative_target(prefix, redir->target, sizeof(redir->target));
     return PGW_OK;
 }
 

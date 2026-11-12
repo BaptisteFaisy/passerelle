@@ -18,6 +18,7 @@
 #include "pgw/log.h"
 #include "pgw/rmfs.h"
 #include "pgw/test.h"
+#include "test_cred.h"
 #include "pgw/time.h"
 
 #include <stdio.h>
@@ -39,7 +40,7 @@ static void test_open_read_write_seek_close(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     pgw_rmfs_fd *fd = NULL;
     PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, &cred, "a.txt",
@@ -83,7 +84,7 @@ static void test_file_above_4gib(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     const uint64_t big = 5ull * 1024ull * 1024ull * 1024ull; /* 5 GiB */
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "big.bin", "", 0), 0);
@@ -120,7 +121,7 @@ static void test_exclusive_create(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     pgw_rmfs_fd *fd = NULL;
     PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, &cred, "x.txt",
@@ -148,7 +149,7 @@ static void test_truncate_on_open(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "t.txt", "0123456789", 10), 0);
     pgw_rmfs_fd *fd = NULL;
@@ -170,7 +171,7 @@ static void test_append_writes_at_end(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "app.txt", "abc", 3), 0);
     pgw_rmfs_fd *fd = NULL;
@@ -205,7 +206,7 @@ static void test_deleted_while_open_stays_readable(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "gone.txt", "payload", 7), 0);
     pgw_rmfs_fd *fd = NULL;
@@ -238,7 +239,7 @@ static void test_pc_change_seen_on_next_read(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0); /* no attribute cache either */
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "live.txt", "before", 6), 0);
     pgw_rmfs_fd *fd = NULL;
@@ -286,7 +287,7 @@ static void test_attr_cache_hits_then_expires(void)
 
     pgw_rmfs *fs = make_fs(b, 1000000); /* 1 ms TTL */
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "c.txt", "abc", 3), 0);
 
     uint64_t hits0 = pgw_stat_get(PGW_STAT_INODE_HIT);
@@ -357,7 +358,7 @@ static void test_readdir_resumes_without_duplicates(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "f1", "a", 1), 0);
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "f2", "a", 1), 0);
@@ -394,8 +395,8 @@ static void test_caller_priority_reaches_backend(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b, 0);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred high = {1000, 1000, 55}; /* a real-time guest priority */
-    pgw_fs_cred low = {1000, 1000, 5};
+    pgw_fs_cred high = tc_self(55); /* a real-time guest priority */
+    pgw_fs_cred low = tc_self(5);
 
     pgw_fs_attr a;
     PGW_ASSERT_EQ_I(pgw_rmfs_stat(fs, &high, "missing", &a), PGW_ENOENT);

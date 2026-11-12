@@ -16,6 +16,7 @@
 #include "pgw/log.h"
 #include "pgw/rmfs.h"
 #include "pgw/test.h"
+#include "test_cred.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +36,7 @@ static void test_stat_reports_every_field(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "s.txt", "12345", 5), 0);
     pgw_fs_attr a;
@@ -69,7 +70,7 @@ static void test_mkdir_unlink_rmdir(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(fs, &cred, "d1", 0755), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(fs, &cred, "d1/sub", 0700), PGW_OK);
@@ -97,7 +98,7 @@ static void test_rename_across_directories(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(fs, &cred, "src", 0755), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_mkdir(fs, &cred, "dst", 0755), PGW_OK);
@@ -131,7 +132,7 @@ static void test_chmod_chown_truncate_utimens(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
     PGW_ASSERT_EQ_I(fake_backend_host_write(b, "m.txt", "0123456789", 10), 0);
 
     pgw_fs_attr a;
@@ -143,8 +144,12 @@ static void test_chmod_chown_truncate_utimens(void)
     PGW_ASSERT_EQ_I(pgw_rmfs_stat(fs, &cred, "m.txt", &a), PGW_OK);
     PGW_ASSERT_EQ_U(a.mode & 0777u, 0600u);
 
-    /* chown by a non-root caller to another uid is refused (FS-09). */
-    PGW_ASSERT_EQ_I(pgw_rmfs_chown(fs, &cred, "m.txt", owner + 1, owner),
+    /* chown by a caller who is neither the owner nor root is refused (FS-09).
+     * The identity is deliberately not the process one: the rule must hold
+     * whoever runs the suite, root included (a container makes that easy to
+     * hit, and the assertion used to depend on the process uid). */
+    pgw_fs_cred outsider = tc_other(20);
+    PGW_ASSERT_EQ_I(pgw_rmfs_chown(fs, &outsider, "m.txt", owner + 1, owner),
                     PGW_EPERM);
 
     /* truncate down and up. */
@@ -176,7 +181,7 @@ static void test_fsync_and_statfs(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     pgw_rmfs_fd *fd = NULL;
     PGW_ASSERT_EQ_I(pgw_rmfs_open(fs, &cred, "sync.txt",
@@ -206,7 +211,7 @@ static void test_utf8_and_special_names(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     const char *names[] = {
         "caf\xc3\xa9.txt",           /* UTF-8 accented */
@@ -252,7 +257,7 @@ static void test_counters_move(void)
     PGW_ASSERT(b != NULL);
     pgw_rmfs *fs = make_fs(b);
     PGW_ASSERT(fs != NULL);
-    pgw_fs_cred cred = {1000, 1000, 20};
+    pgw_fs_cred cred = tc_self(20);
 
     uint64_t req0 = pgw_stat_get(PGW_STAT_REQ);
     uint64_t err0 = pgw_stat_get(PGW_STAT_ERR);
