@@ -14,7 +14,13 @@ name: nightly (campagnes longues, hors PR)
 #                (froid/chaud), étape bornée à 270 s ;
 #   long-fuzz    5 000 000 itérations par famille de décodeurs, sous ASan+UBSan
 #                (preset `fuzz`) : mesurées à 32 s (p9) et 20 s (fuse) ;
-#   compilers    matrice gcc/clang : build + ctest, ~15 s de compilation ;
+#   compilers    matrice gcc/clang x type de build : build + ctest, ~15 s de
+#                compilation par combinaison. `gcc + Debug + WERROR=ON` est
+#                indispensable : le preset `coverage` construit aussi en Debug
+#                mais avec WERROR=OFF, donc un avertissement fatal propre au
+#                -O0 (ex. -Wformat-truncation) ne faisait échouer aucun job —
+#                c'est exactement comme ça que le build Debug s'est retrouvé
+#                cassé sur main le 12/11/2026 ;
 #   libfuzzer    fuzzing guidé par la couverture, borné à 180 s par harnais.
 #
 # Runners : hébergés GitHub (gratuits, le dépôt est public). Le R630 sert
@@ -222,12 +228,19 @@ jobs:
         include:
           - compiler: gcc
             cc: cc
+            build_type: RelWithDebInfo
+            werror: 'ON'
+          - compiler: gcc
+            cc: cc
+            build_type: Debug
             werror: 'ON'
           - compiler: clang
             cc: clang
+            build_type: RelWithDebInfo
             werror: 'OFF'
     env:
       CC_NAME: ${{ matrix.cc }}
+      BUILD_TYPE: ${{ matrix.build_type }}
       WERROR: ${{ matrix.werror }}
     steps:
       - name: Start clock
@@ -251,35 +264,35 @@ jobs:
             exit 1
           fi
 
-      - name: Configure + build (preset ci, ${{ matrix.compiler }})
+      - name: Configure + build (preset ci, ${{ matrix.compiler }} ${{ matrix.build_type }})
         run: |
           set -uo pipefail
           rc=0
           timeout 120 cmake --preset ci -DCMAKE_C_COMPILER="$CC_NAME" \
-            -DPGW_WERROR="$WERROR" 2>&1 \
-            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-configure.log" || rc=$?
+            -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DPGW_WERROR="$WERROR" 2>&1 \
+            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-${{ matrix.build_type }}-configure.log" || rc=$?
           [ "$rc" -eq 0 ] || exit "$rc"
           timeout 200 cmake --build --preset ci -j"$CMAKE_BUILD_JOBS" 2>&1 \
-            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-build.log" || rc=$?
+            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-${{ matrix.build_type }}-build.log" || rc=$?
           if [ "$rc" -ne 0 ]; then
             exit "$rc"
           fi
-          warnings=$(grep -c "warning:" "$LOG_DIR/compilers-${{ matrix.compiler }}-build.log" || true)
-          echo "::notice::${{ matrix.compiler }} : build vert, $warnings avertissement(s) (WERROR=$WERROR)"
+          warnings=$(grep -c "warning:" "$LOG_DIR/compilers-${{ matrix.compiler }}-${{ matrix.build_type }}-build.log" || true)
+          echo "::notice::${{ matrix.compiler }} ${{ matrix.build_type }} : build vert, $warnings avertissement(s) (WERROR=$WERROR)"
 
       - name: ctest (preset ci, hors garde `rules` deja jouee par ci.yml)
         run: |
           set -uo pipefail
           rc=0
           timeout 200 ctest --preset ci -LE rules --timeout 120 2>&1 \
-            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-ctest.log" || rc=$?
+            | tee "$LOG_DIR/compilers-${{ matrix.compiler }}-${{ matrix.build_type }}-ctest.log" || rc=$?
           exit "$rc"
 
       - name: Artefacts (journaux de compilation et de tests)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nightly-compilers-${{ matrix.compiler }}
+          name: nightly-compilers-${{ matrix.compiler }}-${{ matrix.build_type }}
           path: nightly-logs/
           retention-days: 14
           if-no-files-found: warn
@@ -287,7 +300,7 @@ jobs:
       - name: Report duration
         if: always()
         run: |
-          echo "::notice::compilers-${{ matrix.compiler }}: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+          echo "::notice::compilers-${{ matrix.compiler }}-${{ matrix.build_type }}: $(( $(date +%s) - JOB_START ))s (budget 300s)"
 
   # Fuzzing guidé par la couverture (libFuzzer, clang uniquement, preset
   # `fuzz-libfuzzer`). Borné dans le temps : -max_total_time plus un `timeout`
