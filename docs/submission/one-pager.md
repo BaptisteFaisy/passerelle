@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 **A shared host directory for QNX 8.0 guests under QEMU, over 9P2000.L *and* virtiofs.**
 QNX Global Hackathon 2026 · category *Developer Tools* · Apache-2.0 ·
-https://github.com/BaptisteFaisy/passerelle
+https://github.com/Tradoooo/passerelle
 
 ---
 

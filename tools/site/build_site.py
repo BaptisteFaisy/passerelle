@@ -34,7 +34,7 @@ sys.path.insert(0, str(HERE))
 
 from markdown import Doc, render, slugify  # noqa: E402
 
-GITHUB = "https://github.com/BaptisteFaisy/passerelle"
+GITHUB = "https://github.com/Tradoooo/passerelle"
 BLOB = f"{GITHUB}/blob/main"
 
 # Ordered navigation. "section" groups the entries in the sidebar.
@@ -189,7 +189,7 @@ def page_html(title: str, body: str, nav: str, section: str, toc: list[str],
     <a href="user-guide.html">Use it</a>
     <a href="verification-status.html">Status</a>
     <a href="gap-analysis.html">Gaps</a>
-    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+    <a href="https://github.com/Tradoooo/passerelle">GitHub</a>
   </nav>
 </header>
 <div class="layout">
@@ -206,7 +206,7 @@ def page_html(title: str, body: str, nav: str, section: str, toc: list[str],
     </nav>
     <footer>
       <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
-      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+      Sources on <a href="https://github.com/Tradoooo/passerelle">GitHub</a>.</p>
     </footer>
   </main>
 </div>

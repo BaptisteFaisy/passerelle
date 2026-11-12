@@ -24,7 +24,7 @@
 ### 2.1 Host side **[planned — week 2]**
 
 ```bash
-git clone https://github.com/BaptisteFaisy/passerelle.git
+git clone https://github.com/Tradoooo/passerelle.git
 cd passerelle
 # qshare/qrun are Python 3 tools installed on PATH:
 pip install --user host/qshare host/bench   # or copy host/qshare/qshare to ~/bin

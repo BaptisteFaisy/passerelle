@@ -31,7 +31,7 @@ branch, which GitHub by then considers out of date.
 Set `strict: false` and keep every required check:
 
 ```bash
-gh api -X PUT repos/BaptisteFaisy/passerelle/branches/main/protection --input - <<'JSON'
+gh api -X PUT repos/Tradoooo/passerelle/branches/main/protection --input - <<'JSON'
 {
   "required_status_checks": {
     "strict": false,

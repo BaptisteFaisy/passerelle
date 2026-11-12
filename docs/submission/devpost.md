@@ -38,7 +38,7 @@ and security policy, kernel trace events) and **Best Tutorial**
 
 | Field | Value |
 |---|---|
-| Repository | https://github.com/BaptisteFaisy/passerelle (public, Apache-2.0) |
+| Repository | https://github.com/Tradoooo/passerelle (public, Apache-2.0) |
 | Video | **TODO — to be filled at submission** (script and shot list: [`docs/video-script.md`](../video-script.md), target 2:52, ceiling 3:00) |
 | Screenshot | **TODO** (the E5 console with both protocols passing) |
 | Traceability matrix | [`docs/traceability.md`](../traceability.md) — generated, 77 requirements |

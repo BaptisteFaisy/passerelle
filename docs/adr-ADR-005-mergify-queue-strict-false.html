@@ -16,7 +16,7 @@
     <a href="user-guide.html">Use it</a>
     <a href="verification-status.html">Status</a>
     <a href="gap-analysis.html">Gaps</a>
-    <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>
+    <a href="https://github.com/Tradoooo/passerelle">GitHub</a>
   </nav>
 </header>
 <div class="layout">
@@ -86,7 +86,7 @@
 <p>With <code>required_status_checks.strict: true</code> — the "Require branches to be up to date before merging" box — the queue &lt;strong&gt;refused to queue anything&lt;/strong&gt; and posted a failing <code>Mergify Merge Queue</code> check reading &lt;em&gt;"Configuration not compatible with a branch protection setting"&lt;/em&gt;. The reason is mechanical: the queue tests a pull request through a draft PR built on the latest base, then merges the &lt;em&gt;original&lt;/em&gt; branch, which GitHub by then considers out of date.</p>
 <h2 id="decision">Decision</h2>
 <p>Set <code>strict: false</code> and keep every required check:</p>
-<pre><code class="language-bash">gh api -X PUT repos/BaptisteFaisy/passerelle/branches/main/protection --input - &lt;&lt;'JSON'
+<pre><code class="language-bash">gh api -X PUT repos/Tradoooo/passerelle/branches/main/protection --input - &lt;&lt;'JSON'
 {
   "required_status_checks": {
     "strict": false,
@@ -114,7 +114,7 @@ JSON</code></pre>
     </nav>
     <footer>
       <p>Passerelle - Apache-2.0. Built for the QNX Global Hackathon 2026.
-      Sources on <a href="https://github.com/BaptisteFaisy/passerelle">GitHub</a>.</p>
+      Sources on <a href="https://github.com/Tradoooo/passerelle">GitHub</a>.</p>
     </footer>
   </main>
 </div>

@@ -278,7 +278,7 @@ base, then merges the original branch, which GitHub then considers out of date.
 The protection of this repository is therefore:
 
 ```bash
-gh api -X PUT repos/BaptisteFaisy/passerelle/branches/main/protection --input - <<'JSON'
+gh api -X PUT repos/Tradoooo/passerelle/branches/main/protection --input - <<'JSON'
 {
   "required_status_checks": {
     "strict": false,
