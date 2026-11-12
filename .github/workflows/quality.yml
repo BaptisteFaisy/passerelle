@@ -103,6 +103,14 @@ jobs:
         run: |
           echo "::notice::format: $(( $(date +%s) - JOB_START ))s (budget 300s)"
 
+      # The badge of the README must match the measurement it claims to
+      # show: a badge edited by hand, or a measurement too old to be shown,
+      # fails the pull request (gap 44).
+      - name: The committed coverage badge is honest
+        run: |
+          set -uo pipefail
+          timeout 60 python3 tools/quality/coverage_badge.py --check --max-age-days 30
+
   # Couverture de la pile portable : build instrumenté (preset `coverage`),
   # ctest, collecte gcov, rapport texte + HTML + XML + badge SVG.
   # Mesuré le 11/11/2026 sur un poste 12 coeurs : 5,8 s de bout en bout
@@ -114,6 +122,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     timeout-minutes: 5
+    # The badge of the README is refreshed from this measurement, so the job
+    # needs to write to the repository (gap 44). It writes two generated
+    # files under docs/_assets/, nothing else.
+    permissions:
+      contents: write
     steps:
       - name: Start clock
         run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
@@ -161,6 +174,31 @@ jobs:
         if: always()
         run: |
           echo "::notice::coverage: $(( $(date +%s) - JOB_START ))s (budget 300s)"
+
+      # The number of the badge of the README comes from here: the summary
+      # is turned into docs/_assets/coverage.svg and its record, and both
+      # are committed when they changed. "[skip ci]" keeps the commit from
+      # triggering this workflow again (the measurement would be the same).
+      - name: Refresh the committed coverage badge
+        if: github.ref_name == 'main'
+        run: |
+          set -uo pipefail
+          timeout 60 python3 tools/quality/coverage_badge.py \
+            --summary build/coverage/summary.txt \
+            --record docs/_assets/coverage.json \
+            --output docs/_assets/coverage.svg \
+            --commit "$(git rev-parse HEAD)" \
+            --refresh-days 7
+          if git diff --quiet -- docs/_assets/coverage.svg docs/_assets/coverage.json; then
+            echo "::notice::the coverage badge is unchanged: nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/_assets/coverage.svg docs/_assets/coverage.json
+          git commit -m "chore: refresh the coverage badge [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}" \
+            || echo "::warning::the coverage badge could not be pushed: the next run will refresh it"
 
   # Analyse statique : clang-tidy si présent, sinon cppcheck, sinon saut
   # explicite. Mesuré le 11/11/2026 : 15 s pour 158 unités de traduction avec

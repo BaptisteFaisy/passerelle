@@ -1,5 +1,7 @@
 # Passerelle
 
+![coverage](docs/_assets/coverage.svg)
+
 **Passerelle** is a high-performance host-guest shared filesystem driver for **QNX® Neutrino® 8.0** virtual machines under QEMU, providing seamless directory sharing via **9P2000.L** and **virtiofs** over modern virtio-PCI and virtio-MMIO.
 
 Submitted to the **QNX Global Hackathon 2026** under the [Apache-2.0](LICENSE) license.
@@ -148,6 +150,43 @@ cmake --build build-qnx-arm -j8
 ```
 
 Detailed step-by-step instructions and test level runner commands are available in [docs/building.md](docs/building.md).
+
+### 3. Install the package, use it from another project
+
+The portable stack can be installed into a prefix and consumed by another
+CMake project or by any build that speaks `pkg-config`:
+
+```bash
+cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local
+cmake --build build -j8
+cmake --install build
+
+# downstream, with CMake
+find_package(Passerelle REQUIRED)
+target_link_libraries(my_app PRIVATE Passerelle::pgw_common)
+
+# downstream, with pkg-config
+cc $(pkg-config --cflags passerelle) app.c $(pkg-config --libs passerelle)
+```
+
+`tests/install` proves it end to end on every build: the tree is installed
+into a throwaway prefix, then a small consumer is built from that prefix
+with `pkg-config` and with `find_package(Passerelle)`, and runs.
+
+### 4. Supply chain: SBOM, provenance, coverage badge
+
+- **SBOM** — `python3 tools/sbom/generate_sbom.py --output passerelle.sbom.json`
+  writes a CycloneDX 1.5 document listing the real inputs (the C sources
+  with their SHA-256, the version, the toolchain, the git commit) and
+  states explicitly that the shipped artefact depends on no third-party
+  library. The build provenance (compiler, flags, build type, commit,
+  dirty state) goes to the companion file.
+- **Coverage badge** — the badge at the top of this file is written by the
+  `coverage` job of [`.github/workflows/quality.yml`](.github/workflows/quality.yml)
+  from the gcov measurement of the production C code, and committed with its
+  record (`docs/_assets/coverage.json`). `tools/quality/coverage_badge.py --check`
+  fails the build when the badge does not match its record or when the
+  measurement is too old: a badge that lies is worse than no badge.
 
 ---
 
