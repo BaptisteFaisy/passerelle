@@ -33,10 +33,10 @@
 /* A failure that says *what* diverged: a directed case must not only report
  * that something is wrong, it must name the value and the layer. */
 #define CAS_FAIL(...) pgw_fail(__FILE__, __LINE__, __VA_ARGS__)
-#define CAS_ASSERT_MSG(cond, ...)                                              \
-    do {                                                                       \
-        if (!(cond))                                                           \
-            CAS_FAIL(__VA_ARGS__);                                             \
+#define CAS_ASSERT_MSG(cond, ...)                                                        \
+    do {                                                                                 \
+        if (!(cond))                                                                     \
+            CAS_FAIL(__VA_ARGS__);                                                       \
     } while (0)
 
 /* The injectable clock of pgw/time.h: a case that must see an attribute
@@ -78,8 +78,8 @@ bool cas_mount_open(cas_mount *m, const char *tag, const pgw_fs_opts *opts,
                     cas_probe *probe);
 /* A second mount over an *existing* directory: the durability case closes
  * everything and comes back, as a driver would after a crash. */
-bool cas_mount_open_at(cas_mount *m, const char *root,
-                       const pgw_fs_opts *opts, cas_probe *probe);
+bool cas_mount_open_at(cas_mount *m, const char *root, const pgw_fs_opts *opts,
+                       cas_probe *probe);
 void cas_mount_close(cas_mount *m);
 
 /* Absolute host path of a relative path inside the fixture. */

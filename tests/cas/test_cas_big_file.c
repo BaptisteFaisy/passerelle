@@ -35,7 +35,7 @@
 #include <unistd.h>
 
 #define CAS_BIG_BYTES_ENV "PGW_CAS_BIG_BYTES"
-#define CAS_BIG_DEFAULT (64ull * 1024ull * 1024ull) /* 64 MiB in a pull request */
+#define CAS_BIG_DEFAULT (64ull * 1024ull * 1024ull)       /* 64 MiB in a pull request */
 #define CAS_BIG_SPEC (5ull * 1024ull * 1024ull * 1024ull) /* the 5 GiB of 7.4 */
 #define BLK 4096u
 
@@ -46,8 +46,7 @@ static uint64_t big_bytes(void)
 
 /* Write (resp. read back) one block of the deterministic pattern of the
  * harness at `off`, so a case proves the content survived without a copy. */
-static void big_write_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
-                            uint32_t seed)
+static void big_write_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off, uint32_t seed)
 {
     uint8_t buf[BLK];
     pgw_test_pattern(buf, sizeof(buf), seed, off);
@@ -56,8 +55,7 @@ static void big_write_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
     PGW_ASSERT_EQ_U(n, sizeof(buf));
 }
 
-static void big_expect_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
-                             uint32_t seed)
+static void big_expect_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off, uint32_t seed)
 {
     uint8_t buf[BLK];
     memset(buf, 0xAA, sizeof(buf));
@@ -71,8 +69,7 @@ static void big_expect_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
 }
 
 /* A hole must read back as zeros: this is the whole point of a sparse file. */
-static void big_expect_hole(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
-                            size_t len)
+static void big_expect_hole(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off, size_t len)
 {
     uint8_t buf[BLK];
     if (len > sizeof(buf))
@@ -82,7 +79,8 @@ static void big_expect_hole(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
     PGW_ASSERT_EQ_I(pgw_rmfs_read(fs, fd, off, buf, len, &n), PGW_OK);
     PGW_ASSERT_EQ_U(n, len);
     for (size_t i = 0; i < len; i++)
-        CAS_ASSERT_MSG(buf[i] == 0, "hole at offset %llu reads %u, not zero "
+        CAS_ASSERT_MSG(buf[i] == 0,
+                       "hole at offset %llu reads %u, not zero "
                        "(byte %zu of the read)",
                        (unsigned long long)off, (unsigned)buf[i], i);
 }
@@ -91,9 +89,9 @@ static void big_expect_hole(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
 static pgw_rmfs_fd *big_make(cas_mount *m, const char *name, uint64_t n)
 {
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m->fs, &m->cred, name,
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m->fs, &m->cred, name, PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     /* truncate() extends without allocating: the file is sparse from here. */
     PGW_ASSERT_EQ_I(pgw_rmfs_truncate(m->fs, &m->cred, name, n), PGW_OK);
     big_write_block(m->fs, fd, 0, 1);
@@ -123,19 +121,16 @@ static void test_big_file_hole_and_boundary(void)
     pgw_test_pattern(want, 16, 1, BLK - 16);
     memset(want + 16, 0, 16);
     size_t nr = 0;
-    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, BLK - 16, got, sizeof(got), &nr),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, BLK - 16, got, sizeof(got), &nr), PGW_OK);
     PGW_ASSERT_EQ_U(nr, sizeof(got));
     PGW_ASSERT_MEM_EQ(got, want, sizeof(got));
 
     /* A read that starts inside the file and runs past the end is short, not
      * an error, and a read at the end yields nothing. */
     uint8_t tail[64];
-    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, n - 8, tail, sizeof(tail), &nr),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, n - 8, tail, sizeof(tail), &nr), PGW_OK);
     PGW_ASSERT_EQ_U(nr, 8);
-    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, n, tail, sizeof(tail), &nr),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, n, tail, sizeof(tail), &nr), PGW_OK);
     PGW_ASSERT_EQ_U(nr, 0);
 
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
@@ -150,9 +145,9 @@ static void test_big_file_write_past_end_grows(void)
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-biggrow", NULL, NULL));
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "grow.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, "grow.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     size_t w = 0;
     PGW_ASSERT_EQ_I(pgw_rmfs_write(m.fs, fd, 0, "hello", 5, &w), PGW_OK);
     PGW_ASSERT_EQ_U(w, 5);
@@ -169,8 +164,7 @@ static void test_big_file_write_past_end_grows(void)
     big_expect_block(m.fs, fd, far, 7);
     big_expect_hole(m.fs, fd, n, BLK); /* the gap the jump left behind */
     uint8_t head[5];
-    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, 0, head, sizeof(head), &w),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, 0, head, sizeof(head), &w), PGW_OK);
     PGW_ASSERT_EQ_U(w, 5);
     PGW_ASSERT_MEM_EQ(head, "hello", 5);
 
@@ -209,8 +203,7 @@ static void test_big_file_attr_cache_size_and_no_data_cache(void)
 
     uint8_t buf[BLK];
     size_t nr = 0;
-    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, 0, buf, sizeof(buf), &nr),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_read(m.fs, fd, 0, buf, sizeof(buf), &nr), PGW_OK);
     PGW_ASSERT(pgw_test_pattern_ok(buf, sizeof(buf), 1, 0));
 
     /* Past the TTL the size is refreshed from the truth. */
@@ -260,9 +253,9 @@ static void test_big_file_client_sees_size(void)
     PGW_ASSERT(cas_9p_open(&c, "pgwcas-big9p", NULL));
 
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(c.fs, &c.cred, "big.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(c.fs, &c.cred, "big.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_truncate(c.fs, &c.cred, "big.bin", n), PGW_OK);
     big_write_block(c.fs, fd, 0, 11);
     big_write_block(c.fs, fd, n - BLK, 12);

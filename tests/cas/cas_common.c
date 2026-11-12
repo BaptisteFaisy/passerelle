@@ -43,31 +43,29 @@ static void probe_destroy(void *impl)
     (void)impl;
 }
 
-static pgw_err probe_lookup(void *impl, const char *rel, pgw_fs_attr *out,
-                            uint32_t prio)
+static pgw_err probe_lookup(void *impl, const char *rel, pgw_fs_attr *out, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     p->lookup_calls++;
     return p->next->lookup(p->next_impl, rel, out, prio);
 }
 
-static pgw_err probe_getattr(void *impl, const char *rel, pgw_fs_attr *out,
-                             uint32_t prio)
+static pgw_err probe_getattr(void *impl, const char *rel, pgw_fs_attr *out, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     p->getattr_calls++;
     return p->next->getattr(p->next_impl, rel, out, prio);
 }
 
-static pgw_err probe_setattr(void *impl, const char *rel,
-                             const pgw_fs_setattr *sa, uint32_t prio)
+static pgw_err probe_setattr(void *impl, const char *rel, const pgw_fs_setattr *sa,
+                             uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     return p->next->setattr(p->next_impl, rel, sa, prio);
 }
 
-static pgw_err probe_open(void *impl, const char *rel, uint32_t oflags,
-                          uint32_t mode, uint64_t *out_handle, uint32_t prio)
+static pgw_err probe_open(void *impl, const char *rel, uint32_t oflags, uint32_t mode,
+                          uint64_t *out_handle, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     p->open_calls++;
@@ -89,57 +87,51 @@ static pgw_err probe_read(void *impl, uint64_t handle, uint64_t off, void *buf,
     return p->next->read(p->next_impl, handle, off, buf, len, out_read, prio);
 }
 
-static pgw_err probe_write(void *impl, uint64_t handle, uint64_t off,
-                           const void *buf, size_t len, size_t *out_written,
-                           uint32_t prio)
+static pgw_err probe_write(void *impl, uint64_t handle, uint64_t off, const void *buf,
+                           size_t len, size_t *out_written, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     p->write_calls++;
-    return p->next->write(p->next_impl, handle, off, buf, len, out_written,
-                          prio);
+    return p->next->write(p->next_impl, handle, off, buf, len, out_written, prio);
 }
 
 static pgw_err probe_readdir(void *impl, uint64_t handle, uint64_t off,
-                             pgw_fs_dirent *out, size_t max_entries,
-                             size_t *out_count, uint64_t *next_off,
-                             uint32_t prio)
+                             pgw_fs_dirent *out, size_t max_entries, size_t *out_count,
+                             uint64_t *next_off, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     p->readdir_calls++;
-    return p->next->readdir(p->next_impl, handle, off, out, max_entries,
-                            out_count, next_off, prio);
+    return p->next->readdir(p->next_impl, handle, off, out, max_entries, out_count,
+                            next_off, prio);
 }
 
-static pgw_err probe_mkdir(void *impl, const char *rel, uint32_t mode,
-                           uint32_t prio)
+static pgw_err probe_mkdir(void *impl, const char *rel, uint32_t mode, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     return p->next->mkdir(p->next_impl, rel, mode, prio);
 }
 
-static pgw_err probe_unlink(void *impl, const char *rel, bool is_dir,
-                            uint32_t prio)
+static pgw_err probe_unlink(void *impl, const char *rel, bool is_dir, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     return p->next->unlink(p->next_impl, rel, is_dir, prio);
 }
 
-static pgw_err probe_rename(void *impl, const char *oldp, const char *newp,
-                            uint32_t prio)
+static pgw_err probe_rename(void *impl, const char *oldp, const char *newp, uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     return p->next->rename(p->next_impl, oldp, newp, prio);
 }
 
-static pgw_err probe_symlink(void *impl, const char *linkpath,
-                             const char *target, uint32_t prio)
+static pgw_err probe_symlink(void *impl, const char *linkpath, const char *target,
+                             uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     return p->next->symlink(p->next_impl, linkpath, target, prio);
 }
 
-static pgw_err probe_readlink(void *impl, const char *linkpath, char *target,
-                              size_t cap, uint32_t prio)
+static pgw_err probe_readlink(void *impl, const char *linkpath, char *target, size_t cap,
+                              uint32_t prio)
 {
     cas_probe *p = PROBE(impl);
     return p->next->readlink(p->next_impl, linkpath, target, cap, prio);
@@ -166,23 +158,23 @@ static pgw_err probe_statfs(void *impl, pgw_fs_statvfs *out, uint32_t prio)
 }
 
 const pgw_fs_backend_ops cas_probe_ops = {
-    .destroy = probe_destroy,
-    .lookup = probe_lookup,
-    .getattr = probe_getattr,
-    .setattr = probe_setattr,
-    .open = probe_open,
-    .close = probe_close,
-    .read = probe_read,
-    .write = probe_write,
-    .readdir = probe_readdir,
-    .mkdir = probe_mkdir,
-    .unlink = probe_unlink,
-    .rename = probe_rename,
-    .symlink = probe_symlink,
-    .readlink = probe_readlink,
-    .link = probe_link,
-    .fsync = probe_fsync,
-    .statfs = probe_statfs,
+        .destroy = probe_destroy,
+        .lookup = probe_lookup,
+        .getattr = probe_getattr,
+        .setattr = probe_setattr,
+        .open = probe_open,
+        .close = probe_close,
+        .read = probe_read,
+        .write = probe_write,
+        .readdir = probe_readdir,
+        .mkdir = probe_mkdir,
+        .unlink = probe_unlink,
+        .rename = probe_rename,
+        .symlink = probe_symlink,
+        .readlink = probe_readlink,
+        .link = probe_link,
+        .fsync = probe_fsync,
+        .statfs = probe_statfs,
 };
 
 /* --- the fixture ---------------------------------------------------------- */

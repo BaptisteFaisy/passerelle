@@ -32,9 +32,8 @@ bool cas_9p_open(cas_9p *m, const char *tag, const pgw_fs_opts *opts)
     m->srv = ref9p_start(m->root, "none");
     if (m->srv == NULL)
         return false;
-    m->session = pgw_p9_session_open(ref9p_rpc, ref9p_rpc_user(m->srv),
-                                     PGW_MSIZE_DEFAULT, "cas", "",
-                                     (uint32_t)getuid());
+    m->session = pgw_p9_session_open(ref9p_rpc, ref9p_rpc_user(m->srv), PGW_MSIZE_DEFAULT,
+                                     "cas", "", (uint32_t)getuid());
     if (m->session == NULL)
         return false;
 

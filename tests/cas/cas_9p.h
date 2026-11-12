@@ -26,8 +26,8 @@ struct cas_9p {
     struct ref9p_server *srv;
     pgw_p9_session *session;
     pgw_rmfs *fs;
-    char root[512];     /* the served directory: the truth */
-    pgw_fs_cred cred;   /* the owner of the files, never a literal uid */
+    char root[512];   /* the served directory: the truth */
+    pgw_fs_cred cred; /* the owner of the files, never a literal uid */
 };
 typedef struct cas_9p cas_9p;
 

@@ -41,8 +41,7 @@
 #define BLOCK 4096u
 
 /* Write one pattern block at `off` through the layer. */
-static void write_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
-                        uint32_t seed)
+static void write_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off, uint32_t seed)
 {
     uint8_t buf[BLOCK];
     pgw_test_pattern(buf, sizeof(buf), seed, off);
@@ -53,8 +52,8 @@ static void write_block(pgw_rmfs *fs, pgw_rmfs_fd *fd, uint64_t off,
 
 /* Read one block back through a *fresh* handle of a *fresh* mount, so nothing
  * the layer holds can answer: only the file system can. */
-static void reread_fresh(const char *root, const char *name, uint64_t off,
-                         uint32_t seed, bool expect_present)
+static void reread_fresh(const char *root, const char *name, uint64_t off, uint32_t seed,
+                         bool expect_present)
 {
     pgw_fs_opts opts;
     pgw_fs_opts_default(&opts);
@@ -63,8 +62,7 @@ static void reread_fresh(const char *root, const char *name, uint64_t off,
     PGW_ASSERT(cas_mount_open_at(&fresh, root, &opts, NULL));
 
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(fresh.fs, &fresh.cred, name, PGW_O_RDONLY, 0,
-                                  &fd),
+    PGW_ASSERT_EQ_I(pgw_rmfs_open(fresh.fs, &fresh.cred, name, PGW_O_RDONLY, 0, &fd),
                     PGW_OK);
     uint8_t buf[BLOCK];
     memset(buf, 0xA5, sizeof(buf));
@@ -79,8 +77,7 @@ static void reread_fresh(const char *root, const char *name, uint64_t off,
         return;
     }
     PGW_ASSERT_EQ_I(err, PGW_OK);
-    CAS_ASSERT_MSG(n == sizeof(buf), "a fresh reader got %zu bytes, not %u", n,
-                   BLOCK);
+    CAS_ASSERT_MSG(n == sizeof(buf), "a fresh reader got %zu bytes, not %u", n, BLOCK);
     CAS_ASSERT_MSG(pgw_test_pattern_ok(buf, sizeof(buf), seed, off),
                    "the block fsynced at offset %llu did not survive a "
                    "cache drop",
@@ -95,18 +92,17 @@ static void test_fsync_reaches_the_backend(void)
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-fsync", NULL, &probe));
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "f.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, "f.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     write_block(m.fs, fd, 0, 1);
     PGW_ASSERT_EQ_U(probe.fsync_calls, 0);
     PGW_ASSERT_EQ_I(pgw_rmfs_fsync(m.fs, fd), PGW_OK);
-    CAS_ASSERT_MSG(probe.fsync_calls == 1,
-                   "one fsync reached the backend %zu times", probe.fsync_calls);
+    CAS_ASSERT_MSG(probe.fsync_calls == 1, "one fsync reached the backend %zu times",
+                   probe.fsync_calls);
     PGW_ASSERT_EQ_I(pgw_rmfs_fsync(m.fs, fd), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_fsync(m.fs, fd), PGW_OK);
-    CAS_ASSERT_MSG(probe.fsync_calls == 3,
-                   "three fsyncs reached the backend %zu times",
+    CAS_ASSERT_MSG(probe.fsync_calls == 3, "three fsyncs reached the backend %zu times",
                    probe.fsync_calls);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
     cas_mount_close(&m);
@@ -125,9 +121,9 @@ static void test_fsync_not_swallowed_by_attr_cache(void)
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-fsynccache", &opts, &probe));
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "c.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, "c.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     write_block(m.fs, fd, 0, 2);
 
     /* Warm the cache, then fsync: the cached attributes must not shortcut it. */
@@ -156,9 +152,9 @@ static void test_fsync_survives_a_cache_drop(void)
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-fsyncdrop", NULL, NULL));
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "d.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, "d.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     write_block(m.fs, fd, 0, 3);
     write_block(m.fs, fd, BLOCK, 4);
     PGW_ASSERT_EQ_I(pgw_rmfs_fsync(m.fs, fd), PGW_OK);
@@ -182,12 +178,12 @@ static void test_fsync_keeps_the_order_of_writes(void)
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-fsyncorder", NULL, NULL));
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "o.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
-    write_block(m.fs, fd, 0, 5);       /* A */
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, "o.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
+    write_block(m.fs, fd, 0, 5); /* A */
     PGW_ASSERT_EQ_I(pgw_rmfs_fsync(m.fs, fd), PGW_OK);
-    write_block(m.fs, fd, BLOCK, 6);   /* B, never fsynced */
+    write_block(m.fs, fd, BLOCK, 6); /* B, never fsynced */
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, fd), PGW_OK);
     cas_mount_close(&m); /* the mount dies here, as a driver would */
 
@@ -207,9 +203,9 @@ static void test_fsync_answers_like_the_kernel(void)
     cas_mount m;
     PGW_ASSERT(cas_mount_open(&m, "pgwcas-fsyncro", NULL, NULL));
     pgw_rmfs_fd *wr = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "r.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &wr),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(m.fs, &m.cred, "r.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &wr),
+            PGW_OK);
     write_block(m.fs, wr, 0, 7);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(m.fs, wr), PGW_OK);
 
@@ -223,8 +219,7 @@ static void test_fsync_answers_like_the_kernel(void)
     close(raw);
 
     pgw_rmfs_fd *ro = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "r.bin", PGW_O_RDONLY, 0, &ro),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(pgw_rmfs_open(m.fs, &m.cred, "r.bin", PGW_O_RDONLY, 0, &ro), PGW_OK);
     const pgw_err got = pgw_rmfs_fsync(m.fs, ro);
     CAS_ASSERT_MSG(got == pgw_code_from_host(truth),
                    "fsync of a read-only descriptor: the kernel answered errno "
@@ -246,9 +241,9 @@ static void test_fsync_through_9p(void)
     cas_9p c;
     PGW_ASSERT(cas_9p_open(&c, "pgwcas-fsync9p", NULL));
     pgw_rmfs_fd *fd = NULL;
-    PGW_ASSERT_EQ_I(pgw_rmfs_open(c.fs, &c.cred, "w.bin",
-                                  PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
-                    PGW_OK);
+    PGW_ASSERT_EQ_I(
+            pgw_rmfs_open(c.fs, &c.cred, "w.bin", PGW_O_RDWR | PGW_O_CREAT, 0644, &fd),
+            PGW_OK);
     write_block(c.fs, fd, 0, 8);
     PGW_ASSERT_EQ_I(pgw_rmfs_fsync(c.fs, fd), PGW_OK);
     PGW_ASSERT_EQ_I(pgw_rmfs_close(c.fs, fd), PGW_OK);
@@ -262,8 +257,7 @@ static void test_fsync_through_9p(void)
     uint8_t buf[BLOCK];
     size_t len = 0;
     PGW_ASSERT(cas_truth_read(c.root, "w.bin", buf, sizeof(buf), &len));
-    CAS_ASSERT_MSG(len == sizeof(buf), "the file holds %zu bytes, not %u", len,
-                   BLOCK);
+    CAS_ASSERT_MSG(len == sizeof(buf), "the file holds %zu bytes, not %u", len, BLOCK);
     PGW_ASSERT(pgw_test_pattern_ok(buf, sizeof(buf), 8, 0));
 }
 PGW_TEST(test_fsync_through_9p);
