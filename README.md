@@ -215,6 +215,7 @@ matrix and [docs/measurements/](docs/measurements/) for the numbers.
 
 - [docs/spec-en.md](docs/spec-en.md) — Complete English Specification (Requirements VIO, P9, FS, QNX, PERF, ROB, SEC, DX, VFS, SRV)
 - [docs/spec-fr.md](docs/spec-fr.md) — Original French Specification (authoritative text)
+- [docs/glossary.md](docs/glossary.md) — English glossary of every term (9P, virtio, FUSE, QNX, host tools), with the French equivalent and the source of each term
 - [docs/architecture.md](docs/architecture.md) — Detailed Three-Layer Design & Tricky Issues Resolution
 - [docs/user-guide.md](docs/user-guide.md) — User Guide, Mounting Options, CMake and Rust Workflows
 - [docs/state-of-the-art.md](docs/state-of-the-art.md) — Comprehensive Analysis of Existing Projects
