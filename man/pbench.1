@@ -20,6 +20,10 @@ Markdown, JSON and SVG and checks the section 7.6 thresholds.
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
+.TP
+\fB\-\-show\-config\fR \fIFORMAT\fR
+print the effective configuration (text or json) and exit (choices: text,
+json)
 .SS pbench roundtrips
 .TP
 \fBroundtrips\fR
@@ -32,7 +36,7 @@ show this help message and exit
 QEMU trace file (\-trace 'v9fs_*')
 .TP
 \fB\-\-client\fR \fICLIENT\fR
-client name for the report (default: passerelle)
+client name for the report (default: configuration 'client' = 'passerelle')
 .TP
 \fB\-\-markdown\fR \fIFILE\fR
 write the table as Markdown
@@ -51,7 +55,7 @@ show this help message and exit
 working directory (default: temporary)
 .TP
 \fB\-\-scale\fR \fISCALE\fR
-1.0 = specification size (default: 1.0)
+workload scale (default: configuration 'scale' = '1.0')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 write the result as JSON
@@ -67,7 +71,7 @@ show this help message and exit
 working directory (default: temporary)
 .TP
 \fB\-\-scale\fR \fISCALE\fR
-1.0 = specification size (default: 1.0)
+workload scale (default: configuration 'scale' = '1.0')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 write the result as JSON
@@ -83,7 +87,7 @@ show this help message and exit
 working directory (default: temporary)
 .TP
 \fB\-\-scale\fR \fISCALE\fR
-1.0 = specification size (default: 1.0)
+workload scale (default: configuration 'scale' = '1.0')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 write the result as JSON
@@ -99,7 +103,7 @@ show this help message and exit
 working directory (default: temporary)
 .TP
 \fB\-\-scale\fR \fISCALE\fR
-1.0 = specification size (default: 1.0)
+workload scale (default: configuration 'scale' = '1.0')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 write the result as JSON
@@ -115,7 +119,7 @@ show this help message and exit
 working directory (default: temporary)
 .TP
 \fB\-\-scale\fR \fISCALE\fR
-1.0 = specification size (default: 1.0)
+workload scale (default: configuration 'scale' = '1.0')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 write the result as JSON
@@ -131,7 +135,7 @@ show this help message and exit
 working directory (default: temporary)
 .TP
 \fB\-\-scale\fR \fISCALE\fR
-1.0 = specification size (default: 1.0)
+workload scale (default: configuration 'scale' = '1.0')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 write the result as JSON
@@ -147,10 +151,10 @@ show this help message and exit
 working directory (default: temporary)
 .TP
 \fB\-\-scale\fR \fISCALE\fR
-1.0 = specification size (default: 1.0)
+workload scale (default: configuration 'scale' = '1.0')
 .TP
 \fB\-\-client\fR \fICLIENT\fR
-client name (default: passerelle)
+client name (default: configuration 'client' = 'passerelle')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 output JSON file
@@ -205,13 +209,13 @@ show this help message and exit
 guest console unix socket
 .TP
 \fB\-\-driver\fR \fIDRIVER\fR
-guest driver command (default: passerelle)
+guest driver command (default: configuration 'driver' = 'passerelle')
 .TP
 \fB\-\-tag\fR \fITAG\fR
-mount tag (default: hostshare)
+mount tag (default: configuration 'tag' = 'hostshare')
 .TP
 \fB\-\-mount\-point\fR \fIMOUNT_POINT\fR
-guest mount point (default: /host)
+guest mount point (default: configuration 'mount\-point' = '/host')
 .TP
 \fB\-\-json\fR \fIFILE\fR
 write the measurement as JSON
@@ -227,10 +231,11 @@ show this help message and exit
 JSON file produced by 'pbench all' (repeatable)
 .TP
 \fB\-\-level\fR \fILEVEL\fR
-threshold level (choices: socle, complet, extreme) (default: socle)
+threshold level (default: configuration 'level' = 'socle') (choices: socle,
+complet, extreme)
 .TP
 \fB\-\-output\fR \fIOUTPUT\fR, \fB\-o\fR \fIOUTPUT\fR
-output prefix (default: bench_report)
+output prefix (default: configuration 'output' = 'bench_report')
 .SS pbench workloads
 .TP
 \fBworkloads\fR

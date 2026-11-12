@@ -32,9 +32,9 @@ import time
 from dataclasses import dataclass
 
 from pgwutil import HostError, ValidationError, run_cmd
+from pgwutil import config as pgwconfig
 
-DEFAULT_TIMEOUT = 120.0
-DEFAULT_PROMPT_TIMEOUT = 60.0
+TOOL = "qrun"
 
 
 @dataclass(frozen=True)
@@ -141,28 +141,48 @@ def run_guest(
 
 def _parser() -> argparse.ArgumentParser:
     """Argument parser for the qrun command."""
+    help_text = pgwconfig.help_text
     parser = argparse.ArgumentParser(
         prog="qrun", description="Run a program from the share in the guest (DX-03)"
     )
-    parser.add_argument("program", help="program path, relative to the share")
+    # Optional so `qrun --show-config` works without a program; main() reports
+    # the missing program itself, with the same exit status argparse used.
+    parser.add_argument("program", nargs="?", help="program path, relative to the share")
     parser.add_argument("args", nargs=argparse.REMAINDER, help="arguments for the program")
-    parser.add_argument("--share", "-s", default=".", help="shared directory (default: .)")
+    parser.add_argument(
+        "--share", "-s", default=None, help=help_text("share", "shared directory")
+    )
     parser.add_argument(
         "--console",
-        help="guest console unix socket served by QEMU (-serial unix:<path>)",
+        default=None,
+        help=help_text("console", "guest console unix socket served by QEMU"),
     )
     parser.add_argument(
         "--local",
         action="store_true",
         help="run the program on the PC instead of inside the guest",
     )
-    parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT, help="timeout in seconds")
+    parser.add_argument(
+        "--timeout", type=float, default=None, help=help_text("timeout", "timeout in seconds")
+    )
+    pgwconfig.add_show_config(parser)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point of the qrun command."""
     args = _parser().parse_args(argv)
+    try:
+        cfg = pgwconfig.apply(args, pgwconfig.load(TOOL))
+    except ValidationError as err:
+        sys.stderr.write(f"qrun: {err}\n")
+        return 2
+    if args.show_config:
+        print(pgwconfig.render(cfg, args.show_config))
+        return 0
+    if not args.program:
+        sys.stderr.write("qrun: a program to run is required\n")
+        return 2
     share = pathlib.Path(args.share).expanduser()
     if not share.is_dir():
         sys.stderr.write(f"qrun: share directory does not exist: {share}\n")
@@ -185,3 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     if result.stderr:
         sys.stderr.write(result.stderr)
     return result.exit_code
+
+
+if __name__ == "__main__":  # pragma: no cover - console entry point
+    raise SystemExit(main())

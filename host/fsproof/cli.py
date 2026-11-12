@@ -9,6 +9,11 @@ Subcommands:
 
 Every subcommand can target another client with --client, which is what
 makes the comparison objective (PERF-07).
+
+The options below default to None on purpose: they are resolved by the one
+configuration file the four host tools share (gap 99), so `client = eclipse`
+in `[common]` applies to fsproof and to pbench alike. `--show-config` prints
+the effective values and where each of them came from.
 """
 
 from __future__ import annotations
@@ -22,7 +27,62 @@ from fsproof.cases import all_passed, run_cases
 from fsproof.clients import describe_profiles, get_profile, profile_names
 from fsproof.diff import load_regression, run_diff
 from fsproof.exercise import exercise_plan, run_exercise
-from pgwutil import HostError, dump_json, write_atomic
+from pgwutil import HostError, ValidationError, dump_json, write_atomic
+from pgwutil import config as pgwconfig
+
+TOOL = "fsproof"
+
+
+def _add_diff_parser(subs: object) -> None:
+    """Register the differential subcommand (7.2)."""
+    help_text = pgwconfig.help_text
+    diff = subs.add_parser("diff", help="seeded differential test against the PC truth")
+    diff.add_argument(
+        "--seed", type=int, default=None, help=help_text("seed", "seed of the sequence")
+    )
+    diff.add_argument(
+        "--count", type=int, default=None, help=help_text("count", "number of operations")
+    )
+    diff.add_argument("--local", action="store_true", help="replay on the PC, no guest")
+    diff.add_argument(
+        "--guest-cmd", help="guest agent command, e.g. 'qrun --console /tmp/ser.sock'"
+    )
+    diff.add_argument(
+        "--regressions", default=None, help=help_text("regressions", "regression directory")
+    )
+    diff.add_argument("--replay", metavar="FILE", help="replay a stored regression case")
+    diff.add_argument(
+        "--mtime-slack", type=float, default=0.0, help="tolerated mtime drift in seconds"
+    )
+    diff.add_argument("--json", metavar="FILE", help="also write the result as JSON")
+
+
+def _add_exercise_parser(subs: object) -> None:
+    """Register the content exerciser subcommand (7.3)."""
+    help_text = pgwconfig.help_text
+    exercise = subs.add_parser("exercise", help="content exerciser (7.3)")
+    exercise.add_argument("--dir", help="directory to exercise (default: temporary)")
+    exercise.add_argument(
+        "--ops", type=int, default=None, help=help_text("ops", "operations per run")
+    )
+    exercise.add_argument(
+        "--workers", type=int, default=None, help=help_text("workers", "concurrent workers")
+    )
+    exercise.add_argument("--shared", action="store_true", help="all workers on one file")
+    exercise.add_argument("--plan", action="store_true", help="run the three shapes of 7.3")
+    exercise.add_argument(
+        "--seed", type=int, default=None, dest="exercise_seed",
+        help=help_text("exercise-seed", "seed of the exerciser"),
+    )
+
+
+def _add_case_parsers(subs: object) -> None:
+    """Register the directed-case and client-listing subcommands (7.4)."""
+    cases = subs.add_parser("cases", help="directed cases of section 7.4")
+    cases.add_argument("--dir", help="working directory (default: temporary)")
+    cases.add_argument("--slow", action="store_true", help="include the 100 000-entry directory")
+    cases.add_argument("--only", action="append", help="run only this case (repeatable)")
+    subs.add_parser("clients", help="list the client profiles")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -32,36 +92,14 @@ def _parser() -> argparse.ArgumentParser:
         description="Filesystem conformance bench: differential, content, directed (7.2-7.4)",
     )
     parser.add_argument(
-        "--client", default="passerelle", help=f"client under test ({', '.join(profile_names())})"
+        "--client", default=None,
+        help=pgwconfig.help_text("client", f"client under test ({', '.join(profile_names())})"),
     )
-    subs = parser.add_subparsers(dest="command", required=True)
-
-    diff = subs.add_parser("diff", help="seeded differential test against the PC truth")
-    diff.add_argument("--seed", type=int, default=1, help="seed of the operation sequence")
-    diff.add_argument("--count", type=int, default=200, help="number of operations")
-    diff.add_argument("--local", action="store_true", help="replay on the PC, no guest")
-    diff.add_argument(
-        "--guest-cmd", help="guest agent command, e.g. 'qrun --console /tmp/ser.sock'"
-    )
-    diff.add_argument("--regressions", default="regressions", help="regression directory")
-    diff.add_argument("--replay", metavar="FILE", help="replay a stored regression case")
-    diff.add_argument("--mtime-slack", type=float, default=0.0, help="tolerated mtime drift in seconds")
-    diff.add_argument("--json", metavar="FILE", help="also write the result as JSON")
-
-    exercise = subs.add_parser("exercise", help="content exerciser (7.3)")
-    exercise.add_argument("--dir", help="directory to exercise (default: temporary)")
-    exercise.add_argument("--ops", type=int, default=10000, help="operations per run")
-    exercise.add_argument("--workers", type=int, default=1, help="concurrent workers")
-    exercise.add_argument("--shared", action="store_true", help="all workers on one file")
-    exercise.add_argument("--plan", action="store_true", help="run the three shapes of 7.3")
-    exercise.add_argument("--seed", type=int, default=2026, help="seed")
-
-    cases = subs.add_parser("cases", help="directed cases of section 7.4")
-    cases.add_argument("--dir", help="working directory (default: temporary)")
-    cases.add_argument("--slow", action="store_true", help="include the 100 000-entry directory")
-    cases.add_argument("--only", action="append", help="run only this case (repeatable)")
-
-    subs.add_parser("clients", help="list the client profiles")
+    subs = parser.add_subparsers(dest="command")
+    _add_diff_parser(subs)
+    _add_exercise_parser(subs)
+    _add_case_parsers(subs)
+    pgwconfig.add_show_config(parser)
     return parser
 
 
@@ -151,7 +189,7 @@ def _exercise_command(args: argparse.Namespace) -> int:
                 ops=args.ops,
                 workers=args.workers,
                 shared_file=args.shared,
-                seed=args.seed,
+                seed=args.exercise_seed,
             )
         ]
     status = 0
@@ -187,8 +225,17 @@ def _cases_command(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point of the fsproof command."""
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
     try:
+        cfg = pgwconfig.apply(args, pgwconfig.load(TOOL))
+        if args.show_config:
+            print(pgwconfig.render(cfg, args.show_config))
+            return 0
+        if not args.command:
+            parser.print_usage(sys.stderr)
+            sys.stderr.write("fsproof: a subcommand is required (diff, exercise, cases, clients)\n")
+            return 2
         if args.command == "diff":
             return _diff_command(args)
         if args.command == "exercise":
@@ -197,6 +244,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cases_command(args)
         print(describe_profiles())
         return 0
-    except (HostError, KeyError) as err:
+    except (HostError, ValidationError, KeyError) as err:
         sys.stderr.write(f"fsproof: {err}\n")
         return 2
+
+
+if __name__ == "__main__":  # pragma: no cover - console entry point
+    raise SystemExit(main())

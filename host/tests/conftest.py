@@ -42,3 +42,17 @@ def share(tmp_path: pathlib.Path) -> pathlib.Path:
     directory = tmp_path / "share"
     directory.mkdir()
     return directory
+
+
+@pytest.fixture(autouse=True)
+def isolated_config(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the shared configuration file of the four tools out of the tests.
+
+    `pgwutil.config` reads $PASSERELLE_CONFIG, else
+    $XDG_CONFIG_HOME/passerelle/passerelle.ini. A test must never depend on
+    what the developer of this machine happens to have configured, so both
+    are redirected to a file that does not exist; a test that wants a
+    configuration writes one and sets PASSERELLE_CONFIG itself (gap 99).
+    """
+    monkeypatch.setenv("PASSERELLE_CONFIG", str(tmp_path / "absent-passerelle.ini"))
+    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
