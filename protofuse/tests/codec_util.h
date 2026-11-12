@@ -15,6 +15,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef struct msg {
     uint8_t buf[1024];
@@ -34,24 +35,47 @@ static inline size_t finish(pgw_out *w)
     return pgw_written(w);
 }
 
+static inline void put_attr_from(pgw_out *w, const pgw_fuse_attr *a,
+                                 uint32_t flags)
+{
+    pgw_put_u64(w, a->ino);
+    pgw_put_u64(w, a->size);
+    pgw_put_u64(w, a->blocks);
+    pgw_put_u64(w, a->atime);
+    pgw_put_u64(w, a->mtime);
+    pgw_put_u64(w, a->ctime);
+    pgw_put_u32(w, a->atimensec);
+    pgw_put_u32(w, a->mtimensec);
+    pgw_put_u32(w, a->ctimensec);
+    pgw_put_u32(w, a->mode);
+    pgw_put_u32(w, a->nlink);
+    pgw_put_u32(w, a->uid);
+    pgw_put_u32(w, a->gid);
+    pgw_put_u32(w, a->rdev);
+    pgw_put_u32(w, a->blksize);
+    pgw_put_u32(w, flags); /* the 7.32 attr-flags word */
+}
+
 static inline void put_attr(pgw_out *w, uint64_t ino, uint32_t mode)
 {
-    pgw_put_u64(w, ino);   /* ino */
-    pgw_put_u64(w, 42);    /* size */
-    pgw_put_u64(w, 1);     /* blocks */
-    pgw_put_u64(w, 7);     /* atime */
-    pgw_put_u64(w, 8);     /* mtime */
-    pgw_put_u64(w, 9);     /* ctime */
-    pgw_put_u32(w, 11);    /* atimensec */
-    pgw_put_u32(w, 12);    /* mtimensec */
-    pgw_put_u32(w, 13);    /* ctimensec */
-    pgw_put_u32(w, mode);
-    pgw_put_u32(w, 2);     /* nlink */
-    pgw_put_u32(w, 1000);  /* uid */
-    pgw_put_u32(w, 1001);  /* gid */
-    pgw_put_u32(w, 0);     /* rdev */
-    pgw_put_u32(w, 4096);  /* blksize */
-    pgw_put_u32(w, 0);     /* flags */
+    pgw_fuse_attr a;
+    memset(&a, 0, sizeof(a));
+    a.ino = ino;
+    a.size = 42;
+    a.blocks = 1;
+    a.atime = 7;
+    a.mtime = 8;
+    a.ctime = 9;
+    a.atimensec = 11;
+    a.mtimensec = 12;
+    a.ctimensec = 13;
+    a.mode = mode;
+    a.nlink = 2;
+    a.uid = 1000;
+    a.gid = 1001;
+    a.rdev = 0;
+    a.blksize = 4096;
+    put_attr_from(w, &a, 0u);
 }
 
 /* Read the opcode of an encoded request. */
