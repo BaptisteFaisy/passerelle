@@ -69,6 +69,24 @@ size_t pgw_posix_backend_open_handles(const pgw_posix_backend *b)
 
 /* --- paths and attributes ------------------------------------------------- */
 
+/* True when a relative path holds a ".." *component*, i.e. when it escapes the
+ * share root. A substring test is wrong here: "dots..inside" is a perfectly
+ * valid POSIX name and must not be refused (FS-15, gap 67). */
+static bool relpath_escapes_root(const char *relpath)
+{
+    const char *p = relpath;
+    while (*p != '\0') {
+        const char *slash = strchr(p, '/');
+        size_t len = (slash != NULL) ? (size_t)(slash - p) : strlen(p);
+        if (len == 2 && p[0] == '.' && p[1] == '.')
+            return true;
+        if (slash == NULL)
+            return false;
+        p = slash + 1;
+    }
+    return false;
+}
+
 bool pgw_posix_join(const pgw_posix_backend *b, const char *relpath,
                     char *out, size_t cap)
 {
@@ -78,7 +96,7 @@ bool pgw_posix_join(const pgw_posix_backend *b, const char *relpath,
         relpath++;
     if (*relpath == '\0')
         return snprintf(out, cap, "%s", b->root) < (int)cap;
-    if (strstr(relpath, "..") != NULL)
+    if (relpath_escapes_root(relpath))
         return false; /* never escape the share root */
     int n = snprintf(out, cap, "%s/%s", b->root, relpath);
     return n > 0 && (size_t)n < cap;
