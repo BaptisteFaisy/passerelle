@@ -95,7 +95,46 @@ collect() {
     run_guest guest-proc-boot-pci_hw.cfg 'cat /proc/boot/pci_hw.cfg'
     run_guest guest-proc-boot-pci_server.cfg 'cat /proc/boot/pci_server.cfg'
     run_guest guest-proc-boot-pci-files.txt "ls /proc/boot | grep -E '^pci_'"
+    collect_trace
     run_monitor
+}
+
+# What the guest can say about the kernel trace (gap 79).
+#
+# The guest has no compiler, so our driver cannot run in it and it cannot
+# produce a QNX-09 event. What the guest *can* give is its own kernel-side
+# diagnostic output: the system log the kernel writes to (slog2), read with
+# slog2info when the image ships that utility, and the list of the tracing
+# tools the image does or does not ship. The first question is therefore
+# "what is in the image?", and the answer is recorded whatever it is - an
+# image without a tracing tool is a fact, not a failure.
+collect_trace() {
+    log "collecting the kernel-side trace the guest can give"
+    run_guest guest-trace-tools.txt \
+        'for t in tracelogger traceprinter tracecat slog2info; do printf "%s: " "$t"; command -v "$t" 2>/dev/null || echo absent; done'
+    run_guest guest-proc-boot-listing.txt 'ls /proc/boot'
+    run_guest guest-slog2info.txt 'slog2info -a 2>&1 | head -300'
+    run_guest guest-pidin-info.txt 'pidin info'
+    run_guest guest-tracelogger-list.txt 'tracelogger -l 2>&1 | head -60'
+    run_guest guest-tracelogger-dump.txt 'tracelogger -d 2>&1 | head -120'
+    run_guest guest-tracelogger-usage.txt 'tracelogger -h 2>&1 | head -40'
+    capture_console
+}
+
+# The VGA console is the only text channel of this image (no serial console):
+# a dump of it is the boot screen as the guest painted it. The QEMU monitor
+# writes it, so it needs no PIL and no image library in CI.
+capture_console() {
+    log "monitor> screendump $OUT/host-vga-console.ppm"
+    timeout 60 python3 "$HERE/qemu_monitor.py" \
+        "screendump $OUT/host-vga-console.ppm" --vm-dir "$VM" \
+        --out "$OUT/host-vga-console-monitor.txt" > /dev/null 2>&1 || true
+    if [ -s "$OUT/host-vga-console.ppm" ]; then
+        log "  VGA console captured ($OUT/host-vga-console.ppm)"
+    else
+        log "  no VGA console capture: the monitor did not answer"
+    fi
+    [ -s "$VM/serial.log" ] && cp "$VM/serial.log" "$OUT/host-serial.log" || true
 }
 
 # What QNX itself reports about our device: capabilities, address spaces, IRQs.
@@ -146,8 +185,34 @@ summarize() {
         echo
         echo "## What the host assigned, and whether our fragment follows"
         check_drift
+        echo
+        echo "## The kernel-side trace this guest can give (gap 79)"
+        trace_summary
     } > "$OUT/summary.txt"
     cat "$OUT/summary.txt"
+}
+
+# What the trace capture proves, and what it does not: the guest has no
+# compiler, so it cannot run our driver and cannot emit a QNX-09 event. What
+# it can show is the kernel's own log and whether the image ships a reader for
+# the trace events.
+trace_summary() {
+    echo "tools in the image:"
+    sed 's/^/  /' "$OUT/guest-trace-tools.txt" 2>/dev/null || echo "  (not captured)"
+    # The system log separates its records with a carriage return, not with a
+    # newline: counting the \n alone would say "6 lines" for a 26 KB log.
+    lines=$(tr '\r' '\n' < "$OUT/guest-slog2info.txt" 2>/dev/null | grep -c . || true)
+    echo "system log (slog2info -a): ${lines:-0} record(s) captured"
+    echo "tracelogger -l (trace classes): $(head -1 "$OUT/guest-tracelogger-list.txt" 2>/dev/null)"
+    echo "tracelogger -d (trace data): $(wc -c < "$OUT/guest-tracelogger-dump.txt" 2>/dev/null | tr -d '[:space:]') byte(s)"
+    echo "VGA console dump: $([ -s "$OUT/host-vga-console.ppm" ] && echo present || echo absent)"
+    echo
+    echo "It proves: the kernel's own diagnostic output for this boot, the list"
+    echo "of the tracing tools the image ships, and that the QNX trace"
+    echo "facility itself (tracelogger) answers in the guest."
+    echo "It does not prove: QNX-09. The guest has no compiler, so our driver"
+    echo "never runs in it and no TraceEvent of ours is produced there; the"
+    echo "per-request events need the driver and the SDP tracing toolkit."
 }
 
 main() {

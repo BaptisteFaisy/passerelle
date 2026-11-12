@@ -24,15 +24,16 @@ commands of §4.
 | Workflow | `qnx71-guest`, out of pull requests (`push` on `main`, `workflow_dispatch`) |
 | Runner | `ubuntu-24.04` (hosted): the self-hosted `passerelle-worker` machines have no QEMU, see [`docs/ci.md`](ci.md) |
 | Job ceiling | `timeout-minutes: 35`, sum of the per-command ceilings (~33 min); a real run measures ~8 min, and ~1 min once the disk is already on the runner |
-| Guest | QNX Neutrino 7.1.0 x86_64, from the community container `autosarai/qemu_qnx7_1:1.1.0` (11 layers, 622 MB compressed as Docker Hub reports it; the disk inside is `/home/popcornsar/fs_3GB.img`, 6 500 959 232 bytes) |
-| Artifact | `qnx71-guest-probe`: text only (14 days). **The disk image is never uploaded** — it is QNX software under non-commercial terms |
+| Guest | QNX Neutrino 7.1.0 x86_64, from the community container `autosarai/qemu_qnx7_1:1.1.0` **pinned by digest** (11 layers, 652 384 855 bytes compressed as the registry reports it; the disk inside is `/home/popcornsar/fs_3GB.img`, 6 500 959 232 bytes) — see §7 |
+| Artifact | `qnx71-guest-probe`: text plus one PPM screen dump (14 days). **The disk image is never uploaded** — it is QNX software under non-commercial terms |
 
 Steps, in order, each with its own `timeout`:
 
 | Step | Command | Ceiling | On failure |
 |---|---|---|---|
+| Restore the disk from the cache | `actions/cache@v4` | — | a cache failure is not fatal: the disk is downloaded instead (§8) |
 | Install QEMU + ssh | `apt-get install qemu-system-x86 openssh-client` | 90 s + 180 s | **skip** (`::notice::`, green) |
-| Fetch the disk | `tests/qemu/qnx71/ci/fetch_image.sh` | 660 s | **skip** if docker/network/space is missing, **red** if the extraction is truncated |
+| Fetch the disk | `tests/qemu/qnx71/ci/fetch_image.sh` | 660 s | **skip** if docker/network/space is missing, **red** if the digest or the checksum does not match the pin (§7) |
 | Boot | `tests/qemu/qnx71/qnx-vm.sh start` | 90 s | red |
 | Wait for SSH | `tests/qemu/qnx71/ci/wait_ssh.py --timeout 540` | 600 s | red, with `qemu.out` and `serial.log` in the log |
 | Ask the guest | `tests/qemu/qnx71/ci/guest_probe.sh` | 420 s | **red when `1af4/1009` is absent** |
@@ -223,7 +224,9 @@ allocates MSI-X vectors: the `vmxnet3` device next to ours reports
 `Interrupt list - 3 assigned` on `IRQ 256`, `257`, `258`, and the image ships the
 MSI-X capability module `pci_cap-0x11.so`. Our device advertises MSI-X as its
 first capability, which is what `drivers/` should attach to, with INTx as the
-fallback the fragment describes.
+fallback the fragment describes. **That order is a decision, not an accident:
+[ADR-0006](adr/ADR-0006-msix-primary-intx-fallback.md) records it, with these
+measurements and with the list of what is still to be measured under the SDP.**
 
 Attempting to verify the parse live is **not** possible in this image: a second
 `pci-server` shares `/dev/shmem/pci_hw` with the running one and wedges the guest
@@ -240,5 +243,173 @@ the devices the running server already reports, not from a live parse.
 | `tests/qemu/qnx71/ci/wait_ssh.py` | bounded wait for the SSH banner, reports the answering port |
 | `tests/qemu/qnx71/ci/guest_probe.sh` | the questions asked to the guest, the answers saved, the assertion |
 | `tests/qemu/qnx71/ci/qemu_monitor.py` | host side: `info pci` from the QEMU monitor (reuses `qnx_console.py`) |
+| `tools/qnx-image/qnx71-image.manifest.json` | the pin: source by digest, disk by size and SHA256 (§7) |
+| `tools/qnx-image/image_manifest.py` | the only reader of that pin: verify / digest / show / pin |
+| `host/tests/test_image_manifest.py` | the checksum logic, on small synthetic files |
 | `image/pci_hw.cfg` | the interrupt fragment itself |
 | `tests/qemu/qnx71/` | the guest itself: `qnx-vm.sh`, `qnx-ssh`, `EVIDENCE.md` (unchanged by this job) |
+
+## 7. The pin: the guest disk is reproducible from the repository (gap 74)
+
+The disk is 6.1 GiB of QNX software: it is **not** in the repository, and it
+never will be (rule "no binary in the repository"). But "the disk CI used" must
+not be a moving target, so what the repository carries is the *pin*:
+
+| What | Where | Checked |
+|---|---|---|
+| the source container, by **digest** | `tools/qnx-image/qnx71-image.manifest.json` → `source.digest` | `docker pull repository@digest` verifies every layer against it; the job then checks that the pulled image carries the pinned digest in its `RepoDigests` |
+| the disk inside it | `disk.path_in_source` | the path the extraction uses |
+| the **size** of the disk | `disk.size_bytes` (6 500 959 232) | before the digest is computed |
+| the **SHA256** of the disk | `disk.sha256` | after the extraction, before the disk is used |
+| when it was verified | `verified_on` | the date of the last verification |
+
+The rule is simple: **a mismatch fails loudly and the job goes red.** A tag
+that was re-pushed, a truncated extraction or a disk from another build never
+reaches the guest.
+
+One trap worth telling, because the cache found it: **the guest writes into
+the disk it boots from.** The first cached copy was therefore the disk *after*
+the boot (`f9293ec7…`), not the pinned one, and the verification refused it —
+the job went red instead of booting a modified image. The fix is on the
+guest side: `QNX_VM_SNAPSHOT=1` boots QEMU in snapshot mode, the guest's
+writes go to a temporary overlay, and the image on disk stays byte-for-byte
+the pinned one. The CI job sets it; the workstation procedure keeps its
+default.
+
+```bash
+# what CI does, by hand
+python3 tools/qnx-image/image_manifest.py show \
+    --manifest tools/qnx-image/qnx71-image.manifest.json --field docker-reference
+# -> docker.io/autosarai/qemu_qnx7_1@sha256:07319f04f85ea25f2629e7b6cf30b4572c47f37e7031ba9150c86226b2de553a
+
+python3 tools/qnx-image/image_manifest.py verify \
+    --manifest tools/qnx-image/qnx71-image.manifest.json --file ~/qnx71-vm/qnx71-fs.img
+# -> image_manifest: sha256 <digest> verified against the manifest (6500959232 bytes)
+```
+
+The tool has three answers, and they are three different things:
+
+| Exit | Meaning |
+|---|---|
+| 0 | the file is the pinned one |
+| 1 | **mismatch**: the size or the digest is not the pinned one (a failure) |
+| 3 | the manifest pins no SHA256 yet: the observed digest is printed and recorded — the job says so out loud instead of pretending the disk is verified |
+
+## 8. The cache: no 6.1 GiB download twice (gap 51)
+
+The job restores the disk from `actions/cache@v4` before it fetches it. The
+key is the hash of the pinned manifest:
+
+```yaml
+key: qnx71-guest-disk-${{ runner.os }}-${{ hashFiles('tools/qnx-image/qnx71-image.manifest.json') }}
+```
+
+so the pinned version and the pinned checksum invalidate the cache **together**:
+change the pin, and the cached disk of the old pin is never reused. The
+checksum of §7 stays the last word in any case — a cache that came back
+damaged is refused, not booted.
+
+The honest statement about the budget: **the uncached run does not fit in five
+minutes.** It pulls 652 MB of layers and extracts 6.1 GiB, then boots a full
+QNX guest under TCG on a hosted runner (no KVM): ~8 minutes measured on the
+development PC with the disk already there, and up to 33 minutes in the worst
+case the per-command ceilings allow. That is why the job stays out of pull
+requests, with the `timeout-minutes: 35` ceiling the CI budget guard exempts
+by name (`SKIP_FILES` in `.github/ci-budget/check_timeouts.py`). The cache is
+what makes the *recurring* run cheap: with a hit, the fetch step only hashes
+the disk it already has.
+
+**Measured on 12 November 2026** (runs 43240906509 and 43241416176, same
+branch, same runner kind):
+
+| | cache miss | cache hit |
+|---|---|---|
+| the whole job | **148 s** | **88 s** |
+| the fetch step | 101 s (pull 652 MB, extract 6.1 GiB, hash it) | 31 s (hash the restored disk only) |
+| the 6.1 GiB download | yes | **no** |
+
+The hit is not a shortcut around the verification: the restored disk is hashed
+and compared with the pin exactly like a freshly fetched one — that is how the
+first cache save was caught storing a disk the guest had written to (§7).
+
+## 9. The kernel-side trace this guest can give (gap 79)
+
+**QNX-09 asks for kernel trace events (`TraceEvent`) around each request.**
+The guest has no compiler, so our driver never runs in it and it can never
+produce one of our events. What the guest *can* give is its own kernel-side
+diagnostic output, and that is what the probe now collects and uploads:
+
+| File | What it is |
+|---|---|
+| `guest-trace-tools.txt` | the tracing tools the image ships: `tracelogger`, `traceprinter`, `tracecat`, `slog2info` — each one, present or absent |
+| `guest-slog2info.txt` | the system log of the boot (`slog2info -a`): the kernel's own output |
+| `guest-tracelogger-usage.txt`, `guest-tracelogger-list.txt`, `guest-tracelogger-dump.txt` | what the QNX tracer of the image answers (`tracelogger -h`, `-l`, `-d`) |
+| `guest-proc-boot-listing.txt` | the listing of `/proc/boot`, the image's own boot files |
+| `guest-pidin-info.txt` | `pidin info`: the kernel and the processes of the running guest |
+| `host-vga-console.ppm` | the VGA console dumped through the QEMU monitor (the image has no serial console) |
+| `host-serial.log` | what the serial line said, if anything |
+
+**Measured on 12 November 2026** (CI run 43239537750, artefact
+`qnx71-guest-probe`): the image **does** ship the QNX tracer —
+`tracelogger` is at `/system/xbin/tracelogger` — while `traceprinter` and
+`tracecat` are absent, and `slog2info` is at `/system/xbin/slog2info`. The
+system log of the boot is 26 KB of the kernel's own messages (the PCI server
+starting, the deprecated-interface warnings of the drivers of the image), and
+the tracer answers with its own usage: the option letters of the QNX 7.1
+`tracelogger` are **not** those of the `traceprinter` of the SDP (`-l` is
+rejected, `-d` wants an argument), so the reader has to be the one of the
+image.
+
+**What this proves:** the guest-side reference for the trace *mechanism* — the
+kernel does log, the system log is readable from a shell, the QNX tracer
+exists in the image and answers, and the list of the tracing utilities it
+ships is now a fact and not a guess.
+
+**What it does not prove:** anything about QNX-09. The per-request events need
+our driver, in the guest, and a reader for them — and the guest has no
+compiler, so our driver never runs in it. Until the SDP gives us a guest with
+a toolchain and the tracing toolkit, QNX-09 stays "written, not measured" —
+see [`docs/verification-status.md`](verification-status.md) §3.
+
+## 10. The QNX 6.5 cross-check: identified, and out of the PR gate (gap 76)
+
+The gap asks whether a **public image with a QNX SDP 6.5** could prove that the
+portable layers compile for a real QNX target. The artefact exists, it was
+identified without downloading a gigabyte, and the answer is *yes for the
+x86 target, no for aarch64, and not inside the five-minute PR budget*.
+
+| | |
+|---|---|
+| Artefact | `mthimsen/qnx6.5-relay-client-build` on Docker Hub (tag `latest`), manifest digest `sha256:fd723cfa91365252f60fdd140ac16b7fb20fb2fb32663078ed3d20d10ce39323`, one layer of 340 110 057 bytes |
+| What it holds | a real **SDP 6.5**: `ENV QNX_HOST=/opt/qnx650/host/linux/x86`, `ENV QNX_TARGET=/opt/qnx650/target/qnx6` |
+| Target | **x86** (`target/qnx6`), *not* aarch64: the gap names an aarch64 SDP, and this public image does not carry one |
+| Licence | the QNX SDP is proprietary, under QNX's non-commercial terms; that a third party pushed it into a public registry is **not** a redistribution right we can verify or rely on |
+| Cost in CI | 340 MB of pull (the same registry, the same runner as this job) plus the extraction of the SDP tree (of the order of 1.4 GB), then the compile itself, which is seconds |
+
+Three reasons why it is **not** a job of the pull-request pipeline, in the
+order of weight:
+
+1. **The licence.** Depending on an artefact whose redistribution status we
+   cannot verify would put the project's own CI in the same position as the
+   uploader of that image. The project already made the opposite choice for
+   the QNX 7.1 guest: the artefact is fetched, pinned by digest and never
+   redistributed.
+2. **The five-minute budget.** The pull and the extraction alone are two to
+   three minutes on a hosted runner, and they would be paid by *every* pull
+   request for a check that rarely changes. The rule of this repository is
+   that long jobs stay out of pull requests — that is exactly why the QNX 7.1
+   guest job has its own 35-minute workflow.
+3. **The target.** QNX 6.5 with `target/qnx6` is a different kernel and a
+   different ABI than the QNX 8.0 aarch64 target of the specification: it
+   would prove that `qcc` compiles our portable layers, not that they are
+   correct for the target we ship.
+
+**What is therefore decided:** the cross-check is a *nightly* candidate, not a
+PR gate. The recipe is written down here so it is a matter of hours, not of
+research, when the licence question is answered: pin the digest above, pull
+it, run `qcc -V` and build the portable modules with
+`-DCMAKE_TOOLCHAIN_FILE=cmake/qnx-x86_64.cmake`, and keep the artefact (the
+compiler version and the build log) as evidence. Until then, the honest state
+of the row is *identified and documented, not done*, and the requirement it
+would serve keeps its **[S]** (blocked on the SDP) mark in
+[`docs/verification-status.md`](verification-status.md).

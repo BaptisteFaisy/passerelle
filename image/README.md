@@ -80,6 +80,29 @@ cp $QNX_TARGET/lib/ldqnx-64.so.2 .
   (`pathspace`, `public_channel`, `interrupt`, `mem_phys`) and lets it attach
   its mount point and nothing else.
 
+## The guest disk of the CI job is pinned, and it is not here
+
+The CI job of [`docs/qnx71-guest.md`](../docs/qnx71-guest.md) boots a real QNX
+Neutrino 7.1.0 guest on a hosted runner. That disk is QNX software, so it is
+**not** in this repository: what the repository carries is the pin —
+[`tools/qnx-image/qnx71-image.manifest.json`](../tools/qnx-image/qnx71-image.manifest.json),
+which records the source container **by digest**, the path of the disk inside
+it, its size, its SHA256 and the date it was verified. Anyone can fetch
+bit-for-bit what CI used, and the job refuses to boot a disk that does not
+match the pin:
+
+```bash
+python3 tools/qnx-image/image_manifest.py show \
+    --manifest tools/qnx-image/qnx71-image.manifest.json --field docker-reference
+# -> docker.io/autosarai/qemu_qnx7_1@sha256:07319f04...  (pull that, not the tag)
+python3 tools/qnx-image/image_manifest.py verify \
+    --manifest tools/qnx-image/qnx71-image.manifest.json --file ~/qnx71-vm/qnx71-fs.img
+```
+
+The files of *this* directory (`passerelle.build`, `passerelle.sec`,
+`pci_hw.cfg`, `qshare-mount.sh`) are what the project owns; the pin is how the
+disk the project does not own is still reproducible.
+
 ## Notes on the two requirements this directory serves
 
 - **DX-01**: `qshare` on the PC prints the QEMU options and the fragment that
