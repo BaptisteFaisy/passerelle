@@ -1,0 +1,117 @@
+.\" SPDX-License-Identifier: Apache-2.0
+.TH "QSHARE" "1" "2026-11-12" "passerelle 0.1.0" "Passerelle host tools"
+.SH NAME
+qshare \- Share a host directory with a QNX guest under QEMU
+.SH SYNOPSIS
+.B qshare
+.RI [ OPTION ]...
+.RI [ \fIDIRECTORY\fR ]
+.SH DESCRIPTION
+Share a host directory with a QNX guest under QEMU (DX\-01)
+.P
+qshare prints the exact QEMU command\-line options that share a host directory
+with a QNX 8.0 guest over 9P2000.L or virtiofs, and can start QEMU (and
+virtiofsd) itself with \-\-run. It also emits the mkqnximage snippets that
+install the guest driver, writes the CMake and Rust example projects with
+\-\-example, and replays the whole demonstration with \-\-demo.
+.P
+Inside the guest, the share is mounted with the passerelle driver at the
+\-\-mount\-point location; qrun(1) then runs programs from it, and fsproof(1)
+and pbench(1) prove and measure it.
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-version\fR
+print the version and exit
+.TP
+\fIDIRECTORY\fR
+host directory to share
+.TP
+\fB\-\-tag\fR \fITAG\fR, \fB\-t\fR \fITAG\fR
+mount tag (9P <=31 bytes, virtiofs <=36) (default: hostshare)
+.TP
+\fB\-\-proto\fR \fIPROTO\fR
+share protocol (default: 9p) (choices: 9p, virtiofs)
+.TP
+\fB\-\-security\fR \fISECURITY\fR, \fB\-S\fR \fISECURITY\fR
+QEMU security model (default: mapped\-xattr, no root needed) (choices:
+mapped\-xattr, mapped\-file, passthrough, none)
+.TP
+\fB\-\-mount\-point\fR \fIMOUNT_POINT\fR
+guest mount point (default: /host)
+.TP
+\fB\-\-driver\fR \fIDRIVER\fR
+guest driver name (default: passerelle)
+.TP
+\fB\-\-driver\-bin\fR \fIDRIVER_BIN\fR
+absolute host path of the driver binary (default:
+/opt/passerelle/sbin/passerelle)
+.TP
+\fB\-\-emit\fR
+print one shell\-ready option line
+.TP
+\fB\-\-emit\-image\fR
+print the mkqnximage snippets
+.TP
+\fB\-\-mkqnximage\fR \fIVM_DIR\fR
+write snippets into <VM_DIR>/local/snippets
+.TP
+\fB\-\-ifs\fR
+use the IFS layout for the snippets
+.TP
+\fB\-\-run\fR \fIIMAGE\fR
+start QEMU on IMAGE (kernel or disk)
+.TP
+\fB\-\-arch\fR \fIARCH\fR
+guest architecture for \-\-run (default: x86_64)
+.TP
+\fB\-\-qemu\-arg\fR \fIARG\fR
+extra QEMU argument, repeatable (appended after the share options). Used for a
+direct\-kernel boot, e.g. \-\-qemu\-arg=\-initrd
+\-\-qemu\-arg=/tmp/initramfs.cpio.gz
+.TP
+\fB\-\-wait\-for\fR \fIMARKER\fR
+consider the run successful when MARKER appears on the console
+.TP
+\fB\-\-console\-log\fR \fIFILE\fR
+write the guest console here (default: /tmp/pgw\-qemu\-console.log)
+.TP
+\fB\-\-timeout\fR \fITIMEOUT\fR
+seconds to wait for the console marker (default: 120)
+.TP
+\fB\-\-trace\fR \fILOG\fR
+write the 9P trace to LOG (pbench roundtrips)
+.TP
+\fB\-\-demo\fR
+replay the demonstration (DX\-02)
+.TP
+\fB\-\-example\fR \fIEXAMPLE\fR
+write the CMake/Rust example projects into the share (DX\-04) (choices: cmake,
+rust, all)
+.TP
+\fB\-\-security\-help\fR
+explain the security models (SEC\-03)
+.SH EXIT STATUS
+.TP
+\fB0\fR
+success (options printed, snippets written, run or demo finished)
+.TP
+\fB2\fR
+usage error, or invalid input (missing directory, bad tag, ...)
+.TP
+\fB3\fR
+host environment error (QEMU or virtiofsd missing, run failed)
+.SH FILES
+.TP
+\fI<VM_DIR>/local/snippets/\fR
+mkqnximage fragments written by \-\-mkqnximage
+.TP
+\fI<share>/cmake_example/, <share>/rust_example/\fR
+projects written by \-\-example
+.TP
+\fI/tmp/pgw\-qemu\-console.log\fR
+default guest console log of \-\-run
+.SH SEE ALSO
+qrun(1), fsproof(1), pbench(1), qemu(1), virtiofsd(1)

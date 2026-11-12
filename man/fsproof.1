@@ -1,0 +1,123 @@
+.\" SPDX-License-Identifier: Apache-2.0
+.TH "FSPROOF" "1" "2026-11-12" "passerelle 0.1.0" "Passerelle host tools"
+.SH NAME
+fsproof \- Filesystem conformance bench: differential, content, directed
+.SH SYNOPSIS
+.B fsproof
+.RI [ OPTION ]...
+.I COMMAND
+.RI [ COMMAND\-OPTION ]...
+.SH DESCRIPTION
+Filesystem conformance bench: differential, content, directed (7.2\-7.4)
+.P
+fsproof is the filesystem conformance bench of sections 7.2\-7.4 of the
+specification: `diff` replays a seeded pseudo\-random operation sequence
+against the PC truth and stores every divergence as a regression case,
+`exercise` runs the content exerciser of section 7.3, `cases` runs the
+directed cases of section 7.4, and `clients` lists the client profiles that
+can be put under test.
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-client\fR \fICLIENT\fR
+client under test (eclipse, passerelle, qnx\-fs\-9p) (default: passerelle)
+.SS fsproof diff
+.TP
+\fBdiff\fR
+seeded differential test against the PC truth
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-seed\fR \fISEED\fR
+seed of the operation sequence (default: 1)
+.TP
+\fB\-\-count\fR \fICOUNT\fR
+number of operations (default: 200)
+.TP
+\fB\-\-local\fR
+replay on the PC, no guest
+.TP
+\fB\-\-guest\-cmd\fR \fIGUEST_CMD\fR
+guest agent command, e.g. 'qrun \-\-console /tmp/ser.sock'
+.TP
+\fB\-\-regressions\fR \fIREGRESSIONS\fR
+regression directory (default: regressions)
+.TP
+\fB\-\-replay\fR \fIFILE\fR
+replay a stored regression case
+.TP
+\fB\-\-mtime\-slack\fR \fIMTIME_SLACK\fR
+tolerated mtime drift in seconds (default: 0.0)
+.TP
+\fB\-\-json\fR \fIFILE\fR
+also write the result as JSON
+.SS fsproof exercise
+.TP
+\fBexercise\fR
+content exerciser (7.3)
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+directory to exercise (default: temporary)
+.TP
+\fB\-\-ops\fR \fIOPS\fR
+operations per run (default: 10000)
+.TP
+\fB\-\-workers\fR \fIWORKERS\fR
+concurrent workers (default: 1)
+.TP
+\fB\-\-shared\fR
+all workers on one file
+.TP
+\fB\-\-plan\fR
+run the three shapes of 7.3
+.TP
+\fB\-\-seed\fR \fISEED\fR
+seed (default: 2026)
+.SS fsproof cases
+.TP
+\fBcases\fR
+directed cases of section 7.4
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-dir\fR \fIDIR\fR
+working directory (default: temporary)
+.TP
+\fB\-\-slow\fR
+include the 100 000\-entry directory
+.TP
+\fB\-\-only\fR \fIONLY\fR
+run only this case (repeatable)
+.SS fsproof clients
+.TP
+\fBclients\fR
+list the client profiles
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.SH EXIT STATUS
+.TP
+\fB0\fR
+every check passed
+.TP
+\fB1\fR
+at least one divergence, regression or directed case failed
+.TP
+\fB2\fR
+usage error or host environment error
+.SH FILES
+.TP
+\fIregressions/\fR
+divergence cases stored by `diff` (\-\-regressions)
+.TP
+\fI\-\-json FILE\fR
+optional JSON result of `diff`
+.SH SEE ALSO
+qshare(1), qrun(1), pbench(1)
