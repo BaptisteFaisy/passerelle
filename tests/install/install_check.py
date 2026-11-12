@@ -114,19 +114,69 @@ def check_pc(pcfile, version):
                          % (pcfile, fields["Version"], version))
 
 
-def pkg_config_flags(pcfile):
-    """Return the (cflags, libs) of the installed package, via pkg-config."""
+def pc_variables(path):
+    """Return the variable assignments of a .pc file (prefix=..., libdir=...)."""
+    variables = {"pcfiledir": str(path.parent)}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or ":" in line or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        variables[key.strip()] = value.strip()
+    return variables
+
+
+def expand(value, variables):
+    """Expand the ${var} references of a .pc value."""
+    for _ in range(8):
+        expanded = value
+        for key, item in variables.items():
+            expanded = expanded.replace("${%s}" % key, item)
+        if expanded == value:
+            break
+        value = expanded
+    return value
+
+
+def flags_from_pc(pcfile):
+    """Return the (cflags, libs) of a .pc file, parsed and expanded here."""
+    fields = parse_pc(pcfile)
+    variables = pc_variables(pcfile)
+    for field in ("Cflags", "Libs"):
+        if field not in fields:
+            raise CheckError("%s: no %s field" % (pcfile, field))
+    cflags = expand(fields["Cflags"], variables).split()
+    libs = expand(fields["Libs"], variables).split()
+    return cflags, libs
+
+
+def pkg_config_flags(pcfile, require_pkg_config=False):
+    """Return the (cflags, libs) of the installed package.
+
+    pkg-config is used when it is installed: that is what a downstream
+    build does. When the binary is missing, the .pc file is parsed and its
+    variables expanded here, so the flags are still proven usable by the
+    consumer that is compiled with them; the notice says that the
+    pkg-config binary itself was not exercised. `--require-pkg-config`
+    turns that into a failure.
+    """
     if shutil.which("pkg-config") is None:
-        raise CheckError("pkg-config is not installed: the .pc file could not "
-                         "be proven usable (install pkg-config and retry)")
-    env = dict(os.environ)
-    env["PKG_CONFIG_PATH"] = str(pcfile.parent)
-    cflags = run(["pkg-config", "--cflags", "passerelle"], env=env).split()
-    libs = run(["pkg-config", "--libs", "passerelle"], env=env).split()
+        if require_pkg_config:
+            raise CheckError("pkg-config is not installed and "
+                             "--require-pkg-config was given")
+        print("install-check: NOTICE: pkg-config is not installed here: the "
+              ".pc file was parsed and its flags used directly (the "
+              "pkg-config binary itself was not exercised)", file=sys.stderr)
+        cflags, libs = flags_from_pc(pcfile)
+    else:
+        env = dict(os.environ)
+        env["PKG_CONFIG_PATH"] = str(pcfile.parent)
+        cflags = run(["pkg-config", "--cflags", "passerelle"], env=env).split()
+        libs = run(["pkg-config", "--libs", "passerelle"], env=env).split()
     if not any(f.startswith("-I") for f in cflags):
-        raise CheckError("pkg-config --cflags gave no include flag: %s" % cflags)
+        raise CheckError("the .pc file gave no include flag: %s" % cflags)
     if not any(f.startswith("-L") for f in libs):
-        raise CheckError("pkg-config --libs gave no library flag: %s" % libs)
+        raise CheckError("the .pc file gave no library flag: %s" % libs)
     return cflags, libs
 
 
@@ -208,6 +258,8 @@ def parse_args(argv=None):
     ap.add_argument("--cc", default=None, help="C compiler (default: cc)")
     ap.add_argument("--keep", action="store_true",
                     help="keep the temporary prefix for inspection")
+    ap.add_argument("--require-pkg-config", action="store_true",
+                    help="fail when the pkg-config binary is not installed")
     return ap.parse_args(argv)
 
 
@@ -226,7 +278,7 @@ def main(argv=None):
         check_headers(prefix)
         pcfile = find_pc(prefix)
         check_pc(pcfile, version)
-        cflags, libs = pkg_config_flags(pcfile)
+        cflags, libs = pkg_config_flags(pcfile, args.require_pkg_config)
         flags = build_flags(build)
         compile_consumer(cc, consumer / "consumer.c", prefix, cflags, libs, flags)
         build_cmake_consumer(cc, consumer, prefix, prefix, flags)
