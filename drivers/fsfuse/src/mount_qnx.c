@@ -116,10 +116,14 @@ pgw_err fsfuse_mount_and_serve(pgw_mount_opts *opts, const char *mount_point)
     g_dev.opts = *opts;
     g_dev.irq = -1;
 
-    pgw_err e = fsfuse_privdrop(); /* QNX-06 / SEC-01 */
+    /* The PCI attach needs the PCI server's shared database, readable by root
+     * only: the device is opened first and the privileges are dropped
+     * afterwards, with the abilities the serving phase needs granted and
+     * locked before the drop (QNX-06, SEC-01). */
+    pgw_err e = open_transport(&g_dev);
     if (e != PGW_OK)
-        return e;
-    e = open_transport(&g_dev);
+        goto fail;
+    e = fsfuse_privdrop(); /* QNX-06 / SEC-01: after the device work */
     if (e != PGW_OK)
         goto fail;
     e = fsfuse_dispatch_open(&g_dev); /* VFS-02 */

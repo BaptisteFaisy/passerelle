@@ -89,11 +89,15 @@ pgw_err fs9p_mount_and_serve(pgw_mount_opts *opts, const char *mount_point)
     g_dev.opts = *opts;
     g_dev.irq = -1;
 
-    pgw_err e = fs9p_privdrop(); /* QNX-06 / SEC-01: before any device work */
+    /* The PCI attach needs the PCI server's shared database, which is
+     * readable by root only: the device is opened first, and the privileges are
+     * dropped afterwards, with the two abilities the serving phase needs
+     * (map its own memory, take its own interrupt) granted and locked before
+     * the drop (QNX-06, SEC-01). This is the order io-pkt uses. */
+    pgw_err e = open_transport(&g_dev);
     if (e != PGW_OK)
-        return e;
-
-    e = open_transport(&g_dev);
+        goto fail;
+    e = fs9p_privdrop(); /* QNX-06 / SEC-01: after the device work */
     if (e != PGW_OK)
         goto fail;
     e = fs9p_dispatch_open(g_dev.vio, g_dev.queue, opts->timeout_ms);
