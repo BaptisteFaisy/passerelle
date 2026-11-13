@@ -85,6 +85,7 @@ endif()
 set(PGW_QNX_COMMON_SRCS
     "${PGW_DRIVER_COMMON_DIR}/src/attr_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/cred_qnx.c"
+    "${PGW_DRIVER_COMMON_DIR}/src/dma_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/ist_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/prio_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/privdrop_qnx.c"

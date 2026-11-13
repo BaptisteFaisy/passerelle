@@ -31,8 +31,16 @@ mkdir -p "$SHARE_DIR"
 printf 'hello-from-the-pc\n' > "$SHARE_DIR/from-host.txt"
 rm -f "$LOG"
 
-# KVM when the device is readable and writable, TCG otherwise (see QEMU.md of
-# the sibling relais project). `-accel` and `-enable-kvm` are never combined.
+# The machine is q35 (ICH9, PCI Express), not pc (i440fx), and that is not a
+# preference: the i440fx has no MCFG table, so QNX 8.0's PCI server falls back
+# to "I/O accesses only" and its client-side hardware module then faults on a
+# wild pointer for the first configuration-space read a driver makes (measured
+# here: SIGSEGV at a randomised address from pci_device_read_vid()). With q35
+# the firmware publishes MCFG, the server maps the ECAM at 0xb0000000 and the
+# same call answers 0x1af4. See README.md, "Why q35".
+#
+# The device keeps PCI slot 5 (`addr=0x05`), so its BDF stays B0:D5:F0 and the
+# interrupt line it gets is the one image/pci_hw.cfg carries.
 if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
     ACCEL="-enable-kvm -cpu host"
 else
@@ -42,7 +50,7 @@ fi
 # The outer timeout kills QEMU cleanly when the guest has shown what we need;
 # the guest itself keeps running a shell on the console until then.
 timeout 90 qemu-system-x86_64 \
-    -machine pc \
+    -machine q35 \
     -smp 1 \
     -m 512 \
     $ACCEL \

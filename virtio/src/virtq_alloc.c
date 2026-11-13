@@ -113,6 +113,7 @@ static pgw_err alloc_bookkeeping(pgw_virtq *vq)
             (pgw_vring_desc *)vq->dev->vq_alloc(vq->dev, bytes, 16u, &pa);
         if (vq->tables == NULL)
             return PGW_ENOMEM;
+        vq->tables_pa = pa; /* the device reads the tables at that address */
         vq->table_mask = 0;
     }
     return PGW_OK;

@@ -41,6 +41,10 @@ typedef struct fake_pci {
     uint16_t notify_off;
     uint32_t notify_hits;
     uint16_t msix_off;
+    /* Real length of the device-specific region at BAR1 + 0x300, 0 = as long
+     * as the capability claims. QEMU advertises 0x1000 bytes but answers 0xff
+     * past the real structure (2 + tag length for virtio-9p). */
+    uint32_t devcfg_len;
 } fake_pci;
 
 static uint32_t rd32(const uint8_t *p)
@@ -108,8 +112,26 @@ static uint32_t bar_r32(void *ctx, uint8_t bar, uint32_t off)
         return sel == 0u ? (uint32_t)(f->features & 0xFFFFFFFFu)
                          : (uint32_t)(f->features >> 32);
     }
+    /* A read that crosses the real end of the device-specific region. */
+    if (bar == 1u && f->devcfg_len != 0u && off >= 0x300u &&
+        off + 4u > 0x300u + f->devcfg_len)
+        return 0xFFFFFFFFu;
     uint8_t *p = bar_ptr(f, bar, off, 4u);
     return p == NULL ? 0u : rd32(p);
+}
+
+/* Real byte access, what a bus driver with a mapped BAR can do. */
+static uint8_t bar_r8(void *ctx, uint8_t bar, uint32_t off)
+{
+    uint8_t *p = bar_ptr((fake_pci *)ctx, bar, off, 1u);
+    return p == NULL ? 0u : *p;
+}
+
+static void bar_w8(void *ctx, uint8_t bar, uint32_t off, uint8_t val)
+{
+    uint8_t *p = bar_ptr((fake_pci *)ctx, bar, off, 1u);
+    if (p != NULL)
+        *p = val;
 }
 
 static void bar_w32(void *ctx, uint8_t bar, uint32_t off, uint32_t val)
@@ -214,8 +236,16 @@ static pgw_vio_dev *open_pci(fake_pci *f, uint16_t device_id,
                              const char *tag, bool msix)
 {
     pgw_pci_cfg_io cfg = {cfg_read, cfg_write, f};
-    pgw_pci_bar_io bars = {bar_r32, bar_w32, f};
+    pgw_pci_bar_io bars = {bar_r32, bar_w32, f, NULL, NULL};
     return pgw_vio_pci_sim_open(device_id, &cfg, bars, tag, msix);
+}
+
+static pgw_vio_dev *open_pci_bytes(fake_pci *f, uint16_t device_id,
+                                   const char *tag)
+{
+    pgw_pci_cfg_io cfg = {cfg_read, cfg_write, f};
+    pgw_pci_bar_io bars = {bar_r32, bar_w32, f, bar_r8, bar_w8};
+    return pgw_vio_pci_sim_open(device_id, &cfg, bars, tag, false);
 }
 
 /* --- identity (VIO-01) ---------------------------------------------------- */
@@ -354,17 +384,30 @@ static void test_msix_can_be_declined(void)
     pgw_vio_destroy(dev);
 }
 
-static void test_intx_path_uses_the_isr_capability(void)
+/* QEMU's strict device-specific region: the DEVICE capability advertises 0x40
+ * bytes while the structure is 2 + strlen(tag) long, and a read that crosses
+ * the real end answers 0xff (VIO-05, found on the real virtio-9p device). */
+static void test_short_device_region_needs_byte_access(void)
 {
     fake_pci *f = make_pci(PGW_VIRTIO_PCI_DID_9P_MODERN, PGW_VIRTIO_PCI_VENDOR);
-    pgw_vio_dev *dev = open_pci(f, PGW_VIRTIO_ID_9P, NULL, false);
-    PGW_ASSERT(dev != NULL);
+    f->devcfg_len = 2u + 9u; /* the 11 bytes of virtio_9p_config */
 
-    /* No pending interrupt: report it instead of blocking. */
+    /* Without byte access the tail of the tag is 0xff: the device is refused. */
+    PGW_ASSERT(open_pci(f, PGW_VIRTIO_ID_9P, "hostshare", false) == NULL);
+
+    pgw_vio_dev *dev = open_pci_bytes(f, PGW_VIRTIO_ID_9P, "hostshare");
+    PGW_ASSERT(dev != NULL);
+    PGW_ASSERT_STR_EQ(pgw_vio_get_info(dev)->tag, "hostshare");
     PGW_ASSERT_EQ_I(dev->ops->wait_irq(dev, 0), PGW_ETIMEDOUT);
     f->bar1[0x200] = 1u; /* the ISR byte says "queue 0 changed" */
     PGW_ASSERT_EQ_I(dev->ops->wait_irq(dev, 0), PGW_OK);
     pgw_vio_destroy(dev);
+
+    /* The fallback without byte accessors still reads the 1-byte ISR. */
+    pgw_vio_dev *legacy = open_pci(f, PGW_VIRTIO_ID_9P, NULL, false);
+    PGW_ASSERT(legacy != NULL);
+    PGW_ASSERT_EQ_I(legacy->ops->wait_irq(legacy, 0), PGW_OK);
+    pgw_vio_destroy(legacy);
 }
 
 /* --- queue and notification ---------------------------------------------- */
@@ -440,7 +483,7 @@ PGW_TEST(test_device_without_common_cfg_is_refused);
 PGW_TEST(test_looping_capability_list_is_refused);
 PGW_TEST(test_msix_table_is_programmed);
 PGW_TEST(test_msix_can_be_declined);
-PGW_TEST(test_intx_path_uses_the_isr_capability);
+PGW_TEST(test_short_device_region_needs_byte_access);
 PGW_TEST(test_queue_registers_are_written);
 PGW_TEST(test_notify_uses_the_offset_multiplier);
 PGW_TEST(test_features_and_status_round_trip);

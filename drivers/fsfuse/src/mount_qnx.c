@@ -56,6 +56,7 @@ static pgw_err open_transport(fsfuse_dev *dev)
     const pgw_vio_info *info = pgw_vio_get_info(dev->vio);
     if (info == NULL)
         return PGW_EIO;
+    dev->irq = info->irq; /* the interrupt line the transport attached (VIO-04) */
     /* The device says how many request queues it has (VFS-01); queue 0 is the
      * hiprio lane, so the request queues are 1..num_queues-1. */
     uint16_t total = info->num_queues;
