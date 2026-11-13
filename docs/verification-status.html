@@ -374,13 +374,13 @@ ctest --test-dir build --output-on-failure      # 2/2 tests passed</code></pre>
 <tbody>
 <tr>
 <td>VIO-01</td>
-<td>&lt;strong&gt;Tested on PC + observed on QNX&lt;/strong&gt;</td>
-<td>vendor/device matching: <code>ctest -R test_virtio_pci</code>; QNX 7.1's <code>pci-tool</code> reports <code>1af4/1009</code> for our device (EVIDENCE.md §2)</td>
+<td>&lt;strong&gt;Tested on PC + proven on QNX 8.0&lt;/strong&gt;</td>
+<td>vendor/device matching: <code>ctest -R test_virtio_pci</code>; in a QNX 8.0 guest our driver opens the device itself (<code>1af4/1009</code>) and mounts the share (<code>tests/qemu/qnx8/</code>)</td>
 </tr>
 <tr>
 <td>VIO-02</td>
-<td>&lt;strong&gt;Tested on PC + observed on QNX&lt;/strong&gt;</td>
-<td>capability walk on a fake config space (<code>test_virtio_pci</code>); QNX exposes the MSI-X cap and the five vendor (virtio) caps</td>
+<td>&lt;strong&gt;Tested on PC + proven on QNX 8.0&lt;/strong&gt;</td>
+<td>capability walk on a fake config space (<code>test_virtio_pci</code>) and on the real device in a QNX 8.0 guest, where the five vendor (virtio) caps drive the queue setup (<code>tests/qemu/qnx8/</code>)</td>
 </tr>
 <tr>
 <td>VIO-03</td>
@@ -394,8 +394,8 @@ ctest --test-dir build --output-on-failure      # 2/2 tests passed</code></pre>
 </tr>
 <tr>
 <td>VIO-05</td>
-<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
-<td>mount tag read from device config: <code>ctest -R test_virtio_dev</code></td>
+<td>&lt;strong&gt;Tested on PC + proven on QNX 8.0&lt;/strong&gt;</td>
+<td>mount tag read from device config: <code>ctest -R test_virtio_dev</code>; in the guest the tag is read one byte at a time (the region is 11 bytes long) and the device is refused when it differs</td>
 </tr>
 <tr>
 <td>VIO-06</td>
@@ -404,8 +404,8 @@ ctest --test-dir build --output-on-failure      # 2/2 tests passed</code></pre>
 </tr>
 <tr>
 <td>VIO-07</td>
-<td>&lt;strong&gt;Tested on PC&lt;/strong&gt;</td>
-<td>zero-copy scatter-gather: <code>ctest -R test_virtio_vq</code> (no intermediate copy in the transport)</td>
+<td>&lt;strong&gt;Tested on PC + proven on QNX 8.0&lt;/strong&gt;</td>
+<td>zero-copy scatter-gather: <code>ctest -R test_virtio_vq</code> (no intermediate copy in the transport); on QNX the descriptors carry the &lt;em&gt;physical&lt;/em&gt; address of the caller's buffers, out of a contiguous pool</td>
 </tr>
 <tr>
 <td>VIO-08</td>

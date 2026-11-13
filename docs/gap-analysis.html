@@ -119,13 +119,13 @@
 <tbody>
 <tr>
 <td>1</td>
-<td>&lt;strong&gt;QNX-01&lt;/strong&gt; — the resource manager is written but has never run: pathname-space attach, <code>iofunc</code> dispatch, teardown</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - the resource manager runs in a real QNX 8.0 guest: the driver attaches at <code>/host</code>, the kernel dispatches to it, and the listing, the file reads and the sub-directories all come from the share (<code>tests/qemu/qnx8/</code>). Nine defects came out of it (the short device-specific region, the physical addresses of the descriptors, the reset that released the transport, the empty path of the mount point, ...)</td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>2</td>
-<td>&lt;strong&gt;QNX-02&lt;/strong&gt; — startup from the boot image: the IFS fragment exists (<code>image/passerelle.build</code>), nothing was ever built or booted</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - the IFS is built with <code>mkifs</code> from <code>image/passerelle.build</code> and boots: the kernel, the C library, the PCI server, the tools and our two drivers are in it, and the start-up script mounts the share (<code>tests/qemu/qnx8/README.md</code>)</td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>3</td>
@@ -144,18 +144,18 @@
 </tr>
 <tr>
 <td>6</td>
-<td>&lt;strong&gt;QNX-06&lt;/strong&gt; — run without root with the minimum capabilities: the privilege drop and the policy file exist, neither ran</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - the driver drops to <code>uid 200 gid 200</code> in the guest with four abilities (map the device BAR, <code>InterruptAttachThread</code> on its own line, <code>resmgr_attach</code> of the mount point, the dispatch channel), and it serves the share afterwards</td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>7</td>
-<td>&lt;strong&gt;QNX-07&lt;/strong&gt; — <code>mount</code> / <code>umount</code> integration: written, never executed</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - the mount happens in the guest (<code>fs9p -o ro,nosuid,noexec hostshare /host</code>), the driver creates the mount point when the system allows it, and the listing of the mount point comes from the share</td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>8</td>
-<td>&lt;strong&gt;QNX-08&lt;/strong&gt; — system log and per-operation counters: counters proven on the PC, the slog2 backend never ran</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - the slog2 backend runs in the guest: the driver writes its start-up, its mount and its errors in the <code>passerelle</code> buffer, readable with <code>slog2info</code></td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>9</td>
@@ -224,8 +224,8 @@
 </tr>
 <tr>
 <td>22</td>
-<td>&lt;strong&gt;DX-02&lt;/strong&gt; — the one-command demonstration: the demo script exists, it cannot run without an image</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - <code>tests/qemu/qnx8/build-image.sh</code> then <code>run-guest.sh</code> boot the guest and mount the share; the console shows the listing and the file contents</td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>23</td>
@@ -249,8 +249,8 @@
 </tr>
 <tr>
 <td>27</td>
-<td>&lt;strong&gt;VIO-04&lt;/strong&gt; — MSI-X with INTx fallback: the programming is proven against a fake config space, delivery on QNX is not</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - INTx delivery works in the guest: the PCI server reports IRQ 10 for <code>B0:D5:F0</code>, the driver attaches its service thread to it and the requests are answered. The MSI-X programming is still only proven against the fake config space</td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>28</td>

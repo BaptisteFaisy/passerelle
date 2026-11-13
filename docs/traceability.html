@@ -77,7 +77,7 @@
     <p class="crumb">Project</p>
     <h1 id="requirement-traceability">Requirement traceability</h1>
 <blockquote><p>&lt;strong&gt;Generated file - do not edit.&lt;/strong&gt; <code>python3 tools/traceability.py</code> builds it from <code>docs/spec-en.md</code> (identifiers and statements) and <code>tools/traceability-map.yml</code> (state, proof, note). CI re-runs the generator with <code>--check</code>, so a stale map fails the build instead of lying to a reader.</p></blockquote>
-<p>77 requirements: 50 <code>tested</code>, 21 <code>partial</code>, 6 <code>missing</code>.</p>
+<p>77 requirements: 51 <code>tested</code>, 20 <code>partial</code>, 6 <code>missing</code>.</p>
 <h2 id="states">States</h2>
 <table>
 <thead>
@@ -141,10 +141,10 @@
 <tr>
 <td>VIO-04</td>
 <td>Driver receives interrupts via QNX 8.0 APIs, using MSI-X with legacy INTx fallback.</td>
-<td>partial</td>
-<td><code>test_virtio_pci</code>, <code>test_msix_table_is_programmed</code>, <code>test_intx_path_uses_the_isr_capability</code></td>
+<td>tested</td>
+<td><code>test_virtio_pci</code>, <code>test_msix_table_is_programmed</code>, <code>test_intx_path_uses_the_isr_capability</code>, <code>test_short_device_region_needs_byte_access</code></td>
 <td><code>virtio/src/pci.c</code>, <code>virtio/src/pci_qnx.c</code>, <code>drivers/fs9p/src/irq_qnx.c</code></td>
-<td>MSI-X programming and the INTx fallback are tested on the PC; delivery needs a QNX guest with a routed vector (E1). Measured on the QNX 7.1 reference image: no interrupt is routed to this device, so the driver must add its own INTx entry or use MSI-X.</td>
+<td>MSI-X programming and the INTx fallback are tested on the PC; INTx delivery (IRQ 10) is proven on a real QNX 8.0 guest under QEMU (tests/qemu/qnx8).</td>
 </tr>
 <tr>
 <td>VIO-05</td>
@@ -743,11 +743,11 @@
 <tbody>
 <tr>
 <td><code>tested</code></td>
-<td>50</td>
+<td>51</td>
 </tr>
 <tr>
 <td><code>partial</code></td>
-<td>21</td>
+<td>20</td>
 </tr>
 <tr>
 <td><code>missing</code></td>
