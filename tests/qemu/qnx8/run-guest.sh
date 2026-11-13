@@ -22,7 +22,10 @@ BUILD="$ROOT/build/qnx8"
 IFS_IMAGE="${1:-$BUILD/passerelle.ifs}"
 SHARE_DIR="${2:-$BUILD/share}"
 LOG="${3:-$BUILD/console.log}"
-TAG="${TAG:-passerelle}"
+# The tag must be the one the guest's mount script asks for: the driver opens
+# the device whose mount tag matches (VIO-05), and the guest script defaults
+# to "hostshare", the tag the whole project uses.
+TAG="${TAG:-hostshare}"
 
 mkdir -p "$SHARE_DIR"
 printf 'hello-from-the-pc\n' > "$SHARE_DIR/from-host.txt"

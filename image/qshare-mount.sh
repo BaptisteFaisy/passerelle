@@ -28,7 +28,7 @@
 
 TAG="${QSHARE_TAG:-hostshare}"
 MOUNT="${QSHARE_MOUNT:-/host}"
-OPTS="${QSHARE_OPTS:-ro,nosuid,noexec}"
+OPTS="${QSHARE_OPTS:-ro,nosuid,noexec,debug}"
 DRIVER="${QSHARE_DRIVER:-fs9p}"
 TIMEOUT="${QSHARE_TIMEOUT:-30}"
 
@@ -51,6 +51,10 @@ while [ "$waited" -lt "$TIMEOUT" ]; do
     log "mounting $TAG on $MOUNT with $DRIVER ($OPTS)"
     if "$DRIVER" -o "$OPTS" "$TAG" "$MOUNT"; then
         log "mounted $TAG on $MOUNT"
+        log "listing $MOUNT:"
+        ls "$MOUNT"
+        log "reading $MOUNT/from-host.txt:"
+        cat "$MOUNT/from-host.txt"
         exit 0
     fi
     log "device not ready yet, retrying"
@@ -59,4 +63,6 @@ while [ "$waited" -lt "$TIMEOUT" ]; do
 done
 
 log "no $DRIVER device with tag $TAG after ${TIMEOUT}s: giving up"
+log "system log so far:"
+slog2info
 exit 1
