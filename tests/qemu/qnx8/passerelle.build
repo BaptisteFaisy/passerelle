@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# tests/qemu/qnx8/passerelle.build - QNX 8.0 build file of the Passerelle guest.
+#
+# This is the complete build file: it includes the project's fragment
+# (image/passerelle.build) and sets the search path that resolves the SDP 8.0
+# binaries and libraries. mkifs is the tool mkqnximage itself calls to build the
+# IFS; here it is driven directly so the fragment's own boot section and
+# start-up script are used, which is what DX-06 asks for (a minimal guest: the
+# kernel, the C library, the PCI server, the tools).
+#
+# Everything the fragment declares resolves through this search path - the SDP
+# 8.0 layout is $QNX_TARGET/x86_64/... - plus the project's own files (".",
+# "image") and the staging directory that build-image.sh fills when the drivers
+# exist.
+
+[search=.:image:build/qnx8/stage:${QNX_TARGET}/x86_64/sbin:${QNX_TARGET}/x86_64/usr/sbin:${QNX_TARGET}/x86_64/boot/sys:${QNX_TARGET}/x86_64/bin:${QNX_TARGET}/x86_64/usr/bin:${QNX_TARGET}/x86_64/lib:${QNX_TARGET}/x86_64/lib/dll:${QNX_TARGET}/x86_64/usr/lib]
+
+# The default mkifs prefix puts the flat file names under /proc/boot, which is
+# where the start-up script's PATH and the fixed interpreter paths point. An
+# empty prefix would drop them at the image root and nothing would resolve.
+[+include] image/passerelle.build

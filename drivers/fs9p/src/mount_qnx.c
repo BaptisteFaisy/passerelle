@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 /* Provided by dispatch_qnx.c and irq_qnx.c. */
 pgw_err fs9p_dispatch_open(pgw_vio_dev *dev, pgw_virtq *vq, uint32_t timeout_ms);
@@ -58,7 +59,8 @@ static pgw_err open_transport(fs9p_dev *dev)
     const pgw_vio_info *info = pgw_vio_get_info(dev->vio);
     if (info == NULL)
         return PGW_EIO;
-    dev->irq = -1;
+    /* The interrupt line the transport attached to (VIO-04). */
+    dev->irq = info->irq;
 
     /* One queue: 9P2000.L multiplexes everything over a single virtqueue and
      * layer 2 keeps several requests in flight on it (P9-05). */
@@ -81,6 +83,26 @@ static void close_transport(fs9p_dev *dev)
     }
 }
 
+/* Bring the resource manager up: the layer 3 filesystem, the server and the
+ * attachment at the mount point (QNX-01). */
+static pgw_err attach_server(pgw_mount_opts *opts, const char *mount_point)
+{
+    void *impl = fs9p_backend_init(fs9p_session());
+    if (impl == NULL)
+        return PGW_ENOMEM;
+    g_dev.fs = pgw_rmfs_create(fs9p_backend_ops(), impl, &opts->fs);
+    if (g_dev.fs == NULL)
+        return PGW_ENOMEM;
+    pgw_err e = pgw_srv_init(&g_srv, g_dev.fs, opts, "fs9p");
+    if (e != PGW_OK)
+        return e;
+    e = pgw_srv_attach(&g_srv, mount_point); /* QNX-01 */
+    if (e != PGW_OK)
+        return e;
+    g_mounted = true;
+    return PGW_OK;
+}
+
 pgw_err fs9p_mount_and_serve(pgw_mount_opts *opts, const char *mount_point)
 {
     if (opts == NULL || mount_point == NULL)
@@ -89,11 +111,22 @@ pgw_err fs9p_mount_and_serve(pgw_mount_opts *opts, const char *mount_point)
     g_dev.opts = *opts;
     g_dev.irq = -1;
 
-    pgw_err e = fs9p_privdrop(); /* QNX-06 / SEC-01: before any device work */
-    if (e != PGW_OK)
-        return e;
+    /* The mount point has to exist before the driver attaches to it (QNX-07).
+     * The guest image has no writable root, so the driver creates the
+     * directory itself when the system allows it. */
+    if (mkdir(mount_point, 0755) != 0 && errno != EEXIST)
+        PGW_WARN("fs9p: cannot create the mount point %s: %s", mount_point,
+                 strerror(errno));
 
-    e = open_transport(&g_dev);
+    /* The PCI attach needs the PCI server's shared database, which is
+     * readable by root only: the device is opened first, and the privileges are
+     * dropped afterwards, with the two abilities the serving phase needs
+     * (map its own memory, take its own interrupt) granted and locked before
+     * the drop (QNX-06, SEC-01). This is the order io-pkt uses. */
+    pgw_err e = open_transport(&g_dev);
+    if (e != PGW_OK)
+        goto fail;
+    e = fs9p_privdrop(); /* QNX-06 / SEC-01: after the device work */
     if (e != PGW_OK)
         goto fail;
     e = fs9p_dispatch_open(g_dev.vio, g_dev.queue, opts->timeout_ms);
@@ -103,24 +136,9 @@ pgw_err fs9p_mount_and_serve(pgw_mount_opts *opts, const char *mount_point)
     if (e != PGW_OK)
         goto fail;
 
-    void *impl = fs9p_backend_init(fs9p_session());
-    if (impl == NULL) {
-        e = PGW_ENOMEM;
-        goto fail;
-    }
-    g_dev.fs = pgw_rmfs_create(fs9p_backend_ops(), impl, &opts->fs);
-    if (g_dev.fs == NULL) {
-        e = PGW_ENOMEM;
-        goto fail;
-    }
-
-    e = pgw_srv_init(&g_srv, g_dev.fs, opts, "fs9p");
+    e = attach_server(opts, mount_point);
     if (e != PGW_OK)
         goto fail;
-    e = pgw_srv_attach(&g_srv, mount_point); /* QNX-01 */
-    if (e != PGW_OK)
-        goto fail;
-    g_mounted = true;
 
     /* A thread pool wider than the request pipeline, so a client blocked on the
      * device never pins the only thread (QNX-05). */

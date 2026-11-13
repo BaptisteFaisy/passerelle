@@ -308,17 +308,45 @@ typedef union {
     struct _io_sync o;
 } io_sync_t;
 
-/* The mount message: the client asks the driver to mount a filesystem at a
- * path. The extra carries the path and the mount flags (QNX-07). */
+/* The mount message: the client asks the driver to mount a filesystem. The
+ * path travels in msg->connect.path (path_len bytes), and the extra carries the
+ * _MOUNT_* flags plus the pointers the resmgr layer resolved (QNX-07). */
 struct _io_mount_extra {
-    char path[1];
+    uint32_t flags;   /* _MOUNT_? or ST_? flags */
+    uint32_t nbytes;  /* size of the whole structure */
+    uint32_t datalen; /* length of the data following */
+    uint32_t zero[1];
+    union {
+        struct {
+            /* On target this is struct _msg_info32 by value; the drivers never
+             * read it, so a pointer to the stub's _msg_info keeps the type
+             * complete without depending on the include order (iomsg.h is
+             * pulled in before _msg_info is defined). */
+            struct _msg_info *info;
+        } cl;
+        struct {
+            void *ocb;     /* OCB of the special device, or NULL */
+            void *data;    /* server data of len datalen */
+            char *type;    /* mount type string */
+            char *special; /* special device string, or NULL */
+            void *zero[4];
+        } srv;
+    } extra;
 };
 
 typedef struct _io_mount_extra io_mount_extra_t;
 
+/* A connect reply that reports the matched file type (member of io_mount_t). */
+struct _io_connect_ftype_reply {
+    uint16_t status; /* typically an errno */
+    uint16_t reserved;
+    uint32_t file_type;
+};
+
 typedef union {
     struct _io_connect connect;
-    struct _io_mount_extra extra;
+    struct _io_connect_link_reply link_reply;
+    struct _io_connect_ftype_reply ftype_reply;
 } io_mount_t;
 
 /* unlink/rmdir: a connect message whose `mode` says S_IFDIR for rmdir. */

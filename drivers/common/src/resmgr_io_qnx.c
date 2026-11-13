@@ -19,6 +19,7 @@
  * the stubs in tests/qnx-stub, so both are spelled out here once. */
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE 1
+#define _QNX_SOURCE 1 /* SETIOV() and other QNX extensions used with _RESMGR_PTR */
 #include "pgw/drvsrv.h"
 
 #include "pgw/log.h"
@@ -290,7 +291,8 @@ static int devctl_statvfs(resmgr_context_t *ctp, io_devctl_t *msg)
     if (srv == NULL)
         return EIO;
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_fs_statvfs st;
     pgw_err e = pgw_rmfs_statfs(srv->fs, &cred, &st);
     if (e != PGW_OK)

@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <sys/iofunc.h>  /* first: it sets RESMGR_OCB_T before dispatch/resmgr */
 #include <sys/dispatch.h>
@@ -113,7 +114,10 @@ void pgw_attr_from_fs(iofunc_attr_t *attr, const pgw_fs_attr *a,
 
 /* --- caller identity and priority (FS-09, SEC-01, QNX-03) ---------------- */
 
-void pgw_cred_from_ctp(resmgr_context_t *ctp, pgw_fs_cred *cred);
+/* Fill `cred` with the caller's identity and priority. Fails (and returns an
+ * error) when the kernel cannot identify the client, so every caller refuses
+ * the operation instead of guessing (FS-09, SEC-01). */
+pgw_err pgw_cred_from_ctp(resmgr_context_t *ctp, pgw_fs_cred *cred);
 
 /* pgw_err -> this build's errno. An unmapped code stays an error (ROB-01). */
 int pgw_qnx_status(pgw_err e);
@@ -206,14 +210,35 @@ typedef struct pgw_ability {
  * `user` when given). Refuses to serve if root privileges remain (QNX-06). */
 pgw_err pgw_privdrop_apply(const pgw_ability *list, size_t n, const char *user);
 
+/* --- DMA addresses (VIO-07) ---------------------------------------------- */
+
+/* Physical address of `len` bytes at `addr`, for a device that reads or
+ * writes them. PGW_EIO when the range is not physically contiguous. */
+pgw_err pgw_qnx_phys(void *addr, size_t len, uint64_t *out_pa);
+
+/* Memory a device can read and write: physically contiguous and non-cached.
+ * The pair is the allocator the 9P and virtiofs sessions use for their
+ * request and reply buffers (VIO-07). */
+void *pgw_qnx_alloc_dma(size_t bytes, void *user);
+void pgw_qnx_free_dma(void *ptr, size_t bytes, void *user);
+
 /* --- interrupt service thread (VIO-04) ---------------------------------- */
+
+/* Sleep `ms` milliseconds. delay() is a _QNX_SOURCE-gated extension; nanosleep()
+ * is POSIX, which both the target and the host build expose. The busy-wait loops
+ * below use it to yield to the CPU instead of spinning (VIO-04, ROB-05). */
+static inline void pgw_relax_ms(unsigned ms)
+{
+    struct timespec ts = { (time_t)(ms / 1000u),
+                           (long)(ms % 1000u) * 1000000L };
+    (void)nanosleep(&ts, NULL);
+}
 
 /* QNX 8.0 removed InterruptAttach(): a thread is attached with
  * InterruptAttachThread() and becomes the Interrupt Service Thread. */
 typedef struct pgw_ist {
     int irq;
     int id;
-    int thread;
     volatile bool running;
     void (*on_irq)(void *user);
     void *user;

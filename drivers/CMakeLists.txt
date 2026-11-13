@@ -85,6 +85,7 @@ endif()
 set(PGW_QNX_COMMON_SRCS
     "${PGW_DRIVER_COMMON_DIR}/src/attr_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/cred_qnx.c"
+    "${PGW_DRIVER_COMMON_DIR}/src/dma_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/ist_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/prio_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/privdrop_qnx.c"
@@ -132,7 +133,7 @@ if(QNX OR CMAKE_SYSTEM_NAME STREQUAL "QNX")
     target_include_directories(fs9p PRIVATE
         ${PGW_DRIVER_INCLUDES}
         "${CMAKE_CURRENT_SOURCE_DIR}/fs9p/include")
-    target_link_libraries(fs9p PRIVATE pgw_drivers_portable)
+    target_link_libraries(fs9p PRIVATE pgw_drivers_portable pgw_virtio slog2 pci)
 
     add_executable(fsfuse
         "${CMAKE_CURRENT_SOURCE_DIR}/fsfuse/src/main.c"
@@ -142,7 +143,7 @@ if(QNX OR CMAKE_SYSTEM_NAME STREQUAL "QNX")
     target_include_directories(fsfuse PRIVATE
         ${PGW_DRIVER_INCLUDES}
         "${CMAKE_CURRENT_SOURCE_DIR}/fsfuse/include")
-    target_link_libraries(fsfuse PRIVATE pgw_drivers_portable)
+    target_link_libraries(fsfuse PRIVATE pgw_drivers_portable pgw_virtio slog2 pci)
 
     # The ABI check: on the target, the numbers the project quotes are compared
     # with the target's own headers (drivers/tests/qnx_abi_assert.c). A

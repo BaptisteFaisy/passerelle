@@ -31,18 +31,20 @@
 
 #include <sys/mount.h>
 
-/* The path the client wants to mount, and the flags it asks for. */
+/* The path the client wants to mount, and the flags it asks for. In QNX 8 the
+ * path travels in the connect message (path_len bytes, NUL-terminated), and
+ * the extra carries the _MOUNT_* flags - not the path (QNX-07). */
 static bool mount_request(io_mount_t *msg, io_mount_extra_t *extra, char *path,
                            size_t cap, uint32_t *flags)
 {
     if (msg == NULL || extra == NULL || path == NULL || flags == NULL)
         return false;
-    size_t n = strnlen(extra->path, cap - 1u);
-    if (n == 0 || n >= cap)
+    uint16_t plen = msg->connect.path_len;
+    if (plen == 0u || (size_t)plen >= cap)
         return false;
-    memcpy(path, extra->path, n);
-    path[n] = '\0';
-    *flags = (uint32_t)msg->connect.ioflag;
+    memcpy(path, msg->connect.path, plen);
+    path[plen] = '\0';
+    *flags = extra->flags;
     return true;
 }
 

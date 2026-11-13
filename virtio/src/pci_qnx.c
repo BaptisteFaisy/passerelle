@@ -28,6 +28,7 @@
 #include "pgw/log.h"
 
 #include <errno.h>
+#include <pci/cap_vend.h>
 #include <pci/pci.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -39,16 +40,138 @@
 #define PGW_QNX_IRQ_PRIO 21
 #define PGW_QNX_PAGE     4096u
 
+/* The PCI command register (PCI Local Bus 3.0, 6.2.2): memory space enable
+ * (bit 1) and bus master enable (bit 2). The SDP 8.0 headers do not name
+ * these bits, so they are spelled out here once. */
+#define PGW_PCI_CMD_MEM    0x0002u
+#define PGW_PCI_CMD_MASTER 0x0004u
+
 typedef struct qnx_pci {
     pci_bdf_t bdf;
     pci_devhdl_t hdl;
+    /* Configuration-space bytes that libpci cannot serve from the device: the
+     * common header (typed accessors) and the capability chain rebuilt from
+     * the capability modules (see qnx_cfg_read). */
+    uint8_t shadow[0x100];
+    uint8_t valid[0x100];
     void *bar[PGW_QNX_MAX_BARS];
     size_t bar_len[PGW_QNX_MAX_BARS];
     int32_t irq;
     int32_t irq_id;
 } qnx_pci;
 
-/* --- accessors handed to the portable layer ------------------------------- */
+/* --- configuration space -------------------------------------------------- */
+/*
+ * libpci splits configuration space in two: pci_device_cfg_rd*()/cfg_wr*()
+ * reach only the device-dependent area (0x40..0xFF, "PCI Server API Reference,
+ * pci_device_cfg_rd*()"), while the common header has one typed accessor per
+ * register. The portable modern-virtio layer, however, wants one flat
+ * read/write accessor over the whole 256 bytes (VIO-02), so this binding keeps
+ * a shadow of the bytes libpci will not give it raw and serves everything else
+ * from the device.
+ *
+ * The capability chain is the interesting part. libpci enumerates it
+ * (pci_device_read_capid/pci_device_read_cap) but never hands out the raw
+ * "next" bytes, so the chain is rebuilt from the offsets the vendor-capability
+ * module reports: cap_vend_get_offset() is the offset of the first vendor byte
+ * (cfg_type), i.e. capability start + 3. Rebuilding it here rather than
+ * trusting the device's own next pointer keeps a single parser,
+ * pgw_pci_scan_caps(), for both the PC bench and the real bus.
+ */
+static void cfg_put(qnx_pci *q, uint16_t off, const void *src, size_t n)
+{
+    const uint8_t *b = (const uint8_t *)src;
+    for (size_t i = 0; i < n && (size_t)off + i < sizeof(q->shadow); i++) {
+        q->shadow[off + i] = b[i];
+        q->valid[off + i] = 1u;
+    }
+}
+
+static void cfg_put16(qnx_pci *q, uint16_t off, uint16_t val)
+{
+    uint8_t b[2] = {(uint8_t)(val & 0xFFu), (uint8_t)((val >> 8) & 0xFFu)};
+    cfg_put(q, off, b, sizeof(b));
+}
+
+/* The common header: vendor id, device id, command, status. */
+static void cfg_shadow_head(qnx_pci *q)
+{
+    pci_vid_t vid = 0;
+    pci_did_t did = 0;
+    pci_cmd_t cmd = 0;
+    pci_stat_t st = 0;
+    if (pci_device_read_vid(q->bdf, &vid) == PCI_ERR_OK)
+        cfg_put16(q, 0x00u, (uint16_t)vid);
+    if (pci_device_read_did(q->bdf, &did) == PCI_ERR_OK)
+        cfg_put16(q, 0x02u, (uint16_t)did);
+    if (pci_device_read_cmd(q->bdf, &cmd) == PCI_ERR_OK)
+        cfg_put16(q, 0x04u, (uint16_t)cmd);
+    if (pci_device_read_status(q->bdf, &st) == PCI_ERR_OK)
+        cfg_put16(q, 0x06u, (uint16_t)st);
+}
+
+/* One vendor capability of the chain: header at `start`, length nb + 3. */
+static bool cfg_shadow_one(qnx_pci *q, uint_t idx, uint16_t *start, int_t *nb)
+{
+    pci_cap_t cap = NULL;
+    if (pci_device_read_cap(q->bdf, &cap, idx) != PCI_ERR_OK)
+        return false;
+    *nb = cap_vend_get_num_bytes(cap);
+    int_t of = cap_vend_get_offset(cap);
+    free(cap);
+    if (*nb <= 0 || *nb > 0xFC || of < 0x43 || of > 0xFD)
+        return false;
+    *start = (uint16_t)(of - 3); /* cfg_type sits at capability start + 3 */
+    return *start >= 0x40u;
+}
+
+/* Rebuild the vendor-capability chain and the pointer at 0x34. */
+static bool cfg_shadow_caps(qnx_pci *q)
+{
+    uint16_t first = 0;
+    uint16_t prev = 0;
+    for (uint_t idx = 0; idx < 64u; idx++) {
+        pci_capid_t id = 0;
+        if (pci_device_read_capid(q->bdf, &id, idx) != PCI_ERR_OK)
+            break;
+        if (id != (pci_capid_t)CAPID_VEND)
+            continue;
+        uint16_t start = 0;
+        int_t nb = 0;
+        if (!cfg_shadow_one(q, idx, &start, &nb))
+            return false;
+        uint8_t hdr[3] = {(uint8_t)CAPID_VEND, 0u, (uint8_t)(nb + 3)};
+        cfg_put(q, start, hdr, sizeof(hdr));
+        if (prev != 0u) {
+            uint8_t next = (uint8_t)start;
+            cfg_put(q, (uint16_t)(prev + 1u), &next, 1u);
+        } else {
+            first = start;
+        }
+        prev = start;
+    }
+    if (first == 0u)
+        return false;
+    uint8_t end = 0u; /* the last capability ends the list */
+    cfg_put(q, (uint16_t)(prev + 1u), &end, 1u);
+    uint8_t head = (uint8_t)first;
+    cfg_put(q, 0x34u, &head, 1u);
+    return true;
+}
+
+static bool qnx_cfg_discover(qnx_pci *q)
+{
+    memset(q->shadow, 0, sizeof(q->shadow));
+    memset(q->valid, 0, sizeof(q->valid));
+    cfg_shadow_head(q);
+    if (!cfg_shadow_caps(q)) {
+        PGW_ERR("virtio-pci: no usable vendor capability on B%u:D%u:F%u",
+                (unsigned)PCI_BUS(q->bdf), (unsigned)PCI_DEV(q->bdf),
+                (unsigned)PCI_FUNC(q->bdf));
+        return false;
+    }
+    return true;
+}
 
 static pgw_err qnx_cfg_read(void *ctx, uint16_t off, void *out, size_t len)
 {
@@ -56,9 +179,15 @@ static pgw_err qnx_cfg_read(void *ctx, uint16_t off, void *out, size_t len)
     uint8_t *p = (uint8_t *)out;
     for (size_t i = 0; i < len; i++) {
         uint16_t at = (uint16_t)(off + (uint16_t)i);
+        if (at >= (uint16_t)sizeof(q->shadow))
+            return PGW_EIO;
+        if (q->valid[at] != 0u) {
+            p[i] = q->shadow[at];
+            continue;
+        }
         uint32_t word = 0;
-        if (pci_device_cfg_rd32(q->bdf, (uint16_t)(at & ~3u), &word) !=
-            PCI_ERR_OK)
+        if (at < 0x40u || pci_device_cfg_rd32(q->bdf, (uint16_t)(at & ~3u),
+                                              &word) != PCI_ERR_OK)
             return PGW_EIO;
         p[i] = (uint8_t)((word >> (8u * (at & 3u))) & 0xFFu);
     }
@@ -73,12 +202,13 @@ static pgw_err qnx_cfg_write(void *ctx, uint16_t off, const void *in,
     for (size_t i = 0; i < len; i++) {
         uint16_t at = (uint16_t)(off + (uint16_t)i);
         uint32_t word = 0;
-        if (pci_device_cfg_rd32(q->bdf, (uint16_t)(at & ~3u), &word) !=
-            PCI_ERR_OK)
+        /* The common header is written through its typed API, never here. */
+        if (at < 0x40u || pci_device_cfg_rd32(q->bdf, (uint16_t)(at & ~3u),
+                                              &word) != PCI_ERR_OK)
             return PGW_EIO;
         uint32_t shift = 8u * (at & 3u);
         word = (word & ~(0xFFu << shift)) | ((uint32_t)p[i] << shift);
-        if (pci_device_cfg_wr32(q->hdl, (uint16_t)(at & ~3u), word) !=
+        if (pci_device_cfg_wr32(q->hdl, (uint16_t)(at & ~3u), word, &word) !=
             PCI_ERR_OK)
             return PGW_EIO;
     }
@@ -101,19 +231,42 @@ static void qnx_bar_w32(void *ctx, uint8_t bar, uint32_t off, uint32_t val)
     *(volatile uint32_t *)((uint8_t *)q->bar[bar] + off) = val;
 }
 
+/* Real byte accesses. The device-specific region of a virtio PCI device is
+ * usually shorter than its capability, and a wider read that crosses the real
+ * end is answered with 0xff: the mount tag of virtio-9p is 11 bytes long, so a
+ * 32-bit read of it loses its last three characters (VIO-02, VIO-05). */
+static uint8_t qnx_bar_r8(void *ctx, uint8_t bar, uint32_t off)
+{
+    qnx_pci *q = (qnx_pci *)ctx;
+    if (bar >= PGW_QNX_MAX_BARS || q->bar[bar] == NULL)
+        return 0u;
+    return *(volatile uint8_t *)((uint8_t *)q->bar[bar] + off);
+}
+
+static void qnx_bar_w8(void *ctx, uint8_t bar, uint32_t off, uint8_t val)
+{
+    qnx_pci *q = (qnx_pci *)ctx;
+    if (bar >= PGW_QNX_MAX_BARS || q->bar[bar] == NULL)
+        return;
+    *(volatile uint8_t *)((uint8_t *)q->bar[bar] + off) = val;
+}
+
 /* --- interrupt (VIO-04, VIO-09) ------------------------------------------- */
 
 static void qnx_irq_release(pgw_vio_dev *dev)
 {
-    qnx_pci *q = (qnx_pci *)dev->backend;
+    qnx_pci *q = (qnx_pci *)dev->user;
     if (q != NULL)
         pgw_qnx_irq_detach(&q->irq_id);
 }
 
 static bool qnx_irq_attach(qnx_pci *q)
 {
-    uint32_t nirq = 0;
+    /* nirq is an input/output pair: on entry it is how many entries the array
+     * holds, so a zeroed count asks the server for no IRQ at all and answers
+     * "success" with none. */
     pci_irq_t irqs[4] = {0, 0, 0, 0};
+    int_t nirq = (int_t)(sizeof irqs / sizeof irqs[0]);
     if (pci_device_read_irq(q->hdl, &nirq, irqs) != PCI_ERR_OK || nirq == 0) {
         PGW_ERR("virtio-pci: the device reports no interrupt line");
         return false;
@@ -138,6 +291,13 @@ static void qnx_map_bars(qnx_pci *q)
     for (int_t i = 0; i < nba; i++) {
         uint8_t num = (uint8_t)bas[i].bar_num;
         if (num >= PGW_QNX_MAX_BARS || q->bar[num] != NULL)
+            continue;
+        /* The transitional virtio-9p-pci exposes BAR0 as an I/O BAR (the legacy
+         * register layout); its address is a port, not a physical address, so
+         * mmap_device_memory() would map some unrelated page and any read from
+         * it faults (VIO-01). The modern virtio 1.x registers the capabilities
+         * point at live in a memory BAR, which is the only one mapped here. */
+        if (bas[i].type == pci_asType_e_IO)
             continue;
         size_t len = (size_t)bas[i].size;
         if (len == 0)
@@ -166,18 +326,9 @@ static void qnx_unmap_bars(qnx_pci *q)
 
 /* --- opening -------------------------------------------------------------- */
 
-static uint16_t pci_device_id_for(uint16_t virtio_type)
-{
-    if (virtio_type == (uint16_t)PGW_VIRTIO_ID_9P)
-        return (uint16_t)PGW_VIRTIO_PCI_DID_9P_MODERN;
-    if (virtio_type == (uint16_t)PGW_VIRTIO_ID_FS)
-        return (uint16_t)PGW_VIRTIO_PCI_DID_FS_MODERN;
-    return 0;
-}
-
 static void qnx_pci_teardown(pgw_vio_dev *dev)
 {
-    qnx_pci *q = (qnx_pci *)dev->backend;
+    qnx_pci *q = (qnx_pci *)dev->user;
     if (q == NULL)
         return;
     qnx_irq_release(dev);
@@ -186,20 +337,56 @@ static void qnx_pci_teardown(pgw_vio_dev *dev)
         pci_device_detach(q->hdl);
 }
 
+/* The device id a virtio implementation presents depends on how it was
+ * created: a modern-only device is 0x1040 + type, a transitional one
+ * 0x1000 + type. QEMU's virtio-9p-pci is transitional by default, so the
+ * driver looks for both (VIO-01). Returns how many ids were filled. */
+static size_t pci_dids_for(uint16_t virtio_type, uint16_t *out, size_t max)
+{
+    if (virtio_type == (uint16_t)PGW_VIRTIO_ID_9P) {
+        if (max < 2u)
+            return 0;
+        out[0] = (uint16_t)PGW_VIRTIO_PCI_DID_9P_MODERN;
+        out[1] = (uint16_t)PGW_VIRTIO_PCI_DID_9P_TRANSITIONAL;
+        return 2;
+    }
+    if (virtio_type == (uint16_t)PGW_VIRTIO_ID_FS) {
+        if (max < 2u)
+            return 0;
+        out[0] = (uint16_t)PGW_VIRTIO_PCI_DID_FS_MODERN;
+        out[1] = (uint16_t)PGW_VIRTIO_PCI_DID_FS_TRANSITIONAL;
+        return 2;
+    }
+    return 0;
+}
+
+/* Find the device on the bus, modern id first then transitional. */
+static pci_bdf_t pci_find_virtio(uint16_t virtio_type)
+{
+    uint16_t dids[2];
+    size_t n = pci_dids_for(virtio_type, dids, 2u);
+    for (size_t i = 0; i < n; i++) {
+        pci_bdf_t bdf = pci_device_find(0, (uint16_t)PGW_VIRTIO_PCI_VENDOR,
+                                        dids[i], PCI_CCODE_ANY);
+        if (bdf != PCI_BDF_NONE)
+            return bdf;
+    }
+    return PCI_BDF_NONE;
+}
+
 pgw_vio_dev *pgw_vio_pci_open(uint16_t device_id, const char *expected_tag,
                               bool allow_msix)
 {
-    uint16_t pci_did = pci_device_id_for(device_id);
-    if (pci_did == 0u) {
+    uint16_t dids[2];
+    if (pci_dids_for(device_id, dids, 2u) == 0u) {
         PGW_ERR("virtio-pci: unsupported virtio type %u", (unsigned)device_id);
         return NULL;
     }
 
-    pci_bdf_t bdf = pci_device_find(0, (uint16_t)PGW_VIRTIO_PCI_VENDOR, pci_did,
-                                    PCI_CCODE_ANY);
+    pci_bdf_t bdf = pci_find_virtio(device_id);
     if (bdf == PCI_BDF_NONE) {
-        PGW_WARN("virtio-pci: device 0x%04x not found on the bus",
-                 (unsigned)pci_did);
+        PGW_WARN("virtio-pci: no device 0x%04x/0x%04x on the bus",
+                 (unsigned)dids[0], (unsigned)dids[1]);
         return NULL;
     }
 
@@ -223,13 +410,23 @@ pgw_vio_dev *pgw_vio_pci_open(uint16_t device_id, const char *expected_tag,
     if (pci_device_read_cmd(bdf, &cmd) == PCI_ERR_OK) {
         pci_cmd_t after = 0;
         (void)pci_device_write_cmd(q->hdl,
-                                   (pci_cmd_t)(cmd | PCI_CMD_MEM | PCI_CMD_MASTER),
+                                   (pci_cmd_t)(cmd | PGW_PCI_CMD_MEM |
+                                               PGW_PCI_CMD_MASTER),
                                    &after);
+    }
+
+    /* Read the capability chain before touching the BARs: the addresses of the
+     * common, notify and ISR registers all come from it (VIO-02). */
+    if (!qnx_cfg_discover(q)) {
+        pci_device_detach(q->hdl);
+        free(q);
+        return NULL;
     }
     qnx_map_bars(q);
 
     pgw_pci_cfg_io cfg = {qnx_cfg_read, qnx_cfg_write, q};
-    pgw_pci_bar_io bars = {qnx_bar_r32, qnx_bar_w32, q};
+    pgw_pci_bar_io bars = {qnx_bar_r32, qnx_bar_w32,   q,
+                              qnx_bar_r8,  qnx_bar_w8};
     pgw_vio_dev *dev = pgw_vio_pci_sim_open(device_id, &cfg, bars,
                                             expected_tag, false);
     if (dev == NULL) {
@@ -241,6 +438,7 @@ pgw_vio_dev *pgw_vio_pci_open(uint16_t device_id, const char *expected_tag,
     dev->vq_alloc = pgw_qnx_vq_alloc;
     dev->vq_free = pgw_qnx_vq_free;
     dev->irq_release = qnx_pci_teardown;
+    dev->user = q; /* the PCI handle and the BAR mappings live here */
 
     if (allow_msix) {
         /* x86 APIC delivery: destination 0, vector taken from the PCI server. */
@@ -254,6 +452,7 @@ pgw_vio_dev *pgw_vio_pci_open(uint16_t device_id, const char *expected_tag,
             return NULL;
         }
         dev->irq_attached = true;
+        dev->info.irq = q->irq; /* the driver attaches its own thread (VIO-04) */
     }
     return dev;
 }

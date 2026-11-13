@@ -62,9 +62,11 @@ set(PGW_MKQNXIMAGE "${QNX_SDP_BIN}/mkqnximage" CACHE FILEPATH "mkqnximage")
 set(PGW_SECPOLCOMPILE "${QNX_SDP_BIN}/secpolcompile" CACHE FILEPATH "secpolcompile")
 set(PGW_SECPOLPUSH "${QNX_SDP_BIN}/secpolpush" CACHE FILEPATH "secpolpush")
 
-# The SDP's libc is what the drivers link against: no other library is needed
-# (QNX-02).
-set(CMAKE_C_FLAGS_INIT "-D__QNX__ -D__QNXNTO__")
+# qcc's default target is gcc_ntox86_64, so the aarch64 build must select the
+# aarch64le variant explicitly. qcc also defines __QNX__ and __QNXNTO__ itself
+# (adding them again would be a redefinition, and the build treats warnings as
+# errors), so the only initial flag here is the variant selection.
+set(CMAKE_C_FLAGS_INIT "-Vgcc_ntoaarch64le -D_QNX_SOURCE=1")
 
 message(STATUS "QNX target: ${QNX_TARGET}")
 message(STATUS "QNX host tools: ${QNX_SDP_BIN}")

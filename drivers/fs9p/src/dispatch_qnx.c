@@ -75,7 +75,7 @@ static pgw_err wait_completion(fs9p_xport *x, void *cookie, uint32_t *out_len,
             return PGW_ETIMEDOUT;
         }
         if (x->irqs == seen)
-            (void)delay(1); /* nothing arrived yet: yield the CPU */
+            pgw_relax_ms(1); /* nothing arrived yet: yield the CPU */
         seen = x->irqs;
     }
 }
@@ -94,14 +94,21 @@ static pgw_err fs9p_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap,
 
     pgw_trace_req(PGW_OP_OPEN, g_tag_next); /* tag pairs the two events (QNX-09) */
     /* Device-readable request, device-writable reply: the caller's buffers are
-     * handed over as they are (VIO-07). */
+     * handed over as they are, by their physical address (VIO-07). */
+    uint64_t tx_pa = 0;
+    uint64_t rx_pa = 0;
+    pgw_err e = pgw_qnx_phys((void *)(uintptr_t)tx, tx_len, &tx_pa);
+    if (e == PGW_OK)
+        e = pgw_qnx_phys(rx, rx_cap, &rx_pa);
+    if (e != PGW_OK)
+        return e;
     pgw_vio_sg sg[2];
     sg[0].addr = (void *)(uintptr_t)tx; /* the device only reads this buffer */
-    sg[0].phys = 0;
+    sg[0].phys = tx_pa;
     sg[0].len = (uint32_t)tx_len;
     sg[0].write = false;
     sg[1].addr = rx;
-    sg[1].phys = 0;
+    sg[1].phys = rx_pa;
     sg[1].len = (uint32_t)rx_cap;
     sg[1].write = true;
 
@@ -109,7 +116,7 @@ static pgw_err fs9p_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap,
     g_tag_next = g_tag_next == UINT32_MAX ? 1u : g_tag_next + 1u;
 
     pgw_stat_add(PGW_STAT_REQ, 1);
-    pgw_err e = pgw_vq_push(x->vq, sg, 2u, cookie);
+    e = pgw_vq_push(x->vq, sg, 2u, cookie);
     if (e != PGW_OK)
         return e;
     (void)pgw_vq_kick(x->vq); /* suppressed when the device asked us not to */
@@ -136,6 +143,9 @@ pgw_err fs9p_dispatch_open(pgw_vio_dev *dev, pgw_virtq *vq, uint32_t timeout_ms)
     g_xport.vq = vq;
     g_xport.irqs = 0;
     g_xport.timeout_ms = timeout_ms;
+    /* The device reads and writes the session buffers, so they must be
+     * physically contiguous: the session's allocator is the DMA pool (VIO-07). */
+    pgw_p9_session_set_memory(pgw_qnx_alloc_dma, pgw_qnx_free_dma, NULL);
     g_session = pgw_p9_session_open(fs9p_rpc, &g_xport, PGW_MSIZE_DEFAULT, "nobody",
                                     "/", 0u);
     if (g_session == NULL)

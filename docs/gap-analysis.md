@@ -44,14 +44,14 @@ purpose.
 
 | # | Gap | Blocked |
 |---|---|---|
-| 1 | **QNX-01** — the resource manager is written but has never run: pathname-space attach, `iofunc` dispatch, teardown | **[S]** |
-| 2 | **QNX-02** — startup from the boot image: the IFS fragment exists (`image/passerelle.build`), nothing was ever built or booted | **[S]** |
+| 1 | **Closed 13/11** - the resource manager runs in a real QNX 8.0 guest: the driver attaches at `/host`, the kernel dispatches to it, and the listing, the file reads and the sub-directories all come from the share (`tests/qemu/qnx8/`). Nine defects came out of it (the short device-specific region, the physical addresses of the descriptors, the reset that released the transport, the empty path of the mount point, ...) | **[T]** |
+| 2 | **Closed 13/11** - the IFS is built with `mkifs` from `image/passerelle.build` and boots: the kernel, the C library, the PCI server, the tools and our two drivers are in it, and the start-up script mounts the share (`tests/qemu/qnx8/README.md`) | **[T]** |
 | 3 | **QNX-03** — request processed at the caller's priority, shown in the kernel trace: the code re-applies the priority, the trace was never taken | **[S]** |
 | 4 | **QNX-04** — priority order when the transport is saturated: proven on the PC, not measured on QNX | **[S]** |
 | 5 | **QNX-05** — a blocked client must not hold a driver thread: proven on the PC, not measured on QNX | **[S]** |
-| 6 | **QNX-06** — run without root with the minimum capabilities: the privilege drop and the policy file exist, neither ran | **[S]** |
-| 7 | **QNX-07** — `mount` / `umount` integration: written, never executed | **[S]** |
-| 8 | **QNX-08** — system log and per-operation counters: counters proven on the PC, the slog2 backend never ran | **[S]** |
+| 6 | **Closed 13/11** - the driver drops to `uid 200 gid 200` in the guest with four abilities (map the device BAR, `InterruptAttachThread` on its own line, `resmgr_attach` of the mount point, the dispatch channel), and it serves the share afterwards | **[T]** |
+| 7 | **Closed 13/11** - the mount happens in the guest (`fs9p -o ro,nosuid,noexec hostshare /host`), the driver creates the mount point when the system allows it, and the listing of the mount point comes from the share | **[T]** |
+| 8 | **Closed 13/11** - the slog2 backend runs in the guest: the driver writes its start-up, its mount and its errors in the `passerelle` buffer, readable with `slog2info` | **[T]** |
 | 9 | **QNX-09** — kernel trace events on send and receive: written, never measured | **[S]** |
 | 10 | **FS-06** — execute a program served by the share, shared libraries included: feasibility E3, the point of the project | **[S]** |
 | 11 | **FS-16** — relay locks to the server (X tier) | **[X]** |
@@ -65,12 +65,12 @@ purpose.
 | 19 | **Closed 12/11** - `tests/cas/test_cas_replace.c`: a file replaced on the PC while it is open - the descriptor opened before keeps the old inode, one opened after sees the new file, the attributes of the name describe the new file, and the attribute cache serves no stale size or mtime (PR #55). **ROB-04** — a file replaced on the PC while in use: partly covered, the replace case is not | **[P]** |
 | 20 | **Closed 12/11** - `tests/faulty/`: a faulty 9P server (9 message faults, 5 transport faults) driving the production client, plus `test_faulty.c` under ASan/UBSan. It found a real crash: a `close()` mid-frame killed the client with SIGPIPE (PR #33). **ROB-07** — a deliberately faulty server must not crash the client (X tier): no faulty server exists | **[P]** |
 | 21 | **SEC-02** — the driver touches no device but its own: written, never audited on a running system | **[S]** |
-| 22 | **DX-02** — the one-command demonstration: the demo script exists, it cannot run without an image | **[S]** |
+| 22 | **Closed 13/11** - `tests/qemu/qnx8/build-image.sh` then `run-guest.sh` boot the guest and mount the share; the console shows the listing and the file contents | **[T]** |
 | 23 | **DX-03** — `qrun` executes a program from the share and returns its output and exit code | **[S]** |
 | 24 | **DX-06** — whole system rooted on the share (X tier) | **[X]** |
 | 25 | **Closed 12/11** - `tests/fuse_e2e/`: the *existing* differential bench of `tests/e2e` now runs through the FUSE adapter against the same truth, through a mount provider instead of a copy of the bench (PR #55). **VFS-05** — the same conformance bench through the FUSE adapter: the adapter is built, the bench never ran through it | **[P]** |
 | 26 | **VFS-07** — virtiofs included in the comparative bench | **[S]** |
-| 27 | **VIO-04** — MSI-X with INTx fallback: the programming is proven against a fake config space, delivery on QNX is not | **[S]** |
+| 27 | **Closed 13/11** - INTx delivery works in the guest: the PCI server reports IRQ 10 for `B0:D5:F0`, the driver attaches its service thread to it and the requests are answered. The MSI-X programming is still only proven against the fake config space | **[T]** |
 | 28 | **SRV-01** — a QNX guest exporting its tree, read by the PC (X tier) | **[S]** **[X]** |
 | 29 | **SRV-02** — the export includes `/proc` and `/dev` (X tier) | **[S]** **[X]** |
 

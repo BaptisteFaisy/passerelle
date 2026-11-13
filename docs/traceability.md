@@ -5,7 +5,7 @@
 > `tools/traceability-map.yml` (state, proof, note). CI re-runs the generator
 > with `--check`, so a stale map fails the build instead of lying to a reader.
 
-77 requirements: 50 `tested`, 21 `partial`, 6 `missing`.
+77 requirements: 51 `tested`, 20 `partial`, 6 `missing`.
 
 ## States
 
@@ -22,7 +22,7 @@
 | VIO-01 | Driver discovers 9P device on PCI bus (vendor 0x1AF4, device 0x1009, or 0x1049 modern-only). | tested | `test_virtio_pci`, `test_modern_9p_device_is_found`, `test_transitional_9p_id_is_accepted` | `virtio/src/pci.c`, `virtio/src/pci_modern.c`, `virtio/include/pgw/virtio.h` | vendor and device matching, modern and transitional ids. A real QNX 7.1 guest reports 1af4/1009 for the same device (tests/qemu/qnx71/EVIDENCE.md). |
 | VIO-02 | Driver uses modern PCI interface defined by device capabilities. | tested | `test_virtio_pci`, `test_capabilities_are_all_discovered`, `test_device_without_common_cfg_is_refused` | `virtio/src/pci_caps.c`, `virtio/src/pci_modern.c` | capability walk over a fake config space; the QNX 7.1 guest exposes MSI-X and the five vendor capabilities. |
 | VIO-03 | Driver supports virtio-mmio, versions 1 and 2 (ARM64 `virt`, x86 `microvm`). | tested | `test_virtio_mmio`, `test_v2_device_is_found`, `test_v1_device_is_found` | `virtio/src/mmio.c`, `virtio/src/mmio_qnx.c` | MMIO v1 and v2 against a RAM-backed register file; mmio_qnx.c is compile-checked by the qnx-syntax job. |
-| VIO-04 | Driver receives interrupts via QNX 8.0 APIs, using MSI-X with legacy INTx fallback. | partial | `test_virtio_pci`, `test_msix_table_is_programmed`, `test_intx_path_uses_the_isr_capability` | `virtio/src/pci.c`, `virtio/src/pci_qnx.c`, `drivers/fs9p/src/irq_qnx.c` | MSI-X programming and the INTx fallback are tested on the PC; delivery needs a QNX guest with a routed vector (E1). Measured on the QNX 7.1 reference image: no interrupt is routed to this device, so the driver must add its own INTx entry or use MSI-X. |
+| VIO-04 | Driver receives interrupts via QNX 8.0 APIs, using MSI-X with legacy INTx fallback. | tested | `test_virtio_pci`, `test_msix_table_is_programmed`, `test_intx_path_uses_the_isr_capability`, `test_short_device_region_needs_byte_access` | `virtio/src/pci.c`, `virtio/src/pci_qnx.c`, `drivers/fs9p/src/irq_qnx.c` | MSI-X programming and the INTx fallback are tested on the PC; INTx delivery (IRQ 10) is proven on a real QNX 8.0 guest under QEMU (tests/qemu/qnx8). |
 | VIO-05 | Driver reads mount tag from device config and selects device by tag. | tested | `test_virtio_dev`, `test_reads_9p_mount_tag`, `test_rejects_oversized_9p_tag` | `virtio/src/dev.c` | mount tag read from the device config space, length-prefixed as in the Linux header. |
 | VIO-06 | Multiple shares can be mounted simultaneously, one per device. | tested | `test_virtio_mock`, `test_two_devices_are_independent` | `virtio/src/dev.c`, `virtio/src/mock.c` | one device object per share; two mock devices keep separate state. |
 | VIO-07 | Request buffers are passed to QEMU zero-copy within the transport layer. | tested | `test_virtio_vq`, `test_zero_copy_uses_caller_addresses`, `test_phys_address_wins_over_virtual` | `virtio/src/virtq.c`, `virtio/src/virtq_alloc.c` | descriptors carry the caller addresses, no intermediate copy in the transport; the spec asks for inspection here and the test pins it. |
@@ -101,7 +101,7 @@
 
 | State | Count |
 |---|---:|
-| `tested` | 50 |
-| `partial` | 21 |
+| `tested` | 51 |
+| `partial` | 20 |
 | `missing` | 6 |
 | total | 77 |

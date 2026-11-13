@@ -278,6 +278,15 @@ typedef pgw_err (*pgw_p9_rpc_fn)(const void *tx, size_t tx_len,
 
 typedef struct pgw_p9_session pgw_p9_session;
 
+/* The memory the session uses for its request and reply buffers. A transport
+ * that hands those buffers to a device needs memory the device can address,
+ * which on QNX means physically contiguous memory (VIO-07); the allocator is
+ * therefore injectable. NULL means the C library. */
+typedef void *(*pgw_p9_alloc_fn)(size_t bytes, void *user);
+typedef void (*pgw_p9_free_fn)(void *ptr, size_t bytes, void *user);
+void pgw_p9_session_set_memory(pgw_p9_alloc_fn alloc, pgw_p9_free_fn free_fn,
+                               void *user);
+
 pgw_p9_session *pgw_p9_session_open(pgw_p9_rpc_fn rpc, void *user,
                                     uint32_t msize_req, const char *uname,
                                     const char *aname, uint32_t uid);
