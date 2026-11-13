@@ -56,10 +56,10 @@ purpose.
 | 10 | **FS-06** — execute a program served by the share, shared libraries included: feasibility E3, the point of the project | **[S]** |
 | 11 | **FS-16** — relay locks to the server (X tier) | **[X]** |
 | 12 | **PERF-02** — never exceed the best existing client per call: needs both clients measured on the same machine | **[S]** |
-| 13 | **PERF-03** — 1 GiB sequential throughput, at least half of a Linux guest | **[S]** |
+| 13 | **Partly closed 13/11** - 64 MiB read in **9.60 s** (6.7 MiB/s) through our driver in a real QNX 8.0 guest (`docs/measurements/qnx8-guest.md`). The comparison with a Linux guest on the same machine is still missing: the Linux baseline counts round trips per POSIX operation, not a bulk byte rate | **[P]** |
 | 14 | **PERF-04** — 10 000 metadata operations and a 50 000-entry tree | **[S]** |
 | 15 | **PERF-05** — a priority read during a bulk copy: the scheduler is proven on the PC, the end-to-end latency is not | **[S]** |
-| 16 | **PERF-06** — mount takes under 50 ms | **[S]** |
+| 16 | **Closed 13/11** - the mount takes **11 ms** in a real QNX 8.0 guest (from the driver's first log line to the 9P session and the interrupt thread), measured with the system log (`docs/measurements/qnx8-guest.md`) | **[T]** |
 | 17 | **PERF-07** — published comparative report (this driver, A, B, `scp`, virtiofs): harness and Linux baseline exist, the four other rows do not | **[S]** |
 | 18 | **ROB-03** — unmount under load | **[S]** |
 | 19 | **Closed 12/11** - `tests/cas/test_cas_replace.c`: a file replaced on the PC while it is open - the descriptor opened before keeps the old inode, one opened after sees the new file, the attributes of the name describe the new file, and the attribute cache serves no stale size or mtime (PR #55). **ROB-04** — a file replaced on the PC while in use: partly covered, the replace case is not | **[P]** |
