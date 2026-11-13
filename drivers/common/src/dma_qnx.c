@@ -38,8 +38,7 @@ void *pgw_qnx_alloc_dma(size_t bytes, void *user)
     void *p = mmap(NULL, len, PROT_READ | PROT_WRITE | PROT_NOCACHE,
                    MAP_ANON | MAP_PHYS | MAP_SHARED, NOFD, 0);
     if (p == MAP_FAILED) {
-        PGW_ERR("dma: cannot map %zu contiguous bytes: %s", len,
-                strerror(errno));
+        PGW_ERR("dma: cannot map %zu contiguous bytes: %s", len, strerror(errno));
         return NULL;
     }
     memset(p, 0, len);
@@ -70,13 +69,11 @@ pgw_err pgw_qnx_phys(void *addr, size_t len, uint64_t *out_pa)
     /* mem_offset64() with NOFD gives the physical offset of the page that
      * holds `addr` and how far the mapping stays contiguous from there. */
     if (mem_offset64(addr, NOFD, len, &phys, &contig) != 0) {
-        PGW_ERR("dma: cannot map the buffer to a physical address: %s",
-                strerror(errno));
+        PGW_ERR("dma: cannot map the buffer to a physical address: %s", strerror(errno));
         return PGW_EIO;
     }
     if (contig < len) {
-        PGW_ERR("dma: %zu bytes are not physically contiguous (%zu are)",
-                len, contig);
+        PGW_ERR("dma: %zu bytes are not physically contiguous (%zu are)", len, contig);
         return PGW_EIO;
     }
     *out_pa = (uint64_t)phys;

@@ -26,8 +26,7 @@
 
 #define MAP_FAILED ((void *)-1)
 
-extern void *mmap(void *addr, size_t len, int prot, int flags, int fd,
-                   off64_t offset);
+extern void *mmap(void *addr, size_t len, int prot, int flags, int fd, off64_t offset);
 extern int munmap(void *addr, size_t len);
 extern int mem_offset64(const void *addr, int fd, size_t len, off64_t *off,
                         size_t *contig);

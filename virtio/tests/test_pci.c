@@ -42,8 +42,7 @@ typedef struct fake_pci {
     uint32_t notify_hits;
     uint16_t msix_off;
     /* Real length of the device-specific region at BAR1 + 0x300, 0 = as long
-     * as the capability claims. QEMU advertises 0x1000 bytes but answers 0xff
-     * past the real structure (2 + tag length for virtio-9p). */
+     * as the capability claims (QEMU answers 0xff past the real structure). */
     uint32_t devcfg_len;
 } fake_pci;
 
@@ -384,9 +383,20 @@ static void test_msix_can_be_declined(void)
     pgw_vio_destroy(dev);
 }
 
-/* QEMU's strict device-specific region: the DEVICE capability advertises 0x40
- * bytes while the structure is 2 + strlen(tag) long, and a read that crosses
- * the real end answers 0xff (VIO-05, found on the real virtio-9p device). */
+static void test_intx_path_uses_the_isr_capability(void)
+{
+    fake_pci *f = make_pci(PGW_VIRTIO_PCI_DID_9P_MODERN, PGW_VIRTIO_PCI_VENDOR);
+    pgw_vio_dev *dev = open_pci(f, PGW_VIRTIO_ID_9P, NULL, false);
+    PGW_ASSERT(dev != NULL);
+    PGW_ASSERT_EQ_I(dev->ops->wait_irq(dev, 0), PGW_ETIMEDOUT);
+    f->bar1[0x200] = 1u; /* the ISR byte says "queue 0 changed" */
+    PGW_ASSERT_EQ_I(dev->ops->wait_irq(dev, 0), PGW_OK);
+    pgw_vio_destroy(dev);
+}
+
+/* QEMU's strict device-specific region: the capability advertises 0x40 bytes
+ * while the structure is 2 + strlen(tag) long, and a read that crosses the real
+ * end answers 0xff (VIO-05, found on the real virtio-9p device). */
 static void test_short_device_region_needs_byte_access(void)
 {
     fake_pci *f = make_pci(PGW_VIRTIO_PCI_DID_9P_MODERN, PGW_VIRTIO_PCI_VENDOR);
@@ -394,7 +404,6 @@ static void test_short_device_region_needs_byte_access(void)
 
     /* Without byte access the tail of the tag is 0xff: the device is refused. */
     PGW_ASSERT(open_pci(f, PGW_VIRTIO_ID_9P, "hostshare", false) == NULL);
-
     pgw_vio_dev *dev = open_pci_bytes(f, PGW_VIRTIO_ID_9P, "hostshare");
     PGW_ASSERT(dev != NULL);
     PGW_ASSERT_STR_EQ(pgw_vio_get_info(dev)->tag, "hostshare");
@@ -402,12 +411,6 @@ static void test_short_device_region_needs_byte_access(void)
     f->bar1[0x200] = 1u; /* the ISR byte says "queue 0 changed" */
     PGW_ASSERT_EQ_I(dev->ops->wait_irq(dev, 0), PGW_OK);
     pgw_vio_destroy(dev);
-
-    /* The fallback without byte accessors still reads the 1-byte ISR. */
-    pgw_vio_dev *legacy = open_pci(f, PGW_VIRTIO_ID_9P, NULL, false);
-    PGW_ASSERT(legacy != NULL);
-    PGW_ASSERT_EQ_I(legacy->ops->wait_irq(legacy, 0), PGW_OK);
-    pgw_vio_destroy(legacy);
 }
 
 /* --- queue and notification ---------------------------------------------- */
@@ -483,6 +486,7 @@ PGW_TEST(test_device_without_common_cfg_is_refused);
 PGW_TEST(test_looping_capability_list_is_refused);
 PGW_TEST(test_msix_table_is_programmed);
 PGW_TEST(test_msix_can_be_declined);
+PGW_TEST(test_intx_path_uses_the_isr_capability);
 PGW_TEST(test_short_device_region_needs_byte_access);
 PGW_TEST(test_queue_registers_are_written);
 PGW_TEST(test_notify_uses_the_offset_multiplier);
