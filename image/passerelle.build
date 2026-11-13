@@ -161,6 +161,7 @@ toybox=toybox
 # the project (drivers/); until they exist the three entries are skipped, and
 # the image still boots with the kernel, the C library and the PCI server.
 [+optional] clockprobe=clockprobe
+[+optional] qbench=qbench
 [+optional] fs9p=fs9p
 [+optional] fsfuse=fsfuse
 [+optional] qshare-mount.sh=qshare-mount.sh

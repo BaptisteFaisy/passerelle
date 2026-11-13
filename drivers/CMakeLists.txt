@@ -89,6 +89,7 @@ set(PGW_QNX_COMMON_SRCS
     "${PGW_DRIVER_COMMON_DIR}/src/ist_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/prio_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/privdrop_qnx.c"
+    "${PGW_DRIVER_COMMON_DIR}/src/reqtab_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/resmgr_connect_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/resmgr_dir_qnx.c"
     "${PGW_DRIVER_COMMON_DIR}/src/resmgr_io_qnx.c"
