@@ -139,6 +139,10 @@ int iofunc_close_ocb_default(resmgr_context_t *ctp, void *reserved,
                              IOFUNC_OCB_T *ocb);
 int iofunc_read_verify(resmgr_context_t *ctp, io_read_t *msg, IOFUNC_OCB_T *ocb,
                        void *extra);
+/* The kernel maps the segments of an executable through the _IO_MMAP message
+ * (QNX 8.0 documentation, iofunc_mmap_default()). */
+int iofunc_mmap_default(resmgr_context_t *ctp, io_mmap_t *msg,
+                        iofunc_ocb_t *ocb);
 int iofunc_write_verify(resmgr_context_t *ctp, io_write_t *msg, IOFUNC_OCB_T *ocb,
                         void *extra);
 int iofunc_stat_default(resmgr_context_t *ctp, io_stat_t *msg, IOFUNC_OCB_T *ocb);

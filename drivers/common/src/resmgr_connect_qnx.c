@@ -24,6 +24,8 @@
 
 #include "pgw/log.h"
 
+#include <stdio.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
