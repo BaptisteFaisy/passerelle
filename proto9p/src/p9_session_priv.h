@@ -37,6 +37,7 @@ struct pgw_p9_session {
     pgw_p9_idpool *tags;
     pgw_p9_idpool *fids;
     bool flushing; /* a Tflush is in progress: never flush a flush (P9-06) */
+    size_t block_bytes; /* size of the buffer block, for the free hook */
     _Atomic uint32_t busy; /* one bit per slot, 1 = in use */
     struct pgw_p9_slot slots[PGW_P9_SLOTS];
 };

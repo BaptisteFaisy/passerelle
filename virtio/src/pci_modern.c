@@ -93,12 +93,18 @@ static void bar_w16(pci_state *st, uint8_t bar, uint32_t off, uint16_t val)
 
 static uint8_t bar_r8(pci_state *st, uint8_t bar, uint32_t off)
 {
+    if (st->bars.r8 != NULL)
+        return st->bars.r8(st->bars.ctx, bar, off);
     uint32_t word = bar_r32(st, bar, off & ~3u);
     return (uint8_t)((word >> (8u * (off & 3u))) & 0xFFu);
 }
 
 static void bar_w8(pci_state *st, uint8_t bar, uint32_t off, uint8_t val)
 {
+    if (st->bars.w8 != NULL) {
+        st->bars.w8(st->bars.ctx, bar, off, val);
+        return;
+    }
     uint32_t base = off & ~3u;
     uint32_t shift = 8u * (off & 3u);
     uint32_t word = bar_r32(st, bar, base);
@@ -229,13 +235,15 @@ static pgw_err pci_read_config(pgw_vio_dev *dev, uint32_t offset, void *out,
     if ((uint64_t)offset + (uint64_t)len > (uint64_t)st->caps.device.length)
         return PGW_EINVAL;
 
+    /* Byte at a time: the device-specific region is usually shorter than the
+     * capability length, and a wider read that crosses the real end is
+     * answered with 0xff (see the note on pgw_pci_bar_io). The virtio
+     * specification makes the device configuration byte-addressable, so this
+     * is also the conforming access size. */
     uint8_t *p = (uint8_t *)out;
     uint32_t base = st->caps.device.offset + offset;
-    for (size_t i = 0; i < len; i++) {
-        uint32_t abs = base + (uint32_t)i;
-        uint32_t word = bar_r32(st, st->caps.device.bar, abs & ~3u);
-        p[i] = (uint8_t)((word >> (8u * (abs & 3u))) & 0xFFu);
-    }
+    for (size_t i = 0; i < len; i++)
+        p[i] = bar_r8(st, st->caps.device.bar, base + (uint32_t)i);
     return PGW_OK;
 }
 
@@ -264,6 +272,12 @@ static pgw_err pci_setup_queue(pgw_vio_dev *dev, uint16_t qidx, pgw_virtq *vq)
     common_w64(st, PGW_CC_QUEUE_DRIVER, vq->avail_pa);
     common_w64(st, PGW_CC_QUEUE_DEVICE, vq->used_pa);
     common_w16(st, PGW_CC_QUEUE_ENABLE, 1u);
+    PGW_DBG("virtio-pci: queue %u desc=0x%llx avail=0x%llx used=0x%llx "
+            "notify bar=%u off=0x%x mult=%u",
+            (unsigned)qidx, (unsigned long long)vq->desc_pa,
+            (unsigned long long)vq->avail_pa, (unsigned long long)vq->used_pa,
+            (unsigned)st->caps.notify.bar, (unsigned)st->caps.notify.offset,
+            (unsigned)st->caps.notify.multiplier);
     return PGW_OK;
 }
 

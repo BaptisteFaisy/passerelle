@@ -23,7 +23,7 @@ set(PGW_VIRTIO_SRCS
     src/virtq_dev.c
 )
 
-if(QNX)
+if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
     list(APPEND PGW_VIRTIO_SRCS
         src/qnx_mem.c
         src/mmio_qnx.c

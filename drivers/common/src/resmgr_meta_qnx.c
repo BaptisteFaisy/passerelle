@@ -17,6 +17,7 @@
  * the stubs in tests/qnx-stub, so both are spelled out here once. */
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE 1
+#define _QNX_SOURCE 1 /* SETIOV() and other QNX extensions used with _RESMGR_PTR */
 #include "pgw/drvsrv.h"
 
 #include "pgw/log.h"
@@ -26,6 +27,7 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <sys/stat.h>
 
@@ -72,7 +74,8 @@ static int io_chmod(resmgr_context_t *ctp, io_chmod_t *msg, RESMGR_OCB_T *raw)
     if (rc != EOK)
         return rc;
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     uint32_t mode = ocb->ocb.attr->mode & PGW_S_PERM_MASK;
     pgw_srv *srv = pgw_srv_current();
     if (srv == NULL)
@@ -95,7 +98,8 @@ static int io_chown(resmgr_context_t *ctp, io_chown_t *msg, RESMGR_OCB_T *raw)
     if (rc != EOK)
         return rc;
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     uint32_t uid = ocb->ocb.attr->uid;
     uint32_t gid = ocb->ocb.attr->gid;
     pgw_srv *srv = pgw_srv_current();
@@ -121,7 +125,8 @@ static int io_utime(resmgr_context_t *ctp, io_utime_t *msg, RESMGR_OCB_T *raw)
     /* For "now", iofunc may only mark the times stale: make them real. */
     (void)iofunc_time_update(ocb->ocb.attr);
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     uint64_t atime_ns = pgw_ns_join((uint64_t)ocb->ocb.attr->atime,
                                     ocb->ocb.attr->atime_ns);
     uint64_t mtime_ns = pgw_ns_join((uint64_t)ocb->ocb.attr->mtime,
@@ -195,7 +200,8 @@ static int io_space(resmgr_context_t *ctp, io_space_t *msg, RESMGR_OCB_T *raw)
     if (srv == NULL)
         return EIO;
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_prio_state prio;
     pgw_prio_enter(ctp, &prio);
     pgw_trace_req(PGW_OP_TRUNC, 0);

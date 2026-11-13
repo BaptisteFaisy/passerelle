@@ -112,6 +112,8 @@ void pgw_vio_destroy(pgw_vio_dev *dev)
         return;
     /* VIO-09: never leave an interrupt attached behind us. */
     pgw_vio_reset(dev);
+    if (dev->irq_release != NULL)
+        dev->irq_release(dev); /* the backend releases what it mapped */
     if (dev->ops->destroy != NULL)
         dev->ops->destroy(dev);
     free(dev);
@@ -138,8 +140,6 @@ void pgw_vio_reset(pgw_vio_dev *dev)
         return;
     if (dev->ops->teardown_irq != NULL)
         dev->ops->teardown_irq(dev);
-    if (dev->irq_release != NULL)
-        dev->irq_release(dev);
     dev->irq_attached = false;
     if (dev->ops->reset != NULL)
         dev->ops->reset(dev);
@@ -147,6 +147,8 @@ void pgw_vio_reset(pgw_vio_dev *dev)
         dev_set_status(dev, 0);
     dev->info.negotiated_features = 0;
     dev->info.msix_active = false;
+    /* The interrupt line belongs to the transport, not to the negotiated
+     * state: a device reset does not unroute it. */
     dev->host_features = 0;
 }
 

@@ -42,6 +42,7 @@
 #define PGW_VIRTIO_ID_FS        26u
 #define PGW_VIRTIO_PCI_DID_9P_TRANSITIONAL 0x1009u /* 0x1000 + 9 */
 #define PGW_VIRTIO_PCI_DID_9P_MODERN       0x1049u /* 0x1040 + 9 */
+#define PGW_VIRTIO_PCI_DID_FS_TRANSITIONAL 0x101Au /* 0x1000 + 26 */
 #define PGW_VIRTIO_PCI_DID_FS_MODERN       0x105Au /* 0x1040 + 26 */
 
 /* virtio-mmio magic and versions (VIO-03) */

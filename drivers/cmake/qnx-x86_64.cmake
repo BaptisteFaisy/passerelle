@@ -60,9 +60,11 @@ set(PGW_MKQNXIMAGE "${PGW_QNX_MKQNXIMAGE}" CACHE FILEPATH "mkqnximage")
 set(PGW_SECPOLCOMPILE "${PGW_QNX_SECPOLCOMPILE}" CACHE FILEPATH "secpolcompile")
 set(PGW_SECPOLPUSH "${PGW_QNX_SECPOLPUSH}" CACHE FILEPATH "secpolpush")
 
-# qcc defines __QNX__ and __QNXNTO__ itself: declaring them again here would
-# be a redefinition, and the build treats warnings as errors.
-set(CMAKE_C_FLAGS_INIT "")
+# qcc compiles in strict ISO mode here (the portable flags set -std=c11 and
+# feature-test macros), which hides the QNX extensions the driver uses
+# (PROT_NOCACHE, MAP_PHYS, mmap_device_io, mem_offset64). _QNX_SOURCE is the
+# documented way to expose them; it implies all the __EXT_* families.
+set(CMAKE_C_FLAGS_INIT "-D_QNX_SOURCE=1")
 
 message(STATUS "QNX target: ${QNX_TARGET}")
 message(STATUS "QNX host tools: ${QNX_SDP_BIN}")

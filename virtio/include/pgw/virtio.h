@@ -77,6 +77,7 @@ typedef struct pgw_vio_info {
     uint16_t num_queues;
     uint64_t negotiated_features;
     bool msix_active;
+    int32_t irq;           /* the interrupt line, -1 when there is none (VIO-04) */
     char tag[64];          /* mount tag (VIO-05, VFS-01) */
 } pgw_vio_info;
 

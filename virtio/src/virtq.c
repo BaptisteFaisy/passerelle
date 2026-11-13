@@ -122,7 +122,11 @@ static uint16_t chain_build_indirect(pgw_virtq *vq, uint16_t table,
     }
 
     pgw_vring_desc *d = &vq->desc[head];
-    d->addr = (uint64_t)(uintptr_t)t;
+    /* The device reads the table by its own address: the physical one when the
+     * backend has one (QNX), the virtual one otherwise (PC bench). */
+    uint64_t offset = (uint64_t)((uint8_t *)t - (uint8_t *)vq->tables);
+    d->addr = vq->tables_pa != 0u ? vq->tables_pa + offset
+                                  : (uint64_t)(uintptr_t)t;
     d->len = (uint32_t)(count * sizeof(pgw_vring_desc));
     d->flags = PGW_VRING_DESC_F_INDIRECT;
     d->next = 0;

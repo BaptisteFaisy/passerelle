@@ -111,13 +111,13 @@ about the same device is in [§3.2](#32-a-real-qnx-71-guest-on-this-pc).
 
 | ID | State | Proof |
 |---|---|---|
-| VIO-01 | **Tested on PC + observed on QNX** | vendor/device matching: `ctest -R test_virtio_pci`; QNX 7.1's `pci-tool` reports `1af4/1009` for our device (EVIDENCE.md §2) |
-| VIO-02 | **Tested on PC + observed on QNX** | capability walk on a fake config space (`test_virtio_pci`); QNX exposes the MSI-X cap and the five vendor (virtio) caps |
+| VIO-01 | **Tested on PC + proven on QNX 8.0** | vendor/device matching: `ctest -R test_virtio_pci`; in a QNX 8.0 guest our driver opens the device itself (`1af4/1009`) and mounts the share (`tests/qemu/qnx8/`) |
+| VIO-02 | **Tested on PC + proven on QNX 8.0** | capability walk on a fake config space (`test_virtio_pci`) and on the real device in a QNX 8.0 guest, where the five vendor (virtio) caps drive the queue setup (`tests/qemu/qnx8/`) |
 | VIO-03 | **Tested on PC** | MMIO v1 and v2 against a RAM-backed register file: `ctest -R test_virtio_mmio` |
 | VIO-04 | Implemented, **not verifiable here** | MSI-X programming with INTx fallback is separated from bus access (`test_virtio_pci` covers the programming); delivery needs QNX + a routed vector — see §3.2 and E1 |
-| VIO-05 | **Tested on PC** | mount tag read from device config: `ctest -R test_virtio_dev` |
+| VIO-05 | **Tested on PC + proven on QNX 8.0** | mount tag read from device config: `ctest -R test_virtio_dev`; in the guest the tag is read one byte at a time (the region is 11 bytes long) and the device is refused when it differs |
 | VIO-06 | **Tested on PC** | one device object per share: `test_virtio_dev` |
-| VIO-07 | **Tested on PC** | zero-copy scatter-gather: `ctest -R test_virtio_vq` (no intermediate copy in the transport) |
+| VIO-07 | **Tested on PC + proven on QNX 8.0** | zero-copy scatter-gather: `ctest -R test_virtio_vq` (no intermediate copy in the transport); on QNX the descriptors carry the *physical* address of the caller's buffers, out of a contiguous pool |
 | VIO-08 | **Tested on PC** | indirect descriptors and notification suppression: `test_virtio_vq`, `test_virtio_dev` |
 | VIO-09 | **Tested on PC** | reset and interrupt teardown: `test_virtio_dev` |
 | VIO-10 | **Tested on PC** | the mock backend that makes all of the above possible without QNX: `ctest -R test_virtio_mock` |

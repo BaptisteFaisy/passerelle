@@ -105,27 +105,37 @@ struct _pulse {
 #define _NTO_INTR_FLAGS_EXCLUSIVE  0x00000010u
 #define _NTO_INTR_FLAGS_CPU_LOCAL  0x00000020u
 
-/* Caller credentials as the kernel reports them. On target this is
- * <sys/cred.h> `struct _cred_info`; the fields used by the drivers are euid,
- * egid and the supplementary group list (FS-09 / SEC-01). */
-#define _NTO_CRED_MAX_GROUPS 8
+/* Caller credentials, as the kernel reports them to ConnectClientInfo(). QNX's
+ * <limits.h> defines __NGROUPS_MAX (8); the host's does not, so it is spelled
+ * out here behind the guard. The drivers only ever read euid/egid (FS-09). */
+#ifndef __NGROUPS_MAX
+#define __NGROUPS_MAX 8
+#endif
 
 struct _cred_info {
-    uint32_t info_size;
-    uint32_t flags;
-    uint32_t ruid;
-    uint32_t euid;
-    uint32_t suid;
-    uint32_t rgid;
-    uint32_t egid;
-    uint32_t sgid;
+    uid_t ruid;
+    uid_t euid;
+    uid_t suid;
+    gid_t rgid;
+    gid_t egid;
+    gid_t sgid;
     uint32_t ngroups;
-    uint32_t grouplist[_NTO_CRED_MAX_GROUPS];
+    gid_t grouplist[__NGROUPS_MAX];
+};
+
+struct _client_info {
+    uint32_t nd;
+    pid_t pid;
+    pid_t sid;
+    uint32_t flags;
+    struct _cred_info cred;
 };
 
 /* Message info filled by MsgInfo(). `priority` is the sender's priority, which
  * is what the driver runs a request at (QNX-03), and `flags` carries
- * _NTO_MI_UNBLOCK_REQ (QNX-05). Layout is a documented subset. */
+ * _NTO_MI_UNBLOCK_REQ (QNX-05). QNX 8 dropped the `cred` member from
+ * _msg_info64: the credentials are asked for separately with ConnectClientInfo()
+ * (FS-09). Layout is a documented subset. */
 struct _msg_info {
     uint32_t nd;
     int32_t srcnd;
@@ -139,7 +149,6 @@ struct _msg_info {
     uint32_t dstmsglen;
     uint16_t priority;
     uint32_t flags;
-    struct _cred_info cred;
 };
 
 /* --- channel and message passing ----------------------------------------- */
@@ -161,6 +170,10 @@ int MsgError(rcvid_t rcvid, int err);
 int MsgInfo(rcvid_t rcvid, struct _msg_info *info);
 int MsgDeliverEvent(rcvid_t rcvid, const struct sigevent *event);
 
+/* The client's identity and credentials, asked for on the server connection id
+ * that _msg_info.scoid identifies (FS-09). */
+int ConnectClientInfo(int scoid, struct _client_info *info, int ngroups);
+
 /* --- synchronisation (SyncMutex* is the QNX mutex; pthread_mutex works too
  *     but the kernel object is what a resource manager needs when the lock is
  *     taken from a thread that may be boosted by priority inheritance). ----- */
@@ -174,7 +187,13 @@ int SyncDestroy(sync_t *sync);
 
 /* --- threads and scheduling ---------------------------------------------- */
 
-int ThreadCreate(void *(*start_routine)(void *), const void *arg, size_t stacksize);
+/* QNX 8's ThreadCreate() takes an opaque struct _thread_attr that no public
+ * header defines; the C Library Reference says to use pthread_create() instead,
+ * which is what the drivers do. The prototype here is the real one (four
+ * arguments), not the entry/arg/stack-size shape of no QNX version. */
+struct _thread_attr;
+int ThreadCreate(pid_t tid, void *(*func)(void *arg), void *arg,
+                 const struct _thread_attr *attr);
 int ThreadCtl(int cmd, void *data);
 int SchedSet(pid_t pid, int tid, int policy, const struct sched_param *param);
 

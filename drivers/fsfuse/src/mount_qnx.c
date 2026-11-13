@@ -56,6 +56,7 @@ static pgw_err open_transport(fsfuse_dev *dev)
     const pgw_vio_info *info = pgw_vio_get_info(dev->vio);
     if (info == NULL)
         return PGW_EIO;
+    dev->irq = info->irq; /* the interrupt line the transport attached (VIO-04) */
     /* The device says how many request queues it has (VFS-01); queue 0 is the
      * hiprio lane, so the request queues are 1..num_queues-1. */
     uint16_t total = info->num_queues;
@@ -116,10 +117,14 @@ pgw_err fsfuse_mount_and_serve(pgw_mount_opts *opts, const char *mount_point)
     g_dev.opts = *opts;
     g_dev.irq = -1;
 
-    pgw_err e = fsfuse_privdrop(); /* QNX-06 / SEC-01 */
+    /* The PCI attach needs the PCI server's shared database, readable by root
+     * only: the device is opened first and the privileges are dropped
+     * afterwards, with the abilities the serving phase needs granted and
+     * locked before the drop (QNX-06, SEC-01). */
+    pgw_err e = open_transport(&g_dev);
     if (e != PGW_OK)
-        return e;
-    e = open_transport(&g_dev);
+        goto fail;
+    e = fsfuse_privdrop(); /* QNX-06 / SEC-01: after the device work */
     if (e != PGW_OK)
         goto fail;
     e = fsfuse_dispatch_open(&g_dev); /* VFS-02 */

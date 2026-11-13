@@ -61,7 +61,7 @@ static void qnx_mmio_release(pgw_vio_dev *dev)
 pgw_vio_dev *pgw_vio_mmio_open_phys(uint64_t paddr, int32_t irq,
                                     const char *expected_tag)
 {
-    void *va = mmap_device_io(PGW_QNX_MMIO_WINDOW, paddr);
+    void *va = (void *)(uintptr_t)mmap_device_io(PGW_QNX_MMIO_WINDOW, paddr);
     if (va == MAP_FAILED) {
         PGW_ERR("virtio-mmio: cannot map 0x%llx: %s",
                 (unsigned long long)paddr, strerror(errno));
@@ -70,7 +70,7 @@ pgw_vio_dev *pgw_vio_mmio_open_phys(uint64_t paddr, int32_t irq,
 
     qnx_mmio *m = calloc(1u, sizeof(*m));
     if (m == NULL) {
-        munmap_device_io(va, PGW_QNX_MMIO_WINDOW);
+        munmap_device_io((uintptr_t)va, PGW_QNX_MMIO_WINDOW);
         return NULL;
     }
     m->va = va;
@@ -81,7 +81,7 @@ pgw_vio_dev *pgw_vio_mmio_open_phys(uint64_t paddr, int32_t irq,
     pgw_mmio_io io = {qnx_mmio_r32, qnx_mmio_w32, m};
     pgw_vio_dev *dev = pgw_vio_mmio_open(io, expected_tag);
     if (dev == NULL) {
-        munmap_device_io(va, PGW_QNX_MMIO_WINDOW);
+        munmap_device_io((uintptr_t)va, PGW_QNX_MMIO_WINDOW);
         free(m);
         return NULL;
     }

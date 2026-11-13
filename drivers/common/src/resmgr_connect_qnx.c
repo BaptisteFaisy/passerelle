@@ -112,9 +112,14 @@ static int connect_open(resmgr_context_t *ctp, io_open_t *msg,
     if (srv == NULL)
         return EIO;
     const char *path = msg->connect.path;
+    /* The kernel sends an empty path when the client opens the mount point
+     * itself: that is the root of the filesystem, not "nothing" (QNX-01). */
+    if (path == NULL || path[0] == '\0')
+        path = "/";
     uint32_t ioflag = msg->connect.ioflag;
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_prio_state prio;
     pgw_prio_enter(ctp, &prio);
     pgw_trace_req(PGW_OP_OPEN, 0);
@@ -146,7 +151,8 @@ static int connect_readlink(resmgr_context_t *ctp, io_readlink_t *msg,
         return EIO;
     static _Thread_local char target[PGW_PATH_MAX];
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_prio_state prio;
     pgw_prio_enter(ctp, &prio);
     pgw_trace_req(PGW_OP_READLINK, 0);
@@ -175,7 +181,8 @@ static int connect_unlink(resmgr_context_t *ctp, io_unlink_t *msg,
     if (msg->connect.path[0] == '\0')
         return EBUSY; /* the mount point cannot be removed */
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     /* rmdir() sends mode S_IFDIR, unlink() sends S_IFLNK ("do not follow"). */
     bool is_dir = (msg->connect.mode & S_IFMT) == S_IFDIR;
     pgw_prio_state prio;
@@ -204,7 +211,8 @@ static int connect_mknod(resmgr_context_t *ctp, io_mknod_t *msg,
     if ((msg->connect.mode & S_IFMT) != S_IFDIR)
         return ENOTSUP;
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_prio_state prio;
     pgw_prio_enter(ctp, &prio);
     pgw_trace_req(PGW_OP_MKDIR, 0);
@@ -237,7 +245,8 @@ static int connect_rename(resmgr_context_t *ctp, io_rename_t *msg,
     old_path[n] = '\0';
 
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_prio_state prio;
     pgw_prio_enter(ctp, &prio);
     pgw_trace_req(PGW_OP_RENAME, 0);
@@ -268,7 +277,8 @@ static int connect_link(resmgr_context_t *ctp, io_link_t *msg,
     other[n] = '\0';
 
     pgw_fs_cred cred;
-    pgw_cred_from_ctp(ctp, &cred);
+    if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)
+        return EACCES;
     pgw_prio_state prio;
     pgw_prio_enter(ctp, &prio);
     uint8_t type = msg->connect.extra_type;
