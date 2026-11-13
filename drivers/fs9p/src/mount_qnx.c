@@ -31,7 +31,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 /* Provided by dispatch_qnx.c and irq_qnx.c. */
 pgw_err fs9p_dispatch_open(pgw_vio_dev *dev, pgw_virtq *vq, uint32_t timeout_ms);
@@ -111,12 +110,10 @@ pgw_err fs9p_mount_and_serve(pgw_mount_opts *opts, const char *mount_point)
     g_dev.opts = *opts;
     g_dev.irq = -1;
 
-    /* The mount point has to exist before the driver attaches to it (QNX-07).
-     * The guest image has no writable root, so the driver creates the
-     * directory itself when the system allows it. */
-    if (mkdir(mount_point, 0755) != 0 && errno != EEXIST)
-        PGW_WARN("fs9p: cannot create the mount point %s: %s", mount_point,
-                 strerror(errno));
+    /* The mount point does not have to exist: the driver attaches a resource
+     * manager on it and the kernel creates the path in the namespace (QNX-07).
+     * The guest image has no writable root, so a real mkdir() would fail
+     * anyway - the path is a namespace entry, not a directory of the IFS. */
 
     /* The PCI attach needs the PCI server's shared database, which is
      * readable by root only: the device is opened first, and the privileges are

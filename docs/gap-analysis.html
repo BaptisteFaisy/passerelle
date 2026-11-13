@@ -179,8 +179,8 @@
 </tr>
 <tr>
 <td>13</td>
-<td>&lt;strong&gt;PERF-03&lt;/strong&gt; — 1 GiB sequential throughput, at least half of a Linux guest</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Partly closed 13/11&lt;/strong&gt; - 64 MiB read in &lt;strong&gt;9.60 s&lt;/strong&gt; (6.7 MiB/s) through our driver in a real QNX 8.0 guest (<code>docs/measurements/qnx8-guest.md</code>). The comparison with a Linux guest on the same machine is still missing: the Linux baseline counts round trips per POSIX operation, not a bulk byte rate</td>
+<td>&lt;strong&gt;[P]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>14</td>
@@ -194,8 +194,8 @@
 </tr>
 <tr>
 <td>16</td>
-<td>&lt;strong&gt;PERF-06&lt;/strong&gt; — mount takes under 50 ms</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - the mount takes &lt;strong&gt;11 ms&lt;/strong&gt; in a real QNX 8.0 guest (from the driver's first log line to the 9P session and the interrupt thread), measured with the system log (<code>docs/measurements/qnx8-guest.md</code>)</td>
+<td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>17</td>
