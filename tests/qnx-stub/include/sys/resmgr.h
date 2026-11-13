@@ -125,6 +125,10 @@ typedef int (*resmgr_io_space_fn)(resmgr_context_t *ctp, io_space_t *msg,
 typedef int (*resmgr_io_close_fn)(resmgr_context_t *ctp, io_close_t *msg,
                                   RESMGR_OCB_T *ocb);
 typedef int (*resmgr_io_fn)(resmgr_context_t *ctp, void *msg, RESMGR_OCB_T *ocb);
+/* The kernel maps an executable through the _IO_MMAP message; the real
+ * signature takes the typed message (QNX 8.0, resmgr_io_funcs_t.mmap). */
+typedef int (*resmgr_io_mmap_fn)(resmgr_context_t *ctp, io_mmap_t *msg,
+                                 RESMGR_OCB_T *ocb);
 
 typedef struct _resmgr_io_funcs {
     unsigned nfuncs;
@@ -143,7 +147,7 @@ typedef struct _resmgr_io_funcs {
     resmgr_io_space_fn space;
     resmgr_io_close_fn close;
     resmgr_io_lseek_fn lseek;
-    resmgr_io_fn mmap;
+    resmgr_io_mmap_fn mmap;
     resmgr_io_fn msg;
     resmgr_io_fn rmdir;
     resmgr_io_sync_fn sync;

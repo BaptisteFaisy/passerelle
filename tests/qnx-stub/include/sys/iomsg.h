@@ -193,10 +193,31 @@ struct _io_stat {
     uint32_t zero;
 };
 
+/* The kernel asks the filesystem to map an executable with this message
+ * (QNX 8.0 documentation, iofunc_mmap_default()). */
+struct _io_mmap {
+    uint16_t type;
+    uint16_t combine_len;
+    uint32_t prot;
+    uint64_t offset;
+    struct {
+        uint32_t zero;
+        uint32_t type;
+    } info;
+    uint32_t required_prot;
+    uint32_t zero[3];
+    uint64_t requested_len;
+};
+
 typedef union {
     struct _io_stat i;
     struct _io_stat o;
 } io_stat_t;
+
+typedef union {
+    struct _io_mmap i;
+    struct _io_mmap o;
+} io_mmap_t;
 
 struct _io_lseek {
     uint16_t type;

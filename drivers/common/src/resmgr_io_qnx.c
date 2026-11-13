@@ -24,6 +24,9 @@
 
 #include "pgw/log.h"
 
+#include <stdio.h>
+#include <string.h>
+
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -365,6 +368,11 @@ static int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *raw)
 
 void pgw_resmgr_io_init(resmgr_io_funcs_t *io)
 {
+    /* The kernel maps the segments of an executable through the _IO_MMAP
+     * message: without this callout the process manager cannot execute a
+     * program the filesystem serves (FS-06, "iofunc_mmap_default()" in the
+     * QNX 8.0 documentation). */
+    io->mmap = iofunc_mmap_default;
     io->read = pgw_io_read;
     io->read64 = pgw_io_read;
     io->write = io_write;

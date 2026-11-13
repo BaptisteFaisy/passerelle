@@ -156,14 +156,23 @@ back.
 
 **Executing a program of the share does not work yet.** The kernel asks the
 filesystem for the *exec info* - the interpreter and its arguments - when a
-client opens a file with `_IO_FLAG_EX`. A filesystem that serves an executable
-has to answer that open with a **link reply** whose path carries the exec
-information (the interpreter path, then the arguments, NUL separated, with a
-final empty string); the driver answers with the ordinary open reply, the
+client opens a file with `_IO_FLAG_EX` (observed: the open arrives with
+`ioflag & _IO_FLAG_EX`, twice). A filesystem that serves an executable has to
+answer that open with a **link reply** whose path carries the exec information
+(the interpreter path, then the arguments, NUL separated, with a final empty
+string) and whose server entry carries the OCB, so that the kernel can map the
+segments afterwards. The driver answers with the ordinary open reply, the
 kernel finds no interpreter and falls back to the shell, which chokes on the
-binary. `tests/qemu/qnx8/fs6-demo.c` is the program that would be executed: it
-is cross-compiled by `build-image.sh` and put in the share, so only the reply
-is missing.
+binary.
+
+The `_IO_MMAP` callout is now in place (`iofunc_mmap_default()`), which the
+QNX 8.0 documentation requires for a filesystem whose binaries the process
+manager must be able to execute; the kernel never reaches it, because it stops
+at the missing exec info. Two things are still missing: the reply itself, and
+the OCB it must carry - our open path lets `iofunc_ocb_attach()` allocate the
+OCB, so the driver never sees its address (the `ocb_calloc` hook would have to
+hand it over). `tests/qemu/qnx8/fs6-demo.c` is the program that would be
+executed: it is cross-compiled by `build-image.sh` and put in the share.
 
 **`clockprobe.c`** answers, at boot, the two calls the driver's deadlines are
 built on (`clock_gettime(CLOCK_MONOTONIC)` and `nanosleep()`): both work in the
