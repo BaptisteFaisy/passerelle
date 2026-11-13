@@ -45,6 +45,32 @@ stage() {
 stage "$ROOT/build-qnx/drivers/fs9p" fs9p
 stage "$ROOT/build-qnx/drivers/fsfuse" fsfuse
 
+# The clock probe: what the guest answers for clock_gettime() and nanosleep().
+CLOCK_SRC="$ROOT/tests/qemu/qnx8/clockprobe.c"
+if [ -f "$CLOCK_SRC" ]; then
+    if qcc -Vgcc_ntox86_64 -D_QNX_SOURCE=1 -O2 -o "$BUILD/stage/clockprobe" \
+        "$CLOCK_SRC" 2>/dev/null; then
+        echo "built the clock probe"
+    else
+        echo "note: the clock probe did not build"
+    fi
+fi
+
+# The FS-06 demo: a program the guest executes straight from the share. It is
+# built for the target when the SDP is there, and simply absent otherwise
+# (the image still boots).
+DEMO_SRC="$ROOT/tests/qemu/qnx8/fs6-demo.c"
+DEMO_OUT="$BUILD/share/fs6-demo"
+if [ -f "$DEMO_SRC" ]; then
+    mkdir -p "$BUILD/share"
+    if qcc -Vgcc_ntox86_64 -D_QNX_SOURCE=1 -O2 -o "$DEMO_OUT" "$DEMO_SRC" \
+        2>/dev/null; then
+        echo "built the FS-06 demo: $DEMO_OUT"
+    else
+        echo "note: the FS-06 demo did not build (no SDP compiler?)"
+    fi
+fi
+
 cd "$ROOT"
 mkifs -v -v -o "$BUILD" tests/qemu/qnx8/passerelle.build "$BUILD/passerelle.ifs"
 ls -l "$BUILD/passerelle.ifs"

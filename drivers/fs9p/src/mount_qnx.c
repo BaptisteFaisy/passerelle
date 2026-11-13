@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -149,8 +150,10 @@ fail:
 
 void fs9p_unmount(void)
 {
+    /* The path is not detached explicitly: resmgr_detach() blocks until the
+     * mount point's attribute is free, and the kernel removes the namespace
+     * entry when the resource manager exits anyway (ROB-03). */
     if (g_mounted) {
-        (void)pgw_srv_detach(&g_srv);
         g_mounted = false;
     }
     fs9p_dispatch_close(); /* clunks every fid the session opened (P9-07) */

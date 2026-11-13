@@ -146,6 +146,30 @@ Four rules, each one paid for here:
    as an I/O BAR (the legacy register file); mapping it with
    `mmap_device_memory()` maps an unrelated page. Only memory BARs are mapped.
 
+## Two things the guest showed, and one it still needs
+
+**The unmount used to deadlock.** `resmgr_detach()` blocks until the mount
+point's attribute is free, and the attribute never was: the driver now lets the
+kernel remove the namespace entry when the process exits, and a supervisor
+remounts it. `slay fs9p` returns, the console keeps answering, and the mount is
+back.
+
+**Executing a program of the share does not work yet.** The kernel asks the
+filesystem for the *exec info* - the interpreter and its arguments - when a
+client opens a file with `_IO_FLAG_EX`. A filesystem that serves an executable
+has to answer that open with a **link reply** whose path carries the exec
+information (the interpreter path, then the arguments, NUL separated, with a
+final empty string); the driver answers with the ordinary open reply, the
+kernel finds no interpreter and falls back to the shell, which chokes on the
+binary. `tests/qemu/qnx8/fs6-demo.c` is the program that would be executed: it
+is cross-compiled by `build-image.sh` and put in the share, so only the reply
+is missing.
+
+**`clockprobe.c`** answers, at boot, the two calls the driver's deadlines are
+built on (`clock_gettime(CLOCK_MONOTONIC)` and `nanosleep()`): both work in the
+guest, so a wait that does not expire is a defect of the driver, not of the
+platform.
+
 ## Where this stands
 
 Proven, and captured in this directory:
