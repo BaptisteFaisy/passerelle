@@ -246,12 +246,42 @@ static pgw_err do_attach(pgw_p9_session *s, const char *uname, const char *aname
     return e;
 }
 
+/* The allocator the session uses for its buffer block (VIO-07). */
+static pgw_p9_alloc_fn g_alloc = NULL;
+static pgw_p9_free_fn g_free = NULL;
+static void *g_alloc_user = NULL;
+
+void pgw_p9_session_set_memory(pgw_p9_alloc_fn alloc, pgw_p9_free_fn free_fn,
+                               void *user)
+{
+    g_alloc = alloc;
+    g_free = free_fn;
+    g_alloc_user = user;
+}
+
+static void *session_alloc(size_t bytes)
+{
+    if (g_alloc != NULL)
+        return g_alloc(bytes, g_alloc_user);
+    return calloc(1, bytes);
+}
+
+static void session_release(void *ptr, size_t bytes)
+{
+    if (ptr == NULL)
+        return;
+    if (g_free != NULL)
+        g_free(ptr, bytes, g_alloc_user);
+    else
+        free(ptr);
+}
+
 static void session_free(pgw_p9_session *s)
 {
     if (s == NULL)
         return;
     if (s->slots[0].tx != NULL)
-        free(s->slots[0].tx); /* one block for every slot */
+        session_release(s->slots[0].tx, s->block_bytes); /* one block */
     pgw_p9_pool_destroy(s->tags);
     pgw_p9_pool_destroy(s->fids);
     free(s);
@@ -278,7 +308,8 @@ pgw_p9_session *pgw_p9_session_open(pgw_p9_rpc_fn rpc, void *user,
     s->root_fid = PGW_FID_NONE;
     atomic_store_explicit(&s->busy, 0u, memory_order_relaxed);
     size_t block = (size_t)PGW_P9_SLOTS * 2u * (size_t)msize;
-    uint8_t *bufs = calloc(1, block);
+    uint8_t *bufs = session_alloc(block);
+    s->block_bytes = block;
     if (bufs == NULL) {
         session_free(s);
         return NULL;

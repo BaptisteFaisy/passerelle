@@ -210,6 +210,18 @@ typedef struct pgw_ability {
  * `user` when given). Refuses to serve if root privileges remain (QNX-06). */
 pgw_err pgw_privdrop_apply(const pgw_ability *list, size_t n, const char *user);
 
+/* --- DMA addresses (VIO-07) ---------------------------------------------- */
+
+/* Physical address of `len` bytes at `addr`, for a device that reads or
+ * writes them. PGW_EIO when the range is not physically contiguous. */
+pgw_err pgw_qnx_phys(void *addr, size_t len, uint64_t *out_pa);
+
+/* Memory a device can read and write: physically contiguous and non-cached.
+ * The pair is the allocator the 9P and virtiofs sessions use for their
+ * request and reply buffers (VIO-07). */
+void *pgw_qnx_alloc_dma(size_t bytes, void *user);
+void pgw_qnx_free_dma(void *ptr, size_t bytes, void *user);
+
 /* --- interrupt service thread (VIO-04) ---------------------------------- */
 
 /* Sleep `ms` milliseconds. delay() is a _QNX_SOURCE-gated extension; nanosleep()

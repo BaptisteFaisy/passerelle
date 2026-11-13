@@ -113,8 +113,12 @@ struct pgw_virtq {
     /* Device side cursor, used by the mock transport (VIO-10). */
     uint16_t dev_last_avail;
 
-    /* Indirect descriptor pool (VIO-08). */
+    /* Indirect descriptor pool (VIO-08). The device reads those tables by
+     * their address, which on QNX is the physical one: tables_pa is what the
+     * descriptor must carry, zero when the backend has no separate physical
+     * address (the PC bench, where virtual is physical). */
     pgw_vring_desc *tables;
+    uint64_t tables_pa;
     uint32_t table_mask; /* bit set = table in use */
 };
 
@@ -126,9 +130,14 @@ struct pgw_vio_dev {
     bool irq_attached;
     pgw_vq_mem_alloc_fn vq_alloc;
     pgw_vq_mem_free_fn vq_free;
-    /* Optional backend teardown run by pgw_vio_reset() after the bus ops: the
-     * QNX glue uses it to detach its interrupt thread (VIO-09). */
+    /* Backend teardown run by pgw_vio_destroy(): the QNX glue uses it to
+     * release what it mapped for the device (VIO-09). A device *reset* must
+     * not release it: the transport is still needed after the reset. */
     void (*irq_release)(pgw_vio_dev *dev);
+    /* The backend's own data, when the bus needs more than the ops table:
+     * the QNX PCI binding keeps its PCI handle and BAR mappings here, the
+     * portable state stays private to the portable layer. */
+    void *user;
 };
 
 /* Ring sizes in bytes: flags+idx+ring[] plus the EVENT_IDX slot (virtio 1.2
@@ -230,11 +239,20 @@ typedef struct pgw_pci_cfg_io {
     void *ctx;
 } pgw_pci_cfg_io;
 
-/* BAR accessor (32-bit registers, like MMIO). */
+/* BAR accessor (32-bit registers, like MMIO). The byte accessors are optional:
+ * when they are NULL the 32-bit pair emulates them, which is fine for a
+ * RAM-backed bench. A real device is another story: a virtio PCI device's
+ * device-specific regions are often shorter than the capability that describes
+ * them (QEMU advertises a 0x1000-byte DEVICE region but only 11 bytes of actual
+ * configuration for virtio-9p), and a 32-bit read that crosses the real length
+ * is answered with 0xff. A driver that can do real byte accesses declares
+ * r8/w8 and the config-space reader uses them (VIO-02). */
 typedef struct pgw_pci_bar_io {
     uint32_t (*r32)(void *ctx, uint8_t bar, uint32_t off);
     void (*w32)(void *ctx, uint8_t bar, uint32_t off, uint32_t val);
     void *ctx;
+    uint8_t (*r8)(void *ctx, uint8_t bar, uint32_t off);
+    void (*w8)(void *ctx, uint8_t bar, uint32_t off, uint8_t val);
 } pgw_pci_bar_io;
 
 /* The five modern capability types of virtio 1.2 §4.1.4 (VIO-02). */

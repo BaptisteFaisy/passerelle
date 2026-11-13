@@ -112,6 +112,10 @@ static int connect_open(resmgr_context_t *ctp, io_open_t *msg,
     if (srv == NULL)
         return EIO;
     const char *path = msg->connect.path;
+    /* The kernel sends an empty path when the client opens the mount point
+     * itself: that is the root of the filesystem, not "nothing" (QNX-01). */
+    if (path == NULL || path[0] == '\0')
+        path = "/";
     uint32_t ioflag = msg->connect.ioflag;
     pgw_fs_cred cred;
     if (pgw_cred_from_ctp(ctp, &cred) != PGW_OK)

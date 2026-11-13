@@ -63,6 +63,7 @@
     PCI_SLOG_MODULE=pci_slog2.so
     PCI_CAP_MODULE_DIR=/proc/boot
     PCI_BASE_VERBOSITY=3
+    PGW_LOG_LEVEL=info
 
     display_msg "Passerelle: starting PCI Services"
     pci-server --config=/proc/boot/pci_server.cfg
@@ -75,7 +76,8 @@
     [+session] sh &
 
     # The share is mounted here: the script waits for the device, mounts it and
-    # writes to the system log (QNX-07, QNX-08).
+    # writes to the system log (QNX-07, QNX-08). The driver creates the mount
+    # point directory itself when the system lets it.
     /proc/boot/qshare-mount.sh &
 
     display_msg "Passerelle: startup complete"

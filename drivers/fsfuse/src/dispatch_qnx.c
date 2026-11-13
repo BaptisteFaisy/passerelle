@@ -107,13 +107,23 @@ static pgw_err fsfuse_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap
     if (vq == NULL)
         return PGW_ENODEV;
 
+    /* The device addresses physical memory: the descriptors carry the physical
+     * address of the caller's buffers, not their virtual one (VIO-07). */
+    uint64_t tx_pa = 0;
+    uint64_t rx_pa = 0;
+    pgw_err e = pgw_qnx_phys((void *)(uintptr_t)tx, tx_len, &tx_pa);
+    if (e == PGW_OK)
+        e = pgw_qnx_phys(rx, rx_cap, &rx_pa);
+    if (e != PGW_OK)
+        return e;
+
     pgw_vio_sg sg[2];
     sg[0].addr = (void *)(uintptr_t)tx;
-    sg[0].phys = 0;
+    sg[0].phys = tx_pa;
     sg[0].len = (uint32_t)tx_len;
     sg[0].write = false;
     sg[1].addr = rx;
-    sg[1].phys = 0;
+    sg[1].phys = rx_pa;
     sg[1].len = (uint32_t)rx_cap;
     sg[1].write = true;
 
@@ -122,7 +132,7 @@ static pgw_err fsfuse_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap
     unique_next++;
 
     pgw_stat_add(PGW_STAT_REQ, 1);
-    pgw_err e = pgw_vq_push(vq, sg, 2u, cookie);
+    e = pgw_vq_push(vq, sg, 2u, cookie);
     if (e != PGW_OK)
         return e;
     (void)pgw_vq_kick(vq);
