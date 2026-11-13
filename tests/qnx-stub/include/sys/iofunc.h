@@ -115,12 +115,9 @@ typedef struct _iofunc_funcs {
     void (*ocb_free)(IOFUNC_OCB_T *ocb);
 } iofunc_funcs_t;
 
-/* The caller's identity, as the iofunc layer reports it (FS-09, SEC-01). */
-typedef struct _client_info {
-    uint32_t info_size;
-    uint32_t flags;
-    struct _cred_info cred;
-} _client_info;
+/* The caller's identity (struct _client_info in <sys/neutrino.h>); the iofunc
+ * layer refers to it without the `struct` keyword (FS-09, SEC-01). */
+typedef struct _client_info _client_info;
 
 /* --- iofunc layer --------------------------------------------------------- */
 

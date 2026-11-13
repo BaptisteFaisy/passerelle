@@ -38,18 +38,31 @@ typedef struct _dispatch dispatch_t;
 
 typedef struct _thread_pool thread_pool_t;
 
+/* The pool passes its work item to every callback under THREAD_POOL_PARAM_T.
+ * QNX 8's <sys/resmgr.h> defaults it to resmgr_context_t; the drivers pin it to
+ * dispatch_context_t (before including the headers) so the dispatch layer's own
+ * dispatch_* functions type-check, exactly as the QNX 8 resource-manager
+ * examples do. */
+#ifndef THREAD_POOL_PARAM_T
+#define THREAD_POOL_PARAM_T dispatch_context_t
+#endif
+
+#ifndef THREAD_POOL_HANDLE_T
+#define THREAD_POOL_HANDLE_T dispatch_t
+#endif
+
 typedef struct _thread_pool_attr {
-    void *handle;
-    dispatch_context_t *(*context_alloc)(void *handle);
-    void (*context_free)(dispatch_context_t *ctp);
-    int (*block_func)(dispatch_context_t *ctp);
-    void (*unblock_func)(dispatch_context_t *ctp);
-    int (*handler_func)(dispatch_context_t *ctp);
-    void (*context_func)(dispatch_context_t *ctp);
-    int32_t lo_water;
-    int32_t increment;
-    int32_t hi_water;
-    int32_t maximum;
+    THREAD_POOL_HANDLE_T *handle;
+    THREAD_POOL_PARAM_T *(*block_func)(THREAD_POOL_PARAM_T *ctp);
+    void (*unblock_func)(THREAD_POOL_PARAM_T *ctp);
+    int (*handler_func)(THREAD_POOL_PARAM_T *ctp);
+    THREAD_POOL_PARAM_T *(*context_alloc)(THREAD_POOL_HANDLE_T *handle);
+    void (*context_free)(THREAD_POOL_PARAM_T *ctp);
+    void *attr; /* pthread_attr_t * on target */
+    unsigned short lo_water;
+    unsigned short increment;
+    unsigned short hi_water;
+    unsigned short maximum;
     uint32_t reserved[2];
 } thread_pool_attr_t;
 
@@ -63,7 +76,7 @@ int dispatch_destroy(dispatch_t *dpp);
 
 dispatch_context_t *dispatch_context_alloc(dispatch_t *dpp);
 void dispatch_context_free(dispatch_context_t *ctp);
-int dispatch_block(dispatch_context_t *ctp);
+dispatch_context_t *dispatch_block(dispatch_context_t *ctp);
 int dispatch_handler(dispatch_context_t *ctp);
 void dispatch_unblock(dispatch_context_t *ctp);
 
