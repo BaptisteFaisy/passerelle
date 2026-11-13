@@ -44,7 +44,7 @@ env:
 jobs:
   build-test:
     name: build-test
-    runs-on: [self-hosted, passerelle-worker]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Start clock
@@ -113,7 +113,7 @@ jobs:
 
   sanitize:
     name: sanitize
-    runs-on: [self-hosted, passerelle-worker]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     # Charge réduite et déclarée : cet job rejoue la pile portable avec
     # -DPGW_SANITIZERS=ON (ASan + UBSan), c'est-à-dire le même code et les
@@ -187,7 +187,7 @@ jobs:
 
   host-tools:
     name: host-tools
-    runs-on: [self-hosted, passerelle-worker]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Start clock
@@ -234,7 +234,7 @@ jobs:
 
   qnx-syntax:
     name: qnx-syntax
-    runs-on: [self-hosted, passerelle-worker]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     # The QNX-only sources are compiled on the PC against tests/qnx-stub, with
     # the same warning set as the `pgw_qnx_syntax` CMake helper. While the
@@ -313,7 +313,7 @@ jobs:
 
   rules:
     name: rules
-    runs-on: [self-hosted, passerelle-worker]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Start clock
