@@ -213,6 +213,8 @@ jobs:
             [ -d "$d" ] || continue
             python3 -m compileall -q "$d"
           done
+      - name: Installer pytest (absent de ubuntu-latest)
+        run: python3 -m pip install --quiet --break-system-packages pytest
       - name: Host unit tests (pytest)
         run: |
           set -euo pipefail
