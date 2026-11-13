@@ -43,6 +43,11 @@
     # The loader lives at /proc/boot/ldqnx-64.so.2; the absolute interpreter
     # path the binaries declare is /usr/lib/ldqnx-64.so.2 (QNX-02).
     procmgr_symlink /proc/boot/ldqnx-64.so.2 /usr/lib/ldqnx-64.so.2
+    # The scripts are shebanged #!/bin/sh; the shell lives flat at /proc/boot/sh.
+    procmgr_symlink /proc/boot/sh /bin/sh
+    # getpwnam() reads /etc/passwd: the account the driver drops root to
+    # (QNX-06) is declared in the image at /proc/boot/passwd.
+    procmgr_symlink /proc/boot/passwd /etc/passwd
 
     display_msg "Passerelle: starting the PCI services"
     slogger2
@@ -116,6 +121,8 @@ libpci.so.3.0=libpci.so.3.0
 libsecpol.so.1=libsecpol.so.1
 libslog2.so.1=libslog2.so.1
 libslog2parse.so.1=libslog2parse.so.1
+libfsnotify.so.1=libfsnotify.so.1
+libz.so.2=libz.so.2
 pci_bkwd_compat.so=pci/pci_bkwd_compat.so
 pci_cap-0x05.so=pci/pci_cap-0x05.so
 pci_cap-0x01.so=pci/pci_cap-0x01.so

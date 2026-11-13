@@ -16,9 +16,7 @@
 
 [search=.:image:build/qnx8/stage:${QNX_TARGET}/x86_64/sbin:${QNX_TARGET}/x86_64/usr/sbin:${QNX_TARGET}/x86_64/boot/sys:${QNX_TARGET}/x86_64/bin:${QNX_TARGET}/x86_64/usr/bin:${QNX_TARGET}/x86_64/lib:${QNX_TARGET}/x86_64/lib/dll:${QNX_TARGET}/x86_64/usr/lib]
 
-# An empty prefix keeps the fragment's flat file names at the image root, so
-# they land directly under /proc/boot (the SDP 8.0 layout; the default prefix
-# proc/boot would nest them one level deeper: /proc/boot/proc/boot/...).
-[prefix=]
-
+# The default mkifs prefix puts the flat file names under /proc/boot, which is
+# where the start-up script's PATH and the fixed interpreter paths point. An
+# empty prefix would drop them at the image root and nothing would resolve.
 [+include] image/passerelle.build
