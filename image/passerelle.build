@@ -70,6 +70,9 @@
 
     # DX-01 proof: print what QNX sees on the PCI bus so the operator can
     # confirm the virtio-9p device (vid/did 1af4/1009) without a debugger.
+    # What the guest answers for the two calls the deadlines are built on.
+    /proc/boot/clockprobe
+
     display_msg "Passerelle: PCI bus inventory"
     pci-tool -v
 
@@ -142,6 +145,7 @@ pci-server=pci-server
 pci-tool=pci-tool
 pidin=pidin
 sh=sh
+slay=slay
 shutdown=shutdown
 slog2info=slog2info
 slogger2=slogger2
@@ -156,6 +160,7 @@ toybox=toybox
 # The drivers and the mount script. The drivers are built by the other half of
 # the project (drivers/); until they exist the three entries are skipped, and
 # the image still boots with the kernel, the C library and the PCI server.
+[+optional] clockprobe=clockprobe
 [+optional] fs9p=fs9p
 [+optional] fsfuse=fsfuse
 [+optional] qshare-mount.sh=qshare-mount.sh

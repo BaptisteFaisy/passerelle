@@ -164,8 +164,8 @@
 </tr>
 <tr>
 <td>10</td>
-<td>&lt;strong&gt;FS-06&lt;/strong&gt; — execute a program served by the share, shared libraries included: feasibility E3, the point of the project</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Partly closed 13/11&lt;/strong&gt; - the share serves a program built for the target (<code>tests/qemu/qnx8/fs6-demo.c</code>, cross-compiled by <code>build-image.sh</code>), and the guest reads and copies it through the driver. &lt;strong&gt;The exec itself does not work yet&lt;/strong&gt;: the kernel asks the filesystem for the &lt;em&gt;exec info&lt;/em&gt; (the interpreter and its arguments) and answers with the shell instead. A filesystem that serves an executable has to reply to an <code>_IO_CONNECT_OPEN</code> carrying <code>_IO_FLAG_EX</code> with a link reply whose path holds that information - that reply is the missing piece</td>
+<td>&lt;strong&gt;[P]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>11</td>
@@ -204,8 +204,8 @@
 </tr>
 <tr>
 <td>18</td>
-<td>&lt;strong&gt;ROB-03&lt;/strong&gt; — unmount under load</td>
-<td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
+<td>&lt;strong&gt;Partly closed 13/11&lt;/strong&gt; - the driver stops on a signal, the mount point leaves the namespace and a supervisor remounts it (<code>tests/qemu/qnx8/</code>: <code>slay fs9p</code> then the mount is back). The first attempt deadlocked in <code>resmgr_detach()</code>, which waits for the mount point's attribute; the driver no longer calls it, the kernel removes the entry when the process exits. &lt;strong&gt;Still missing&lt;/strong&gt;: the unmount under load</td>
+<td>&lt;strong&gt;[P]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>19</td>

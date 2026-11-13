@@ -251,6 +251,10 @@ pgw_err pgw_srv_detach(pgw_srv *srv)
     if (srv == NULL)
         return PGW_EINVAL;
     if (srv->dpp != NULL && srv->mntid >= 0) {
+        /* Note: the drivers do not call this on the way out. resmgr_detach()
+         * blocks until the mount point's attribute is free, and the kernel
+         * removes the namespace entry when the resource manager exits anyway
+         * (ROB-03). */
         if (resmgr_detach(srv->dpp, srv->mntid, _RESMGR_DETACH_PATHNAME) == -1) {
             PGW_WARN("%s: detach failed: %s", srv->name, strerror(errno));
         }

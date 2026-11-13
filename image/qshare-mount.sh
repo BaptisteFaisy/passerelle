@@ -18,7 +18,7 @@
 #
 #   QSHARE_TAG        mount tag of the share (default: "hostshare")
 #   QSHARE_MOUNT      mount point (default: "/host")
-#   QSHARE_OPTS       extra options for the driver (default: "ro,nosuid,noexec")
+#   QSHARE_OPTS       extra options for the driver (default: "ro,nosuid")
 #   QSHARE_DRIVER     "fs9p" (default) or "fsfuse"
 #   QSHARE_TIMEOUT    seconds to wait for the device (default: 30)
 #
@@ -28,7 +28,10 @@
 
 TAG="${QSHARE_TAG:-hostshare}"
 MOUNT="${QSHARE_MOUNT:-/host}"
-OPTS="${QSHARE_OPTS:-ro,nosuid,noexec,debug}"
+# SEC-01 asks for nosuid (no privilege escalation through the files), not for
+# noexec: FS-06 asks for the opposite, a program of the share executed by the
+# guest. The share is read-only, so nothing can be written back.
+OPTS="${QSHARE_OPTS:-ro,nosuid,debug}"
 DRIVER="${QSHARE_DRIVER:-fs9p}"
 TIMEOUT="${QSHARE_TIMEOUT:-30}"
 
@@ -50,12 +53,17 @@ while [ "$waited" -lt "$TIMEOUT" ]; do
     fi
     log "mounting $TAG on $MOUNT with $DRIVER ($OPTS)"
     if "$DRIVER" -o "$OPTS" "$TAG" "$MOUNT"; then
-        log "mounted $TAG on $MOUNT"
-        log "listing $MOUNT:"
-        ls "$MOUNT"
-        log "reading $MOUNT/from-host.txt:"
-        cat "$MOUNT/from-host.txt"
-        exit 0
+        # The driver can also stop on a signal, which is not a mounted share:
+        # check that the mount point is still served before saying so.
+        if ls "$MOUNT" >/dev/null 2>&1; then
+            log "mounted $TAG on $MOUNT"
+            log "listing $MOUNT:"
+            ls "$MOUNT"
+            log "reading $MOUNT/from-host.txt:"
+            cat "$MOUNT/from-host.txt"
+            exit 0
+        fi
+        log "the driver stopped, the mount point is gone"
     fi
     log "device not ready yet, retrying"
     sleep 1
