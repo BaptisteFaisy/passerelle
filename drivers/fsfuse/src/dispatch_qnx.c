@@ -72,12 +72,21 @@ static pgw_err wait_completion(fsfuse_xport *x, pgw_virtq *vq, void *cookie,
     pgw_deadline dl = pgw_deadline_from_ms(timeout_ms);
     unsigned seen = x->irqs;
     for (;;) {
+        /* A reply popped by another waiter is kept for its owner. */
+        uint32_t kept = 0;
+        if (pgw_reqtab_take(cookie, &kept)) {
+            *out_len = kept;
+            return PGW_OK;
+        }
         void *got = NULL;
         uint32_t len = 0;
         pgw_err e = pgw_vq_pop(vq, &got, &len);
-        if (e == PGW_OK && got == cookie) {
-            *out_len = len;
-            return PGW_OK;
+        if (e == PGW_OK) {
+            if (got == cookie) {
+                *out_len = len;
+                return PGW_OK;
+            }
+            pgw_reqtab_keep(got, len); /* it belongs to another request */
         }
         if (e != PGW_OK && e != PGW_EAGAIN)
             return e;

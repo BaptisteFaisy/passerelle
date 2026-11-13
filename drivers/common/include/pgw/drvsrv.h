@@ -210,6 +210,15 @@ typedef struct pgw_ability {
  * `user` when given). Refuses to serve if root privileges remain (QNX-06). */
 pgw_err pgw_privdrop_apply(const pgw_ability *list, size_t n, const char *user);
 
+/* --- replies popped by another waiter (VIO-02) ---------------------------- */
+
+/* One virtqueue serves every client: a reply can be popped by the thread that
+ * waits for another one. The table keeps the early replies until their owner
+ * comes for them; without it, two clients lose each other's replies. */
+void pgw_reqtab_keep(void *cookie, uint32_t len);
+bool pgw_reqtab_take(void *cookie, uint32_t *out_len);
+void pgw_reqtab_clear(void);
+
 /* --- DMA addresses (VIO-07) ---------------------------------------------- */
 
 /* Physical address of `len` bytes at `addr`, for a device that reads or

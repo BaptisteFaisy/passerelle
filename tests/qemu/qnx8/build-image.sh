@@ -45,6 +45,17 @@ stage() {
 stage "$ROOT/build-qnx/drivers/fs9p" fs9p
 stage "$ROOT/build-qnx/drivers/fsfuse" fsfuse
 
+# The bench: the measurements, taken inside the guest (PERF-03, PERF-05).
+BENCH_SRC="$ROOT/tests/qemu/qnx8/qbench.c"
+if [ -f "$BENCH_SRC" ]; then
+    if qcc -Vgcc_ntox86_64 -D_QNX_SOURCE=1 -O2 -o "$BUILD/stage/qbench" \
+        "$BENCH_SRC" 2>/dev/null; then
+        echo "built the bench"
+    else
+        echo "note: the bench did not build"
+    fi
+fi
+
 # The clock probe: what the guest answers for clock_gettime() and nanosleep().
 CLOCK_SRC="$ROOT/tests/qemu/qnx8/clockprobe.c"
 if [ -f "$CLOCK_SRC" ]; then
