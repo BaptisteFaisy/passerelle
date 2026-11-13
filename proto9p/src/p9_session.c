@@ -16,6 +16,9 @@
  *   - P9-07: every fid and tag comes from a pool and goes back to it;
  *   - PERF-01: every round trip is counted in the shared pgw_stat_* table.
  */
+/* nanosleep() is POSIX, not C11: the feature macro comes first. */
+#define _POSIX_C_SOURCE 200809L
+
 #include "p9_session_priv.h"
 
 #include "pgw/log.h"
@@ -23,10 +26,15 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 /* Bounded wait for a free slot: a nested call needs one immediately, so we
- * spin a little instead of failing the whole operation at the first miss. */
+ * spin a little instead of failing the whole operation at the first miss. When
+ * the transport is saturated (more clients than slots), the wait continues -
+ * sleeping between the spins - until the caller's own deadline: giving up
+ * there turned a busy mount into a failed open. */
 #define PGW_P9_SLOT_SPINS 1000000u
+#define PGW_P9_SLOT_SLEEPS 10000u /* 10 s of 1 ms sleeps, then give up */
 
 static void slot_release(pgw_p9_session *s, unsigned slot)
 {
@@ -36,6 +44,7 @@ static void slot_release(pgw_p9_session *s, unsigned slot)
 static pgw_err slot_acquire(pgw_p9_session *s, unsigned *slot)
 {
     const uint32_t all = (uint32_t)((1u << PGW_P9_SLOTS) - 1u);
+    for (uint32_t sleeps = 0; sleeps <= PGW_P9_SLOT_SLEEPS; sleeps++) {
     for (uint32_t tries = 0; tries < PGW_P9_SLOT_SPINS; tries++) {
         uint32_t busy = atomic_load_explicit(&s->busy, memory_order_acquire);
         if (busy == all)
@@ -52,6 +61,12 @@ static pgw_err slot_acquire(pgw_p9_session *s, unsigned *slot)
             }
             break; /* the mask moved: reload it and retry */
         }
+    }
+    /* Saturated: give the holders a chance to finish before trying again. */
+    {
+        struct timespec ts = { 0, 1000000L }; /* 1 ms */
+        (void)nanosleep(&ts, NULL);
+    }
     }
     return PGW_EAGAIN;
 }
