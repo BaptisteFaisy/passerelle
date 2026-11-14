@@ -55,4 +55,11 @@ pgw_err pgw_opts_u32(const char *text, size_t len, uint32_t min, uint32_t max,
 /* True when `key` (a slice) is exactly `name`. */
 bool pgw_opts_key_is(const char *key, size_t key_len, const char *name);
 
+/* Whether the mount lets layer 1 negotiate MSI-X (VIO-04). `-o irq=N` is the
+ * documented escape hatch to force the classic line, and it has to decide at the
+ * transport: enabling MSI-X and then waiting on line N would mean the device
+ * signals through a vector nobody listens to, and no interrupt would arrive.
+ * One rule for both drivers, so they cannot drift apart. */
+bool pgw_opts_allow_msix(const pgw_mount_opts *opts);
+
 #endif /* PGW_DRVOPTS_H */

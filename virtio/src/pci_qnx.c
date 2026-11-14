@@ -21,6 +21,7 @@
  * by DMA address.
  */
 #include "virtio_priv.h"
+#include "pgw/virtio_qnx.h"
 
 #if defined(__QNX__)
 
@@ -260,6 +261,15 @@ static void qnx_irq_release(pgw_vio_dev *dev)
         pgw_qnx_irq_detach(&q->irq_id);
 }
 
+/* Nothing stays enabled when the mount goes away (VIO-09): a capability the
+ * server allocated for MSI-X is given back. */
+static void qnx_msix_release(pgw_vio_dev *dev)
+{
+    qnx_pci *q = (qnx_pci *)dev->user;
+    if (q != NULL && dev->info.msix_active)
+        pgw_vio_pci_qnx_msix_release(q->bdf, q->hdl);
+}
+
 static bool qnx_irq_attach(qnx_pci *q)
 {
     /* nirq is an input/output pair: on entry it is how many entries the array
@@ -332,6 +342,7 @@ static void qnx_pci_teardown(pgw_vio_dev *dev)
     if (q == NULL)
         return;
     qnx_irq_release(dev);
+    qnx_msix_release(dev);
     qnx_unmap_bars(q);
     if (q->hdl != NULL)
         pci_device_detach(q->hdl);
@@ -441,10 +452,14 @@ pgw_vio_dev *pgw_vio_pci_open(uint16_t device_id, const char *expected_tag,
     dev->user = q; /* the PCI handle and the BAR mappings live here */
 
     if (allow_msix) {
-        /* x86 APIC delivery: destination 0, vector taken from the PCI server. */
-        uint32_t vector = 0;
-        if (pgw_vio_pci_sim_msix(dev, 0xFEE00000ULL, vector) != PGW_OK)
+        int32_t msix_irq = -1;
+        if (pgw_vio_pci_qnx_msix(dev, bdf, q->hdl, &msix_irq) == PGW_OK) {
+            q->irq = msix_irq;
+            dev->info.msix_active = true;
+            dev->info.irq = msix_irq;
+        } else {
             PGW_WARN("virtio-pci: MSI-X unavailable, using INTx");
+        }
     }
     if (!dev->info.msix_active) {
         if (!qnx_irq_attach(q)) {

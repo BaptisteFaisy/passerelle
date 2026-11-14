@@ -18,6 +18,7 @@ set(PGW_VIRTIO_SRCS
     src/pci.c
     src/pci_caps.c
     src/pci_modern.c
+    src/pci_msix.c
     src/virtq.c
     src/virtq_alloc.c
     src/virtq_dev.c
@@ -28,6 +29,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
         src/qnx_mem.c
         src/mmio_qnx.c
         src/pci_qnx.c
+        src/pci_msix_qnx.c
     )
 endif()
 
@@ -55,7 +57,7 @@ endif()
 # skipped silently while the stubs are missing.
 if(PGW_QNX_STUBS AND EXISTS "${CMAKE_SOURCE_DIR}/tests/qnx-stub/include")
     pgw_qnx_syntax(pgw_virtio_qnx_syntax
-        SRCS src/qnx_mem.c src/mmio_qnx.c src/pci_qnx.c
+        SRCS src/qnx_mem.c src/mmio_qnx.c src/pci_qnx.c src/pci_msix_qnx.c
         DEPS pgw_common
     )
     target_include_directories(pgw_virtio_qnx_syntax PRIVATE

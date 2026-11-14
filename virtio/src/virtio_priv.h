@@ -291,8 +291,27 @@ pgw_err pgw_pci_scan_caps(const pgw_pci_cfg_io *io, pgw_pci_caps *out);
 /* Largest queue the device accepts, 0 when the backend is not PCI. */
 uint16_t pgw_vio_pci_queue_max(pgw_vio_dev *dev, uint16_t qidx);
 
+/* The PCI backend state, shared by the modern transport and MSI-X modules. */
+typedef struct pci_state {
+    pgw_pci_cfg_io cfg;
+    pgw_pci_bar_io bars;
+    pgw_pci_caps caps;
+    uint32_t notify_count;
+    uint32_t teardown_count;
+    uint32_t reset_count;
+    bool msix_enabled;
+} pci_state;
+
+pci_state *pgw_pci_state(pgw_vio_dev *dev);
+
 /* Program MSI-X vector 0 with a delivery address the caller owns (the QNX glue
  * knows the APIC vector; the PC test uses the default one). */
+pgw_err pgw_pci_msix_program(pgw_vio_dev *dev, uint64_t msg_addr,
+                             uint32_t msg_data);
+pgw_err pgw_vio_pci_msix_program(pgw_vio_dev *dev, uint64_t msg_addr,
+                                  uint32_t msg_data);
+
+/* Compatibility wrapper retained by the PC simulator tests. */
 pgw_err pgw_vio_pci_sim_msix(pgw_vio_dev *dev, uint64_t msg_addr,
                              uint32_t msg_data);
 

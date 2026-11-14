@@ -55,6 +55,23 @@ static void test_values(void)
     PGW_ASSERT(o.timeout_ms == 1500u);
 }
 
+static void test_irq_override(void)
+{
+    /* VIO-04 documents `-o irq=N` as the way to force the classic line. The
+     * default must stay -1 ("let layer 1 pick"), or every mount would silently
+     * ignore MSI-X. */
+    pgw_mount_opts o;
+    pgw_opts_default(&o);
+    PGW_ASSERT(o.irq == -1);
+    PGW_ASSERT(pgw_opts_parse("ro,nosuid,irq=10", &o, NULL) == PGW_OK);
+    PGW_ASSERT(o.irq == 10);
+    /* A bare `irq` has no value to take: it is a typo, not a default. */
+    PGW_ASSERT(pgw_opts_parse("irq", &o, NULL) != PGW_OK);
+    /* Zero is a legal line number on x86, and it must not be read as "unset". */
+    PGW_ASSERT(pgw_opts_parse("irq=0", &o, NULL) == PGW_OK);
+    PGW_ASSERT(o.irq == 0);
+}
+
 static void test_bounds(void)
 {
     pgw_mount_opts o;
@@ -101,6 +118,7 @@ static void test_u32(void)
 PGW_TEST(test_defaults);
 PGW_TEST(test_flags);
 PGW_TEST(test_values);
+PGW_TEST(test_irq_override);
 PGW_TEST(test_bounds);
 PGW_TEST(test_attrttl);
 PGW_TEST(test_u32);
