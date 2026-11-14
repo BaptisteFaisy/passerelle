@@ -21,8 +21,10 @@
 #define _DEFAULT_SOURCE 1
 
 #include "pgw/drvsrv.h"
+#include "pgw/cookie.h"
 #include "pgw/fs9p.h"
 #include "pgw/fs9p_qnx.h"
+#include "pgw/fs9p_op.h"
 #include "pgw/log.h"
 #include "pgw/p9.h"
 #include "pgw/time.h"
@@ -43,7 +45,9 @@ typedef struct fs9p_xport {
 
 static fs9p_xport g_xport;
 static pgw_p9_session *g_session;
-static uint32_t g_tag_next = 1u;
+/* The cookie of a request in flight. Several clients share the queue, so the
+ * cookie must be unique even when two threads draw at the same time (QNX-05). */
+static pgw_cookie g_tag_next = PGW_COOKIE_INITIALIZER;
 
 void fs9p_xport_irq(void *user)
 {
@@ -95,13 +99,28 @@ static pgw_err fs9p_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap,
                         void *user)
 {
     fs9p_xport *x = user;
-    (void)prio; /* the caller already runs at its own priority (QNX-03) */
+    /* Nothing to do with `prio` here: the handler thread was already raised to
+     * the caller's priority by pgw_prio_enter() before the session reached us,
+     * and the submission event reads that priority back off the thread, so
+     * QNX-03 is shown in the trace rather than merely claimed (see
+     * pgw_trace_prio_now()). */
+    (void)prio;
     if (x == NULL || x->vq == NULL || tx == NULL || rx == NULL || rx_len == NULL)
         return PGW_EINVAL;
     if (tx_len > UINT32_MAX || rx_cap > UINT32_MAX)
         return PGW_EINVAL;
 
-    pgw_trace_req(PGW_OP_OPEN, g_tag_next); /* tag pairs the two events (QNX-09) */
+    /* The label of the request is the message it carries, never a default:
+     * Twalk outnumbers every other message a session sends (path resolution),
+     * and labelling it OPEN hid the lookups in the trace (QNX-09). */
+    pgw_p9_hdr hdr;
+    enum pgw_op op = (pgw_p9_dec_hdr(tx, tx_len, &hdr) == PGW_OK)
+                       ? fs9p_op_of(hdr.type)
+                       : PGW_OP_OTHER;
+    /* One draw per request: the cookie identifies the completion and the same
+     * value pairs the two trace events (QNX-09). */
+    uint32_t tag = pgw_cookie_next(&g_tag_next);
+    pgw_trace_req(op, tag); /* tag pairs the two events (QNX-09) */
     /* Device-readable request, device-writable reply: the caller's buffers are
      * handed over as they are, by their physical address (VIO-07). */
     uint64_t tx_pa = 0;
@@ -121,8 +140,7 @@ static pgw_err fs9p_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap,
     sg[1].len = (uint32_t)rx_cap;
     sg[1].write = true;
 
-    void *cookie = (void *)(uintptr_t)g_tag_next;
-    g_tag_next = g_tag_next == UINT32_MAX ? 1u : g_tag_next + 1u;
+    void *cookie = (void *)(uintptr_t)tag;
 
     pgw_stat_add(PGW_STAT_REQ, 1);
     e = pgw_vq_push(x->vq, sg, 2u, cookie);
@@ -133,7 +151,7 @@ static pgw_err fs9p_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap,
     uint32_t got = 0;
     uint32_t wait_ms = timeout_ms != 0u ? timeout_ms : x->timeout_ms;
     e = wait_completion(x, cookie, &got, wait_ms);
-    pgw_trace_rep(PGW_OP_OPEN, (uint32_t)(uintptr_t)cookie,
+    pgw_trace_rep(op, (uint32_t)(uintptr_t)cookie,
                   e == PGW_OK ? EOK : pgw_qnx_status(e));
     if (e != PGW_OK) {
         pgw_stat_add(PGW_STAT_ERR, 1);

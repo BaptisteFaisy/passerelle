@@ -23,8 +23,11 @@
 #define _DEFAULT_SOURCE 1
 
 #include "pgw/drvsrv.h"
+#include "pgw/cookie.h"
 #include "pgw/fsfuse.h"
 #include "pgw/fsfuse_qnx.h"
+#include "pgw/fsfuse_op.h"
+#include "pgw/fusep.h"
 #include "pgw/log.h"
 #include "pgw/time.h"
 #include "pgw/virtio.h"
@@ -44,6 +47,9 @@ typedef struct fsfuse_xport {
 
 static fsfuse_xport g_xport;
 static pgw_fuse_session *g_session;
+/* The virtqueue is shared by all clients of this mount. A cookie is therefore
+ * an atomic draw, not a local increment in the thread that submits. */
+static pgw_cookie g_unique_next = PGW_COOKIE_INITIALIZER;
 
 void fsfuse_xport_irq(void *user)
 {
@@ -106,7 +112,11 @@ static pgw_err fsfuse_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap
                           uint32_t timeout_ms, void *user)
 {
     fsfuse_xport *x = user;
-    (void)prio; /* the caller already runs at its own priority (QNX-03) */
+    /* Nothing to do with `prio`: the handler thread was already raised to the
+     * caller's priority by pgw_prio_enter(), and the submission event reads it
+     * back off the thread, so QNX-03 is shown in the trace (pgw_trace_prio_now
+     *()). */
+    (void)prio;
     if (x == NULL || tx == NULL || rx == NULL || rx_len == NULL)
         return PGW_EINVAL;
     if (tx_len > UINT32_MAX || rx_cap > UINT32_MAX)
@@ -115,6 +125,17 @@ static pgw_err fsfuse_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap
     pgw_virtq *vq = pick_queue(x, hiprio);
     if (vq == NULL)
         return PGW_ENODEV;
+
+    /* The label of the request is the opcode it carries, and the tag that pairs
+     * a submission with its reply is the FUSE unique id (QNX-09). */
+    pgw_fuse_in_hdr hdr;
+    enum pgw_op op = PGW_OP_OTHER;
+    uint32_t tag = 0;
+    if (pgw_fuse_dec_in_hdr(tx, tx_len, &hdr) == PGW_OK) {
+        op = fsfuse_op_of(hdr.opcode);
+        tag = (uint32_t)hdr.unique;
+    }
+    pgw_trace_req(op, tag);
 
     /* The device addresses physical memory: the descriptors carry the physical
      * address of the caller's buffers, not their virtual one (VIO-07). */
@@ -136,9 +157,8 @@ static pgw_err fsfuse_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap
     sg[1].len = (uint32_t)rx_cap;
     sg[1].write = true;
 
-    static uint64_t unique_next = 1u;
-    void *cookie = (void *)(uintptr_t)unique_next;
-    unique_next++;
+    uint32_t unique = pgw_cookie_next(&g_unique_next);
+    void *cookie = (void *)(uintptr_t)unique;
 
     pgw_stat_add(PGW_STAT_REQ, 1);
     e = pgw_vq_push(vq, sg, 2u, cookie);
@@ -149,6 +169,7 @@ static pgw_err fsfuse_rpc(const void *tx, size_t tx_len, void *rx, size_t rx_cap
     uint32_t got = 0;
     uint32_t wait_ms = timeout_ms != 0u ? timeout_ms : x->timeout_ms;
     e = wait_completion(x, vq, cookie, &got, wait_ms);
+    pgw_trace_rep(op, tag, e == PGW_OK ? 0 : pgw_qnx_status(e));
     if (e != PGW_OK) {
         pgw_stat_add(PGW_STAT_ERR, 1);
         return e;
