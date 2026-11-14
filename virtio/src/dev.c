@@ -146,9 +146,12 @@ void pgw_vio_reset(pgw_vio_dev *dev)
     else
         dev_set_status(dev, 0);
     dev->info.negotiated_features = 0;
-    dev->info.msix_active = false;
-    /* The interrupt line belongs to the transport, not to the negotiated
-     * state: a device reset does not unroute it. */
+    /* Neither the interrupt line nor the delivery mode belongs to the negotiated
+     * state: a device reset does not unroute the line, and on QNX it does not
+     * take back the MSI-X vector the PCI server allocated. Whichever transport
+     * really disabled a mode says so in its own teardown_irq hook - clearing it
+     * here used to make a driver that was signalling through MSI-X report
+     * itself as INTx (measured 14 November 2026). */
     dev->host_features = 0;
 }
 

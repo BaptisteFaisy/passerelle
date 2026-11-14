@@ -62,9 +62,14 @@ pgw_err fs9p_irq_start(fs9p_dev *dev)
             PGW_ERR("fs9p: no device info, cannot pick an interrupt");
             return PGW_EINVAL;
         }
-        if (!info->msix_active)
+        if (info->msix_active) {
+            /* The PCI server allocated the MSI-X vector and layer 1 programmed
+             * its table; this is the interrupt line the vector was bound to. */
+            irq = (int)info->irq;
+        } else {
             PGW_WARN("fs9p: MSI-X unavailable, falling back to INTx (VIO-04)");
-        irq = dev->irq;
+            irq = dev->irq;
+        }
         if (irq < 0) {
             PGW_ERR("fs9p: the PCI server reported no interrupt line");
             return PGW_ENODEV;

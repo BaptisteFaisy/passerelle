@@ -47,17 +47,7 @@
 #define PGW_MSIX_MSG_ADDR     0xFEE00000ULL /* x86 local APIC, one delivery */
 #define PGW_MSIX_MSG_DATA     0u
 
-typedef struct pci_state {
-    pgw_pci_cfg_io cfg;
-    pgw_pci_bar_io bars;
-    pgw_pci_caps caps;
-    uint32_t notify_count;
-    uint32_t teardown_count;
-    uint32_t reset_count;
-    bool msix_enabled;
-} pci_state;
-
-static pci_state *state_of(pgw_vio_dev *dev)
+pci_state *pgw_pci_state(pgw_vio_dev *dev)
 {
     if (dev == NULL || dev->info.bus_kind != 1u)
         return NULL;
@@ -129,15 +119,6 @@ static void cfg_w16(pci_state *st, uint16_t off, uint16_t val)
         (void)st->cfg.write(st->cfg.ctx, off, b, sizeof(b));
 }
 
-static uint32_t cfg_r32(pci_state *st, uint16_t off)
-{
-    uint8_t b[4] = {0, 0, 0, 0};
-    if (st->cfg.read(st->cfg.ctx, off, b, sizeof(b)) != PGW_OK)
-        return 0;
-    return (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) |
-           ((uint32_t)b[3] << 24);
-}
-
 static uint32_t common_r32(pci_state *st, uint32_t off)
 {
     return bar_r32(st, st->caps.common.bar, st->caps.common.offset + off);
@@ -173,12 +154,12 @@ static void common_w64(pci_state *st, uint32_t off, uint64_t val)
 
 static void pci_destroy(pgw_vio_dev *dev)
 {
-    free(state_of(dev));
+    free(pgw_pci_state(dev));
 }
 
 static void pci_reset(pgw_vio_dev *dev)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return;
     common_w8(st, PGW_CC_DEVICE_STATUS, 0u);
@@ -187,7 +168,7 @@ static void pci_reset(pgw_vio_dev *dev)
 
 static uint8_t pci_get_status(pgw_vio_dev *dev)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return 0;
     return bar_r8(st, st->caps.common.bar, st->caps.common.offset +
@@ -196,14 +177,14 @@ static uint8_t pci_get_status(pgw_vio_dev *dev)
 
 static void pci_set_status(pgw_vio_dev *dev, uint8_t status)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st != NULL)
         common_w8(st, PGW_CC_DEVICE_STATUS, status);
 }
 
 static uint64_t pci_get_features(pgw_vio_dev *dev)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return 0;
     common_w32(st, PGW_CC_DEV_FEAT_SEL, 1u);
@@ -215,7 +196,7 @@ static uint64_t pci_get_features(pgw_vio_dev *dev)
 
 static void pci_set_features(pgw_vio_dev *dev, uint64_t features)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return;
     common_w32(st, PGW_CC_DRV_FEAT_SEL, 1u);
@@ -227,7 +208,7 @@ static void pci_set_features(pgw_vio_dev *dev, uint64_t features)
 static pgw_err pci_read_config(pgw_vio_dev *dev, uint32_t offset, void *out,
                                size_t len)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL || out == NULL)
         return PGW_EINVAL;
     if (!st->caps.device.present)
@@ -249,7 +230,7 @@ static pgw_err pci_read_config(pgw_vio_dev *dev, uint32_t offset, void *out,
 
 static pgw_err pci_setup_queue(pgw_vio_dev *dev, uint16_t qidx, pgw_virtq *vq)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL || vq == NULL)
         return PGW_EINVAL;
 
@@ -283,7 +264,7 @@ static pgw_err pci_setup_queue(pgw_vio_dev *dev, uint16_t qidx, pgw_virtq *vq)
 
 static void pci_notify_queue(pgw_vio_dev *dev, uint16_t qidx)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return;
     st->notify_count++;
@@ -301,7 +282,7 @@ static void pci_notify_queue(pgw_vio_dev *dev, uint16_t qidx)
 static pgw_err pci_wait_irq(pgw_vio_dev *dev, int32_t timeout_ms)
 {
     (void)timeout_ms;
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return PGW_EINVAL;
     if (st->msix_enabled)
@@ -314,7 +295,7 @@ static pgw_err pci_wait_irq(pgw_vio_dev *dev, int32_t timeout_ms)
 
 static void pci_teardown_irq(pgw_vio_dev *dev)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return;
     st->teardown_count++;
@@ -324,6 +305,10 @@ static void pci_teardown_irq(pgw_vio_dev *dev)
     cfg_w16(st, (uint16_t)(st->caps.msix_off + 2u),
             (uint16_t)(ctrl & (uint16_t)~PGW_MSIX_CTRL_ENABLE));
     st->msix_enabled = false;
+    /* This transport really did turn MSI-X off, so it is the one to say so. The
+     * QNX binding leaves this hook untouched - the vector belongs to the PCI
+     * server, and a device reset does not take it back. */
+    dev->info.msix_active = false;
 }
 
 static const pgw_vio_bus_ops g_pci_ops = {
@@ -342,62 +327,24 @@ static const pgw_vio_bus_ops g_pci_ops = {
 
 /* --- MSI-X (VIO-04) ------------------------------------------------------- */
 
-/* Program vector 0 and unmask it, then enable MSI-X in the capability
- * (virtio 1.2 §4.1.5, PCI Local Bus 3.0 §6.8.2). */
-static pgw_err pci_msix_program(pci_state *st, uint64_t msg_addr,
-                                uint32_t msg_data)
+/* Programming lives in pci_msix.c, so the platform can supply the message
+ * without duplicating the table/control sequence. */
+
+pgw_err pgw_vio_pci_msix_program(pgw_vio_dev *dev, uint64_t msg_addr,
+                                  uint32_t msg_data)
 {
-    if (st->caps.msix_off == 0u)
-        return PGW_ENOENT;
-
-    uint16_t ctrl = cfg_r16(st, (uint16_t)(st->caps.msix_off + 2u));
-    uint16_t vectors = (uint16_t)((ctrl & 0x07FFu) + 1u);
-    if (vectors == 0u) {
-        PGW_ERR("virtio-pci: MSI-X table is empty");
-        return PGW_EIO;
-    }
-    uint32_t table = cfg_r32(st, (uint16_t)(st->caps.msix_off + 4u));
-    uint8_t bar = (uint8_t)(table & 0x07u);
-    uint32_t off = table & ~0x07u;
-    if (bar > 5u) {
-        PGW_ERR("virtio-pci: MSI-X table sits in BAR %u", (unsigned)bar);
-        return PGW_EIO;
-    }
-
-    bar_w32(st, bar, off + 0u, (uint32_t)(msg_addr & 0xFFFFFFFFu));
-    bar_w32(st, bar, off + 4u, (uint32_t)(msg_addr >> 32));
-    bar_w32(st, bar, off + 8u, msg_data);
-    bar_w32(st, bar, off + 12u, 0u); /* vector control: unmasked, not pending */
-
-    cfg_w16(st, (uint16_t)(st->caps.msix_off + 2u),
-            (uint16_t)(ctrl | PGW_MSIX_CTRL_ENABLE));
-    uint16_t after = cfg_r16(st, (uint16_t)(st->caps.msix_off + 2u));
-    if ((after & PGW_MSIX_CTRL_ENABLE) == 0u) {
-        PGW_WARN("virtio-pci: MSI-X refused to enable, falling back to INTx");
-        return PGW_EOPNOTSUPP;
-    }
-    st->msix_enabled = true;
-    common_w16(st, PGW_CC_MSIX_CONFIG, 0u); /* config changes: vector 0 */
-    return PGW_OK;
+    return pgw_pci_msix_program(dev, msg_addr, msg_data);
 }
-
-/* --- opening -------------------------------------------------------------- */
 
 pgw_err pgw_vio_pci_sim_msix(pgw_vio_dev *dev, uint64_t msg_addr,
                              uint32_t msg_data)
 {
-    pci_state *st = state_of(dev);
-    if (st == NULL)
-        return PGW_EINVAL;
-    pgw_err e = pci_msix_program(st, msg_addr, msg_data);
-    if (e == PGW_OK)
-        dev->info.msix_active = true;
-    return e;
+    return pgw_pci_msix_program(dev, msg_addr, msg_data);
 }
 
 uint16_t pgw_vio_pci_queue_max(pgw_vio_dev *dev, uint16_t qidx)
 {
-    pci_state *st = state_of(dev);
+    pci_state *st = pgw_pci_state(dev);
     if (st == NULL)
         return 0;
     common_w16(st, PGW_CC_QUEUE_SELECT, qidx);
@@ -479,7 +426,7 @@ pgw_vio_dev *pgw_vio_pci_sim_open(uint16_t device_id,
     dev->info.num_queues = common_r16(st, PGW_CC_NUM_QUEUES);
 
     if (allow_msix &&
-        pci_msix_program(st, PGW_MSIX_MSG_ADDR, PGW_MSIX_MSG_DATA) == PGW_OK) {
+        pgw_pci_msix_program(dev, PGW_MSIX_MSG_ADDR, PGW_MSIX_MSG_DATA) == PGW_OK) {
         dev->info.msix_active = true;
         PGW_INFO("virtio-pci: MSI-X enabled");
     }

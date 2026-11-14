@@ -46,7 +46,8 @@ static bool g_mounted;
  * (VIO-01, VIO-02, VIO-08). */
 static pgw_err open_transport(fs9p_dev *dev)
 {
-    dev->vio = pgw_vio_pci_open(PGW_VIRTIO_ID_9P, dev->opts.tag, true);
+    dev->vio = pgw_vio_pci_open(PGW_VIRTIO_ID_9P, dev->opts.tag,
+                                pgw_opts_allow_msix(&dev->opts));
     if (dev->vio == NULL) {
         PGW_ERR("fs9p: no virtio-9p device with mount tag '%s'", dev->opts.tag);
         return PGW_ENODEV;

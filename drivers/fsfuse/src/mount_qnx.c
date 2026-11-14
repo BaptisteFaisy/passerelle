@@ -42,7 +42,8 @@ static bool g_mounted;
 /* Open the virtiofs device and read its tag and its queue count (VFS-01). */
 static pgw_err open_transport(fsfuse_dev *dev)
 {
-    dev->vio = pgw_vio_pci_open(PGW_VIRTIO_ID_FS, dev->opts.tag, true);
+    dev->vio = pgw_vio_pci_open(PGW_VIRTIO_ID_FS, dev->opts.tag,
+                                pgw_opts_allow_msix(&dev->opts));
     if (dev->vio == NULL) {
         PGW_ERR("fsfuse: no virtiofs device with mount tag '%s'", dev->opts.tag);
         return PGW_ENODEV;

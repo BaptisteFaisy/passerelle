@@ -44,6 +44,14 @@ bool pgw_opts_key_is(const char *key, size_t key_len, const char *name)
     return key_len == n && memcmp(key, name, n) == 0;
 }
 
+bool pgw_opts_allow_msix(const pgw_mount_opts *opts)
+{
+    /* -1 is the default ("let layer 1 pick, MSI-X first"); any other value is a
+     * line the caller asked for, and the transport must not put a vector in
+     * front of it (VIO-04). */
+    return opts == NULL || opts->irq < 0;
+}
+
 static int digit_value(char c)
 {
     if (c >= '0' && c <= '9')
