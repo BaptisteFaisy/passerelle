@@ -129,17 +129,17 @@
 </tr>
 <tr>
 <td>3</td>
-<td>&lt;strong&gt;QNX-03&lt;/strong&gt; — request processed at the caller's priority, shown in the kernel trace: the code re-applies the priority, the trace was never taken</td>
+<td>&lt;strong&gt;Closed 14/11&lt;/strong&gt; - &lt;strong&gt;QNX-03&lt;/strong&gt;: the kernel trace of the real guest carries the priority that served each request. 1,604 submissions decoded, priorities 10 and 63 present, and the payload operation agrees with the event code for every parsed event (<code>docs/measurements/qnx8-guest.md</code>)</td>
 <td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>4</td>
-<td>&lt;strong&gt;QNX-04&lt;/strong&gt; — priority order when the transport is saturated: proven on the PC, not measured on QNX</td>
+<td>&lt;strong&gt;Closed 14/11&lt;/strong&gt; - &lt;strong&gt;QNX-04&lt;/strong&gt;: the same trace pairs 1,177 transport round trips under a 16-reader bulk load; the high-priority reads are served beside the saturated copy, and the cookie collision that used to steal completions is fixed in <code>common/src/cookie.c</code></td>
 <td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
 </tr>
 <tr>
 <td>5</td>
-<td>&lt;strong&gt;QNX-05&lt;/strong&gt; — a blocked client must not hold a driver thread: proven on the PC, not measured on QNX</td>
+<td>&lt;strong&gt;Partly closed 14/11&lt;/strong&gt; - &lt;strong&gt;QNX-05&lt;/strong&gt;: the trace shows requests completing while sixteen bulk readers hold the transport, so a blocked client does not hold a driver thread. A dedicated saturation measurement is still not a benchmark series</td>
 <td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
 </tr>
 <tr>
@@ -159,7 +159,7 @@
 </tr>
 <tr>
 <td>9</td>
-<td>&lt;strong&gt;QNX-09&lt;/strong&gt; — kernel trace events on send and receive: written, never measured</td>
+<td>&lt;strong&gt;Closed 14/11&lt;/strong&gt; - &lt;strong&gt;QNX-09&lt;/strong&gt;: the kernel trace is captured and read back on the real guest: 3,207 user events (1,604 submissions, 1,603 replies), every submission paired with its reply (<code>tests/qemu/qnx8/capture_trace.py</code> + <code>trace_report.py</code>). The events are labelled with the operation they belong to, not with a default: <code>Twalk</code> used to be labelled OPEN, which hid every path resolution</td>
 <td>&lt;strong&gt;[S]&lt;/strong&gt;</td>
 </tr>
 <tr>
@@ -249,7 +249,7 @@
 </tr>
 <tr>
 <td>27</td>
-<td>&lt;strong&gt;Closed 13/11&lt;/strong&gt; - INTx delivery works in the guest: the PCI server reports IRQ 10 for <code>B0:D5:F0</code>, the driver attaches its service thread to it and the requests are answered. The MSI-X programming is still only proven against the fake config space</td>
+<td>&lt;strong&gt;Closed 14/11&lt;/strong&gt; - both delivery modes work in the real QNX 8.0 guest. MSI-X is now allocated by the &lt;strong&gt;PCI server&lt;/strong&gt; (<code>vector bound to line 256</code>, <code>interrupt 256 attached (msix)</code>) through the documented sequence (<code>cap_msix_set_irq_entry</code> → <code>pci_device_cfg_cap_enable</code> → <code>pci_device_read_irq</code>), and INTx is still proven through <code>-o irq=10</code> (<code>31.20 MiB/s</code>, the same rate as MSI-X within the noise). Three defects only a real target could show: the shadow of configuration space carried no MSI-X capability, <code>pci_device_read_irq()</code> was asked for one line when the device has two, and <code>pgw_vio_reset()</code> cleared <code>msix_active</code> while the vector was still bound</td>
 <td>&lt;strong&gt;[T]&lt;/strong&gt;</td>
 </tr>
 <tr>

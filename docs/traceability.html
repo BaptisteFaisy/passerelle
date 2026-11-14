@@ -77,7 +77,7 @@
     <p class="crumb">Project</p>
     <h1 id="requirement-traceability">Requirement traceability</h1>
 <blockquote><p>&lt;strong&gt;Generated file - do not edit.&lt;/strong&gt; <code>python3 tools/traceability.py</code> builds it from <code>docs/spec-en.md</code> (identifiers and statements) and <code>tools/traceability-map.yml</code> (state, proof, note). CI re-runs the generator with <code>--check</code>, so a stale map fails the build instead of lying to a reader.</p></blockquote>
-<p>77 requirements: 51 <code>tested</code>, 20 <code>partial</code>, 6 <code>missing</code>.</p>
+<p>77 requirements: 52 <code>tested</code>, 19 <code>partial</code>, 6 <code>missing</code>.</p>
 <h2 id="states">States</h2>
 <table>
 <thead>
@@ -127,8 +127,8 @@
 <td>Driver uses modern PCI interface defined by device capabilities.</td>
 <td>tested</td>
 <td><code>test_virtio_pci</code>, <code>test_capabilities_are_all_discovered</code>, <code>test_device_without_common_cfg_is_refused</code></td>
-<td><code>virtio/src/pci_caps.c</code>, <code>virtio/src/pci_modern.c</code></td>
-<td>capability walk over a fake config space; the QNX 7.1 guest exposes MSI-X and the five vendor capabilities.</td>
+<td><code>virtio/src/pci_caps.c</code>, <code>virtio/src/pci_modern.c</code>, <code>virtio/src/pci_msix_qnx.c</code></td>
+<td>capability walk over a fake config space; on the real QNX 8.0 guest the MSI-X capability is found by the PCI server (pci_device_find_capid), not by the shadow, which only carries the vendor capabilities.</td>
 </tr>
 <tr>
 <td>VIO-03</td>
@@ -142,9 +142,9 @@
 <td>VIO-04</td>
 <td>Driver receives interrupts via QNX 8.0 APIs, using MSI-X with legacy INTx fallback.</td>
 <td>tested</td>
-<td><code>test_virtio_pci</code>, <code>test_msix_table_is_programmed</code>, <code>test_intx_path_uses_the_isr_capability</code>, <code>test_short_device_region_needs_byte_access</code></td>
-<td><code>virtio/src/pci.c</code>, <code>virtio/src/pci_qnx.c</code>, <code>drivers/fs9p/src/irq_qnx.c</code></td>
-<td>MSI-X programming and the INTx fallback are tested on the PC; INTx delivery (IRQ 10) is proven on a real QNX 8.0 guest under QEMU (tests/qemu/qnx8).</td>
+<td><code>test_virtio_pci</code>, <code>test_msix_table_is_programmed</code>, <code>test_intx_path_uses_the_isr_capability</code>, <code>test_short_device_region_needs_byte_access</code>, <code>test_irq_override</code></td>
+<td><code>virtio/src/pci.c</code>, <code>virtio/src/pci_qnx.c</code>, <code>virtio/src/pci_msix_qnx.c</code>, <code>drivers/fs9p/src/irq_qnx.c</code></td>
+<td>both delivery modes are measured on a real QNX 8.0 guest: MSI-X is allocated by the PCI server (vector bound to line 256, 31.22 MiB/s) and INTx is forced with -o irq=10 (31.20 MiB/s); the escape hatch decides at the transport, or the service thread would wait on a line the device no longer signals.</td>
 </tr>
 <tr>
 <td>VIO-05</td>
@@ -183,8 +183,8 @@
 <td>On unmount, device is cleanly reset and no interrupt handlers remain attached.</td>
 <td>tested</td>
 <td><code>test_virtio_dev</code>, <code>test_destroy_resets_first</code>, <code>test_reset_detaches_irq_and_zeroes_status</code></td>
-<td><code>virtio/src/dev.c</code></td>
-<td>reset zeroes the device status and detaches the interrupt handler.</td>
+<td><code>virtio/src/dev.c</code>, <code>virtio/src/pci_modern.c</code></td>
+<td>reset zeroes the device status and detaches the interrupt handler; the delivery mode is reported by the transport that really disabled it, not cleared by reset (measured on the QNX 8.0 guest, where a reset left the MSI-X vector bound).</td>
 </tr>
 <tr>
 <td>VIO-10</td>
@@ -421,26 +421,26 @@
 <tr>
 <td>QNX-03</td>
 <td>Request handling executes at the calling thread's priority, verifiable via kernel trace.</td>
-<td>partial</td>
+<td>tested</td>
 <td><code>prio</code>, <code>test_most_urgent_qnx_priority_wins</code>, <code>test_caller_priority_reaches_backend</code></td>
-<td><code>drivers/common/src/prio_qnx.c</code>, <code>common/include/pgw/prio.h</code></td>
-<td>the conversion and the priority-ordered submission are proven on the PC; the requirement asks for a kernel trace on a QNX guest, and that trace does not exist yet.</td>
+<td><code>drivers/common/src/prio_qnx.c</code>, <code>common/include/pgw/prio.h</code>, <code>drivers/common/src/trace_qnx.c</code>, <code>drivers/common/include/pgw/traceop.h</code>, <code>tests/qemu/qnx8/trace_report.py</code></td>
+<td>the real QNX 8.0 trace carries priorities 10 and 63 in 1 604 submissions, and the operation payload agrees with the event code.</td>
 </tr>
 <tr>
 <td>QNX-04</td>
 <td>When transport queue is saturated, pending requests are submitted in priority order.</td>
 <td>tested</td>
 <td><code>test_rmfs_sched</code>, <code>test_high_priority_overtakes_bulk</code>, <code>test_equal_priority_is_fifo</code></td>
-<td><code>rmfs/src/sched.c</code></td>
-<td>a priority request overtakes eight low-priority ones, FIFO inside one priority; the measured half of the requirement needs a QNX guest.</td>
+<td><code>rmfs/src/sched.c</code>, <code>common/src/cookie.c</code>, <code>tests/qemu/qnx8/qbench.c</code></td>
+<td>the QNX guest trace records 1 177 paired transport round trips while sixteen bulk readers saturate the transport; the atomic cookie prevents concurrent completion theft.</td>
 </tr>
 <tr>
 <td>QNX-05</td>
 <td>A blocked client does not lock up a driver worker thread.</td>
-<td>tested</td>
+<td>partial</td>
 <td><code>test_rmfs_sched</code>, <code>test_enqueue_does_not_block</code>, <code>test_core_runs_when_saturated</code></td>
-<td><code>rmfs/src/sched.c</code>, <code>rmfs/src/rmfs.c</code></td>
-<td>a parked request never holds the caller thread and the core still runs when the queue is saturated.</td>
+<td><code>rmfs/src/sched.c</code>, <code>rmfs/src/rmfs.c</code>, <code>common/src/cookie.c</code></td>
+<td>the QNX trace shows request completions under the saturated guest load; a dedicated long saturation series remains.</td>
 </tr>
 <tr>
 <td>QNX-06</td>
@@ -469,10 +469,10 @@
 <tr>
 <td>QNX-09</td>
 <td>Emits kernel trace events (<code>TraceEvent</code>) on request send and receive.</td>
-<td>partial</td>
-<td>-</td>
-<td><code>drivers/common/src/trace_qnx.c</code>, <code>drivers/fs9p/src/trace_qnx.c</code></td>
-<td>trace events are written around each request; measuring them needs the QNX kernel trace tooling.</td>
+<td>tested</td>
+<td><code>test_driver_traceop</code></td>
+<td><code>drivers/common/src/trace_qnx.c</code>, <code>drivers/fs9p/src/op.c</code>, <code>tests/qemu/qnx8/capture_trace.py</code>, <code>tests/qemu/qnx8/trace_report.py</code></td>
+<td>the real QNX 8.0 trace contains 3 207 user events, 1 604 submissions and 1 603 replies; operation labels and priority payloads agree for every parsed event.</td>
 </tr>
 <tr>
 <td>PERF-01</td>
@@ -743,11 +743,11 @@
 <tbody>
 <tr>
 <td><code>tested</code></td>
-<td>51</td>
+<td>52</td>
 </tr>
 <tr>
 <td><code>partial</code></td>
-<td>20</td>
+<td>19</td>
 </tr>
 <tr>
 <td><code>missing</code></td>
