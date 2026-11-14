@@ -179,6 +179,42 @@ built on (`clock_gettime(CLOCK_MONOTONIC)` and `nanosleep()`): both work in the
 guest, so a wait that does not expire is a defect of the driver, not of the
 platform.
 
+## Capturing the kernel trace (QNX-09)
+
+The kernel trace of our own request events is now a repeatable measurement, not
+a manual exercise. Three pieces:
+
+* `image/qtrace.sh` (in the guest): starts `tracelogger` on the kernel ring,
+  runs the benchmark at two priorities, stops the recorder and prints the user
+  events `traceprinter` decoded;
+* `tests/qemu/qnx8/capture_trace.py` (on the host): boots the guest, waits for
+  the share to answer a read, runs the script and records the console. It ends
+  on the script's own last line, not on a gap in the console, because a
+  measurement script is silent for seconds while its benchmark runs;
+* `tests/qemu/qnx8/trace_report.py` (on the host): pairs each submission with
+  its reply, decodes the operation and the priority out of the payload, and
+  refuses a trace whose two decodings disagree.
+
+```
+python3 tests/qemu/qnx8/capture_trace.py --keep --workdir /tmp/pgw-trace
+python3 tests/qemu/qnx8/trace_report.py /tmp/pgw-trace/transcript.log
+```
+
+Two traps measured on this guest, both now avoided by the scripts:
+
+* **the guest's shell cannot create a pipe** once the driver is serving (`sh:
+  can't create pipe - try again`). It is not caused by the driver: a guest
+  booted without a matching mount tag fails the same way. So `qtrace.sh` uses no
+  command substitution and no pipe at all - only redirections, exit statuses and
+  shell variables;
+* **`tracelogger` needs an instrumented kernel**, which this image has
+  (`procnto-smp-instr`), and it must run as root in the guest.
+
+The measured result of 14 November is in
+[`docs/measurements/qnx8-guest.md`](../../../docs/measurements/qnx8-guest.md):
+3,207 user events, priorities 10 and 63 read out of the payload, and every
+submission paired with its reply.
+
 ## Where this stands
 
 Proven, and captured in this directory:

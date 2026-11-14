@@ -50,7 +50,13 @@ mount_share() {
             mount -t virtiofs "$tag" "$SHARE" 2>&1 | sed "s/^/$MOUNT-ERR /"
             ;;
         9p)
-            mount -t 9p -o trans=virtio,version=9p2000.L,cache=none "$tag" \
+            # The message size is what decides the rate (PERF-03): the host
+            # passes the one to compare with, so both rows read with the same
+            # message size. Unset, the kernel's default applies.
+            msize=$(pgw_cmdline_value pgw.msize)
+            opts="trans=virtio,version=9p2000.L,cache=none"
+            [ -n "$msize" ] && opts="$opts,msize=$msize"
+            mount -t 9p -o "$opts" "$tag" \
                 "$SHARE" 2>&1 | sed "s/^/$MOUNT-ERR /"
             ;;
         *)
@@ -118,6 +124,22 @@ run_workload() {
     say "PASS workload of $count create/stat/read/unlink cycles"
 }
 
+# PERF-03: the same measurement the QNX guest makes, on the same file, so the
+# two rows of the comparison are comparable: read the file the host put in the
+# share and report the rate. The host's page cache is warm for both guests.
+measure_rate() {
+    [ -f "$SHARE/rate.bin" ] || return 0
+    bytes=$(wc -c < "$SHARE/rate.bin" 2>/dev/null || echo 0)
+    [ "$bytes" -gt 0 ] || return 0
+    t0=$(cut -d' ' -f1 /proc/uptime 2>/dev/null || echo 0)
+    dd if="$SHARE/rate.bin" of=/dev/null bs=262144 2>/dev/null
+    t1=$(cut -d' ' -f1 /proc/uptime 2>/dev/null || echo 0)
+    awk -v b="$bytes" -v a="$t0" -v c="$t1" \
+        'BEGIN { d = c - a; if (d <= 0) d = 0.001;
+                  printf "PGW-E5 INFO rate bytes=%d seconds=%.3f MiBps=%.2f\n",
+                         b, d, b / d / 1048576 }'
+}
+
 report_environment() {
     say "INFO kernel $(uname -r) $(uname -m)"
     say "INFO virtio devices: $(ls -d /sys/bus/virtio/devices/* 2>/dev/null | wc -l)"
@@ -138,6 +160,7 @@ main() {
         check_guest_to_host  || rc=1
         check_exec_from_share
         run_workload
+        measure_rate
     fi
     [ "$rc" -eq 0 ] && say "RESULT PASS" || say "RESULT FAIL"
     say "DONE"

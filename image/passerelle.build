@@ -127,6 +127,7 @@ libsecpol.so.1=libsecpol.so.1
 libslog2.so.1=libslog2.so.1
 libslog2parse.so.1=libslog2parse.so.1
 libfsnotify.so.1=libfsnotify.so.1
+libtracelog.so.1=libtracelog.so.1
 libz.so.2=libz.so.2
 pci_bkwd_compat.so=pci/pci_bkwd_compat.so
 pci_cap-0x05.so=pci/pci_cap-0x05.so
@@ -150,12 +151,17 @@ shutdown=shutdown
 slog2info=slog2info
 slogger2=slogger2
 toybox=toybox
+tracelogger=tracelogger
+traceprinter=traceprinter
 
 [type=link] cat=toybox
+[type=link] grep=toybox
+[type=link] head=toybox
 [type=link] ls=toybox
 [type=link] mkdir=toybox
 [type=link] rm=toybox
 [type=link] sleep=toybox
+[type=link] uname=toybox
 
 # The drivers and the mount script. The drivers are built by the other half of
 # the project (drivers/); until they exist the three entries are skipped, and
@@ -165,6 +171,7 @@ toybox=toybox
 [+optional] fs9p=fs9p
 [+optional] fsfuse=fsfuse
 [+optional] qshare-mount.sh=qshare-mount.sh
+[+optional] qtrace.sh=qtrace.sh
 
 # The account the drivers drop root to (QNX-06): it exists only to own the
 # mount point and the device, it has no shell rights.

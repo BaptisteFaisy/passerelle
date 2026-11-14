@@ -90,7 +90,8 @@ def build_initramfs(work: pathlib.Path, cache: pathlib.Path,
 def qemu_command(share: pathlib.Path, proto: str, tag: str,
                  kernel: pathlib.Path, initrd: pathlib.Path,
                  work: pathlib.Path, workload: int = 0,
-                 trace: pathlib.Path | None = None) -> tuple[list, object]:
+                 trace: pathlib.Path | None = None,
+                 guest_msize: int = 0) -> tuple[list, object]:
     """Ask qshare for the command line, so the options tested are the emitted ones.
 
     ``build_qemu_cmd`` decides between ``-kernel`` and ``-drive`` from the image
@@ -106,6 +107,8 @@ def qemu_command(share: pathlib.Path, proto: str, tag: str,
 
     cfg = validate_share(str(share), tag=tag, proto=proto)
     append = f"console=ttyS0 pgw.share={proto} pgw.tag={tag}"
+    if guest_msize:
+        append += f" pgw.msize={guest_msize}"
     if workload:
         append += f" pgw.workload={workload}"
     placeholder = work / "unused-disk.img"
@@ -139,17 +142,27 @@ def run_guest(cmd: list, cfg, console: pathlib.Path) -> str:
     return console.read_text(encoding="utf-8", errors="replace")
 
 
+def put_rate_file(share: pathlib.Path, rate_file: pathlib.Path | None) -> None:
+    """PERF-03: the same file the QNX guest measures, so both rows of the
+    comparison read the same bytes with the host's page cache warm."""
+    if rate_file is not None and rate_file.exists():
+        (share / "rate.bin").write_bytes(rate_file.read_bytes())
+
+
 def check_proto(proto: str, work: pathlib.Path, cache: pathlib.Path,
                 kernel: pathlib.Path, initrd: pathlib.Path, workload: int = 0,
-                trace: pathlib.Path | None = None) -> bool:
+                trace: pathlib.Path | None = None,
+                rate_file: pathlib.Path | None = None,
+                guest_msize: int = 0) -> bool:
     tag = f"e5{proto}"[:31]
     share = work / f"share-{proto}"
     share.mkdir(parents=True, exist_ok=True)
     (share / "from-host.txt").write_text(f"hello-from-pc-{proto}\n")
+    put_rate_file(share, rate_file)
     console = work / f"console-{proto}.log"
 
     cmd, cfg = qemu_command(share, proto, tag, kernel, initrd, work, workload,
-                            trace)
+                            trace, guest_msize)
     started = time.monotonic()
     text = run_guest(cmd, cfg, console)
     elapsed = time.monotonic() - started
@@ -224,7 +237,18 @@ def prepare_workdir(args: argparse.Namespace) -> pathlib.Path:
     return work
 
 
-def main() -> int:
+def run_one(proto: str, work: pathlib.Path, args: argparse.Namespace,
+            kernel: pathlib.Path, initrd: pathlib.Path,
+            trace: pathlib.Path | None) -> bool:
+    """Run the guest for one protocol, with the options the run asked for."""
+    return check_proto(proto, work, pathlib.Path(args.cache),
+                       kernel, initrd, args.workload,
+                       trace if proto == "9p" else None,
+                       pathlib.Path(args.rate_file) if args.rate_file else None,
+                       args.guest_msize)
+
+
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--protos", default="virtiofs,9p")
     parser.add_argument("--cache", default=os.path.expanduser("~/.cache/passerelle"))
@@ -233,11 +257,23 @@ def main() -> int:
                         help="have the guest run N create/stat/read/unlink "
                              "cycles on the share, so a 9P trace contains a "
                              "known number of operations (PERF-01)")
+    parser.add_argument("--guest-msize", type=int, default=0, metavar="N",
+                        help="mount the share with that 9P message size in the "
+                             "guest (PERF-03: the comparison is only fair if "
+                             "both guests read with the same message size)")
+    parser.add_argument("--rate-file", default="", metavar="FILE",
+                        help="put this file in the share and have the guest "
+                             "measure the rate of reading it (PERF-03); point "
+                             "it at the very file the QNX guest measured, so "
+                             "both rows read the same bytes")
     parser.add_argument("--trace", default="", metavar="FILE",
                         help="write the QEMU 9P trace here (implies the 9p "
                              "protocol) and report the round-trip table")
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def main() -> int:
+    args = parse_args()
     protos = [p.strip() for p in args.protos.split(",") if p.strip()]
     try:
         kernel, protos = check_prerequisites(protos)
@@ -251,13 +287,12 @@ def main() -> int:
         trace = work / args.trace
         if "9p" not in protos:
             protos = ["9p"] + protos  # only the 9P server emits v9fs_* events
+    # (the loop below is one call per protocol)
     results: dict[str, bool] = {}
     try:
         initrd = build_initramfs(work, pathlib.Path(args.cache), kernel)
         for proto in protos:
-            results[proto] = check_proto(proto, work, pathlib.Path(args.cache),
-                                         kernel, initrd, args.workload,
-                                         trace if proto == "9p" else None)
+            results[proto] = run_one(proto, work, args, kernel, initrd, trace)
     except Skipped as exc:
         return skip(exc)
     finally:
