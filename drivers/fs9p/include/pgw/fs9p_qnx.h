@@ -44,10 +44,9 @@ void fs9p_xport_irq(void *user);
 
 /* --- trace_qnx.c --------------------------------------------------------- */
 
-/* Switch kernel tracing on for this mount (QNX-09) and label a 9P message with
- * the operation it belongs to. */
+/* Switch kernel tracing on for this mount (QNX-09). The message table lives in
+ * pgw/fs9p_op.h and the payload packing in pgw/traceop.h, both portable. */
 void fs9p_trace_init(const pgw_mount_opts *opts);
-enum pgw_op fs9p_op_of(uint8_t p9_type);
 
 /* --- syslog_qnx.c -------------------------------------------------------- */
 

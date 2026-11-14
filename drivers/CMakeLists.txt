@@ -39,6 +39,7 @@ set(PGW_DRIVER_INCLUDES
 pgw_library(pgw_drivers_portable
     SRCS
         "${PGW_DRIVER_COMMON_DIR}/src/opts.c"
+        "${PGW_DRIVER_COMMON_DIR}/src/traceop.c"
     DEPS pgw_common
     INCLUDES ${PGW_DRIVER_INCLUDES}
 )
@@ -48,7 +49,8 @@ pgw_library(pgw_drivers_portable
 # only when its module is present.
 if(TARGET pgw_proto9p)
     target_sources(pgw_drivers_portable PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/fs9p/src/p9_backend.c")
+        "${CMAKE_CURRENT_SOURCE_DIR}/fs9p/src/p9_backend.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/fs9p/src/op.c")
     target_include_directories(pgw_drivers_portable PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/fs9p/include")
     target_link_libraries(pgw_drivers_portable PUBLIC pgw_proto9p)
@@ -56,7 +58,8 @@ endif()
 
 if(TARGET pgw_protofuse)
     target_sources(pgw_drivers_portable PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/fsfuse/src/fuse_backend.c")
+        "${CMAKE_CURRENT_SOURCE_DIR}/fsfuse/src/fuse_backend.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/fsfuse/src/op.c")
     target_include_directories(pgw_drivers_portable PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/fsfuse/include")
     target_link_libraries(pgw_drivers_portable PUBLIC pgw_protofuse)
@@ -74,6 +77,15 @@ endif()
 if(TARGET pgw_test)
     pgw_test(test_driver_opts
         SRCS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_opts.c"
+        DEPS pgw_drivers_portable pgw_test
+        LABELS "drivers")
+
+    # The trace labels are a table and a packing rule, nothing else. They are
+    # checked here because a trace nobody can read is not evidence (QNX-03,
+    # QNX-09): every message a session sends must answer with the operation it
+    # is, and the priority must survive the packing.
+    pgw_test(test_driver_traceop
+        SRCS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_traceop.c"
         DEPS pgw_drivers_portable pgw_test
         LABELS "drivers")
 endif()

@@ -45,7 +45,11 @@ void pgw_trace_req(enum pgw_op op, uint32_t tag)
 {
     if (!g_trace || (unsigned)op >= (unsigned)PGW_OP__MAX)
         return;
-    pgw_trace_emit(TRACE_EVENT_REQ(op), (int)(unsigned)op, (int)tag);
+    /* The first payload word carries the operation and the priority the serving
+     * thread runs at, so the trace itself shows a request processed at the
+     * caller's priority (QNX-03) rather than leaving it to be inferred. */
+    pgw_trace_emit(TRACE_EVENT_REQ(op), pgw_trace_pack(op, pgw_trace_prio_now()),
+                   (int)tag);
 }
 
 void pgw_trace_rep(enum pgw_op op, uint32_t tag, int32_t status)

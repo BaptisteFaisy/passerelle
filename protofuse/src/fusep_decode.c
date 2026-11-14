@@ -47,6 +47,41 @@ static pgw_err body_exact(const pgw_buf *body, size_t want)
     return (pgw_left(body) == want) ? PGW_OK : PGW_FUSEP_E_BAD_MSG;
 }
 
+/* The header of a REQUEST, read back. A client never needed it - it writes its
+ * own requests - until a driver had to say, in the kernel trace, which operation
+ * a submitted message was (QNX-09). One implementation here, so the label and
+ * the encoder cannot drift apart. */
+pgw_err pgw_fuse_dec_in_hdr(const void *msg, size_t len, pgw_fuse_in_hdr *out)
+{
+    if (msg == NULL || out == NULL)
+        return PGW_EINVAL;
+    if (len < PGW_FUSE_IN_HDR_SZ)
+        return PGW_FUSEP_E_BAD_MSG; /* truncated header */
+
+    pgw_buf r;
+    pgw_buf_init(&r, msg, len);
+    uint32_t mlen = pgw_get_u32(&r);
+    uint32_t opcode = pgw_get_u32(&r);
+    uint64_t unique = pgw_get_u64(&r);
+    uint64_t nodeid = pgw_get_u64(&r);
+    uint32_t uid = pgw_get_u32(&r);
+    uint32_t gid = pgw_get_u32(&r);
+    uint32_t pid = pgw_get_u32(&r);
+    if (!pgw_buf_ok(&r))
+        return PGW_FUSEP_E_BAD_MSG;
+    if (mlen < PGW_FUSE_IN_HDR_SZ || (size_t)mlen > len)
+        return PGW_FUSEP_E_BAD_MSG; /* declared length impossible */
+
+    out->len = mlen;
+    out->opcode = opcode;
+    out->unique = unique;
+    out->nodeid = nodeid;
+    out->uid = uid;
+    out->gid = gid;
+    out->pid = pid;
+    return PGW_OK;
+}
+
 pgw_err pgw_fuse_dec_init(const void *msg, size_t len, uint64_t unique,
                           pgw_fuse_init_info *out)
 {

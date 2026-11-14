@@ -23,6 +23,7 @@
 #include "pgw/err.h"
 #include "pgw/limits.h"
 #include "pgw/rmfs.h"
+#include "pgw/traceop.h" /* the operation numbering, testable without QNX */
 
 #include <sched.h>
 #include <stdbool.h>
@@ -152,37 +153,17 @@ int pgw_io_readdir(resmgr_context_t *ctp, io_read_t *msg, pgw_ocb *ocb);
 
 /* --- kernel trace (QNX-09) ------------------------------------------------ */
 
-/* Operations, numbered once for both drivers: the trace events and the
- * per-operation counters are keyed by them. */
-enum pgw_op {
-    PGW_OP_OPEN = 0,
-    PGW_OP_READ,
-    PGW_OP_WRITE,
-    PGW_OP_STAT,
-    PGW_OP_READDIR,
-    PGW_OP_LSEEK,
-    PGW_OP_CHMOD,
-    PGW_OP_CHOWN,
-    PGW_OP_UTIME,
-    PGW_OP_TRUNC,
-    PGW_OP_SYNC,
-    PGW_OP_DEVCTL,
-    PGW_OP_UNLINK,
-    PGW_OP_RENAME,
-    PGW_OP_MKDIR,
-    PGW_OP_SYMLINK,
-    PGW_OP_LINK,
-    PGW_OP_READLINK,
-    PGW_OP_CLOSE,
-    PGW_OP__MAX
-};
+/* The operation numbering itself lives in pgw/traceop.h: a table and a packing
+ * rule, no OS header, so the PC bench checks them (test_traceop.c). */
 
 void pgw_trace_enable(bool on);
 bool pgw_trace_enabled(void);
 /* One user trace event (low level). */
 void pgw_trace_emit(int event, int data0, int data1);
 /* The pair every request produces: one at submission, one at reception.
- * `tag` is the 9P tag or the FUSE unique id, so a reader can pair them. */
+ * `tag` is the 9P tag or the FUSE unique id, so a reader can pair them. The
+ * submission event also carries the priority the serving thread runs at
+ * (QNX-03); see pgw_trace_pack(). */
 void pgw_trace_req(enum pgw_op op, uint32_t tag);
 void pgw_trace_rep(enum pgw_op op, uint32_t tag, int32_t status);
 

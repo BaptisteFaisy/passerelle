@@ -215,6 +215,9 @@ int32_t pgw_fuse_enc_interrupt(void *buf, size_t cap, uint64_t unique,
 /* --- decoders ------------------------------------------------------------- */
 
 pgw_err pgw_fuse_dec_hdr(const void *msg, size_t len, pgw_fuse_out_hdr *out);
+/* The header of a request this client wrote (a driver reads it back to label
+ * the kernel trace of QNX-09). */
+pgw_err pgw_fuse_dec_in_hdr(const void *msg, size_t len, pgw_fuse_in_hdr *out);
 pgw_err pgw_fuse_dec_init(const void *msg, size_t len, uint64_t unique,
                           pgw_fuse_init_info *out);
 pgw_err pgw_fuse_dec_entry(const void *msg, size_t len, uint64_t unique,

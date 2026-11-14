@@ -2,6 +2,7 @@
 add_library(pgw_common STATIC
     src/buf_reader.c
     src/buf_writer.c
+    src/cookie.c
     src/err.c
     src/flags.c
     src/log.c

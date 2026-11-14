@@ -44,10 +44,9 @@ void fsfuse_xport_irq(void *user);
 
 /* --- trace_qnx.c --------------------------------------------------------- */
 
-/* Switch kernel tracing on for this mount (QNX-09) and label a FUSE message
- * with the operation it belongs to. */
+/* Switch kernel tracing on for this mount (QNX-09). The opcode table lives in
+ * pgw/fsfuse_op.h and the payload packing in pgw/traceop.h, both portable. */
 void fsfuse_trace_init(const pgw_mount_opts *opts);
-enum pgw_op fsfuse_op_of(uint32_t opcode);
 
 /* --- syslog_qnx.c -------------------------------------------------------- */
 
