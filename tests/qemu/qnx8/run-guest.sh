@@ -13,7 +13,10 @@
 #   ./run-guest.sh [ifs_image] [share_dir] [console_log]
 #
 # Environment:
-#   TAG    mount tag of the share (default: passerelle)
+#   TAG           mount tag of the share (default: passerelle)
+#   SERIAL        how the console is wired (default: file:$LOG; use
+#                 `unix:/tmp/ser.sock,server,nowait` to drive the guest)
+#   RUN_TIMEOUT   seconds the whole run may take (default: 90)
 
 set -eu
 
@@ -49,7 +52,32 @@ fi
 
 # The outer timeout kills QEMU cleanly when the guest has shown what we need;
 # the guest itself keeps running a shell on the console until then.
-timeout 90 qemu-system-x86_64 \
+#
+# SERIAL overrides how the console is wired. The default is a file, which is what
+# a boot check needs; `SERIAL=pty` gives a pseudo-terminal, and the capture
+# harness drives it - that is how a measurement run sends commands to the guest
+# without rebuilding it. A pty is used instead of a unix socket because QEMU
+# drops what the guest writes before a socket client connects, while the kernel
+# buffers a pty (measured 14 November 2026).
+# RUN_TIMEOUT bounds the whole run (a trace capture needs more than a boot).
+SERIAL_SPEC="${SERIAL:-file:$LOG}"
+RUN_TIMEOUT="${RUN_TIMEOUT:-90}"
+
+# The pid of the process that runs QEMU is written here, so a harness can stop
+# exactly this guest. GNU timeout puts itself and its child in their own
+# process group, which is why the harness signals that group rather than the
+# script: killing the script alone used to leave the guest running.
+PID_FILE="${QEMU_PID_FILE:-}"
+
+# The QEMU command line lives in one place. QEMU writes its own PID when the
+# capture harness asks for one; that PID belongs only to this guest.
+if [ -n "$PID_FILE" ]; then
+    QEMU_PID_ARG="-pidfile $PID_FILE"
+else
+    QEMU_PID_ARG=""
+fi
+
+timeout "$RUN_TIMEOUT" qemu-system-x86_64 \
     -machine q35 \
     -smp 1 \
     -m 512 \
@@ -58,8 +86,9 @@ timeout 90 qemu-system-x86_64 \
     -fsdev "local,id=host,path=$SHARE_DIR,security_model=mapped-xattr" \
     -device "virtio-9p-pci,fsdev=host,mount_tag=$TAG,addr=0x05" \
     -display none \
-    -serial "file:$LOG" \
+    -serial "$SERIAL_SPEC" \
     -monitor none \
-    -no-reboot
+    -no-reboot \
+    $QEMU_PID_ARG
 
 echo "console captured in $LOG"
